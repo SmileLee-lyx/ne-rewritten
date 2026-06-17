@@ -1,7 +1,7 @@
 import type { NotationDefinition } from '@/utils';
 import { display, from_display, convert_to_0Y, Expr } from '@/notations/BM';
 
-const isPseudoInfinity = (expr: any): boolean => '' + expr === 'Infinity';
+const isPseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';
 const cloneColumn = (col: number[]) => col.slice();
 const cloneMatrix = (matrix: Expr) => matrix.map(cloneColumn);
 
