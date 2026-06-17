@@ -1,4 +1,5 @@
 import type { NotationDefinition } from '@/utils';
+import { display as BM_display, from_display as BM_from_display } from '@/notations/BM';
 
 export type Expr = number[][];
 
@@ -385,7 +386,10 @@ const FS_cache = new Map<string, Expr>();
 export const UPMS: NotationDefinition<Expr> = {
     id: 'upms',
     name: 'Unupgrading projection matrix system',
-    display: matrixDisplay,
+    display: { plain: matrixDisplay, from_display: BM_from_display },
+    display_equiv: {
+        'UP0Y': { plain: BM_display, from_display: BM_from_display },
+    },
     is_limit: upmsLimit,
     compare: matrixCompare,
     FS: (expr, index) => {
