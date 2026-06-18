@@ -228,6 +228,7 @@ function Limit(n: number): Expr {
 export const DEN: NotationDefinition<Expr> = {
     id: 'den',
     name: 'Defective embedding notation (DEN)',
+    simple_name: 'DEN',
     display,
     is_limit: isLimit,
     compare,

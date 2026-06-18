@@ -214,6 +214,7 @@ const data: Record<string, Expr[]> = {};
 export const BM4: NotationDefinition<Expr> = {
     id: 'bm4',
     name: 'Bashicu matrix (BMS)',
+    simple_name: 'BMS',
     display: { plain: display, from_display },
     display_equiv: {
         '0Y': (m) => (is_infinite(m) ? '1,ω' : '' + convert_to_0Y(m)),

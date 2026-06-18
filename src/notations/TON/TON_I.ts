@@ -153,6 +153,7 @@ var TON_gen = function* (term: any): any {
 export const TON_I: NotationDefinition<any> = {
     id: 'ton-i',
     name: 'Iteration of n-built from below (no passthrough)',
+    simple_name: 'TON_I',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

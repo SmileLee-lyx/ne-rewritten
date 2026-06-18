@@ -137,6 +137,7 @@ var TON_gen = function* (term: any, sys: any): any {
 export const TON_MC: NotationDefinition<any> = {
     id: 'ton-mc',
     name: 'TON (reflection configuration) without passthrough',
+    simple_name: 'TON_MC',
     display: TON_main_display,
     is_limit: TON_limit,
     compare: TON_compare,

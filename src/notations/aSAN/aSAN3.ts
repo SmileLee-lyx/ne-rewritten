@@ -107,6 +107,7 @@ var aSAN_FS = (A: any, FSterm: any): any => {
 export const aSAN3: NotationDefinition<any> = {
     id: 'asan-3',
     name: 'aSAN-3',
+    simple_name: 'aSAN-3',
     display: aSAN_display,
     is_limit: aSAN_able,
     compare: aSAN_compare,

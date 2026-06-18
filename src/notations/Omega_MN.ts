@@ -315,6 +315,7 @@ const FS_cache: Record<string, Expr> = {};
 export const omega_MN: NotationDefinition<Expr> = {
     id: 'omega-mn',
     name: 'ω mountain notation (ωMN)',
+    simple_name: 'ωMN',
     display: { plain: mountain_display, from_display: mountain_from_display },
     display_equiv: {
         layer: (m) => mountain_display(convert_to_layer(m)),

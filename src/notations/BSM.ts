@@ -96,6 +96,7 @@ function expand(m: Expr, index: number): Expr {
 export const BSM: NotationDefinition<Expr> = {
     id: 'bsm',
     name: 'Bashicu sudden matrix (BSM)',
+    simple_name: 'BSM',
     display: { plain: display, from_display },
     is_limit: matrix_is_limit,
     compare: compare,

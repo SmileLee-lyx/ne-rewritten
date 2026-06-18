@@ -376,10 +376,11 @@ const FS_cache = new Map<string, Expr>();
 
 export const UPMS: NotationDefinition<Expr> = {
     id: 'upms',
-    name: 'Unupgrading projection matrix system',
+    name: 'Unupgrading projection matrix system (UPMS)',
+    simple_name: 'UPMS',
     display: { plain: display, from_display },
     display_equiv: {
-        'UP0Y': { plain: (m) => (isPseudoInfinity(m) ? '1,ω' : '' + convert_to_0Y(m)), from_display },
+        UP0Y: { plain: (m) => (isPseudoInfinity(m) ? '1,ω' : '' + convert_to_0Y(m)), from_display },
     },
     is_limit: upmsLimit,
     compare: matrixCompare,

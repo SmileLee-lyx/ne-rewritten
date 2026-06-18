@@ -99,6 +99,7 @@ var TON_gen = function* (term: any, sys: any): any {
 export const TON_main: NotationDefinition<any> = {
     id: 'ton-m',
     name: "Taranosvky's ordinal notation",
+    simple_name: 'TON',
     display: TON_main_display,
     is_limit: TON_limit,
     compare: TON_compare,

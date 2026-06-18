@@ -107,6 +107,7 @@ var aSAN_FS = (A: any, FSterm: any): any => {
 export const aSAN_tilde3plus: NotationDefinition<any> = {
     id: 'asan-tilde3plus',
     name: 'aSAN~3+',
+    simple_name: 'aSAN~3+',
     display: aSAN_display,
     is_limit: aSAN_able,
     compare: aSAN_compare,

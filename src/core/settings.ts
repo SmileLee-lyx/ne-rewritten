@@ -8,6 +8,7 @@ export interface Settings {
     show_input: boolean;
     font_family: string;
     display_html_mode: boolean;
+    notation_name_mode: 'full' | 'simple';
     equiv_active: Record<string, string | undefined>;
     equiv_hide_original: Record<string, boolean>;
 }
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
     show_input: true,
     font_family: 'Comic Sans MS',
     display_html_mode: true,
+    notation_name_mode: 'simple',
     equiv_active: {},
     equiv_hide_original: {},
 };

@@ -97,6 +97,7 @@ var TON_gen = function* (term: any): any {
 export const TON_DRP: NotationDefinition<any> = {
     id: 'ton-drp',
     name: 'Degrees of Reflection with Passthrough',
+    simple_name: 'TON_DRP',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

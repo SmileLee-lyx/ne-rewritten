@@ -88,6 +88,7 @@ function expand(m: Expr, index: number): Expr {
 export const BHM: NotationDefinition<Expr> = {
     id: 'bhm',
     name: 'Bashicu hyper matrix (BHM)',
+    simple_name: 'BHM',
     display: { plain: display, from_display },
     is_limit: matrix_is_limit,
     compare: compare,

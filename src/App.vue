@@ -15,6 +15,25 @@ import DiagramViewer from '@/components/DiagramViewer.vue';
 const settings = inject(SETTINGS_KEY)!;
 const { diagram, visible, pos_x, pos_y, hide } = use_diagram();
 const settings_collapsed = ref(true);
+const is_flashing = ref(false);
+const flash_show_simple = ref(false);
+let flash_timer: ReturnType<typeof setInterval> | null = null;
+
+function start_flash() {
+    is_flashing.value = true;
+    flash_show_simple.value = false;
+    flash_timer = setInterval(() => {
+        flash_show_simple.value = !flash_show_simple.value;
+    }, 800);
+}
+
+function stop_flash() {
+    is_flashing.value = false;
+    if (flash_timer !== null) {
+        clearInterval(flash_timer);
+        flash_timer = null;
+    }
+}
 
 watch(
     () => settings.font_family,
@@ -169,12 +188,33 @@ onUnmounted(() => document.removeEventListener('keydown', on_global_keydown));
                 :disabled="n.id === settings.current_notation_id"
                 @mousedown="settings.current_notation_id = n.id"
             >
-                {{ n.name }}
+                <span v-if="n.simple_name && settings.notation_name_mode === 'full'" class="tab-stack">
+                    <span :class="{ active: !is_flashing || !flash_show_simple }">{{ n.name }}</span>
+                    <span :class="{ active: is_flashing && flash_show_simple }">{{ n.simple_name }}</span>
+                </span>
+                <span v-else>{{ settings.notation_name_mode === 'simple' ? (n.simple_name ?? n.name) : n.name }}</span>
             </button>
         </div>
 
         <div class="settings-box">
             <div class="toolbar">
+                <div class="toolbar-row">
+                    <span
+                        style="margin-right: 8px"
+                        @mouseenter="settings.notation_name_mode === 'full' && start_flash()"
+                        @mouseleave="stop_flash"
+                    >
+                        Notation name:
+                        <button
+                            class="toggle-btn"
+                            @mousedown="
+                                settings.notation_name_mode = settings.notation_name_mode === 'full' ? 'simple' : 'full'
+                            "
+                        >
+                            {{ settings.notation_name_mode }}
+                        </button>
+                    </span>
+                </div>
                 <div class="toolbar-row">
                     <label>
                         Navigate to:
@@ -266,7 +306,7 @@ onUnmounted(() => document.removeEventListener('keydown', on_global_keydown));
                     <span style="margin-right: 8px">
                         Analysis input:
                         <button class="toggle-btn" @mousedown="settings.show_input = !settings.show_input">
-                            {{ settings.show_input ? 'hide' : 'show' }}
+                            {{ settings.show_input ? 'show' : 'hide' }}
                         </button>
                     </span>
                     <label v-if="settings.show_input">
@@ -327,6 +367,19 @@ onUnmounted(() => document.removeEventListener('keydown', on_global_keydown));
 .tab > button[disabled] {
     background-color: #60a;
     color: #fff;
+}
+
+.tab-stack {
+    display: inline-grid;
+}
+.tab-stack > * {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transition: opacity 0.6s;
+    pointer-events: none;
+}
+.tab-stack > .active {
+    opacity: 1;
 }
 
 .settings-box {

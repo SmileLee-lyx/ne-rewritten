@@ -62,6 +62,7 @@ export function resolve_display<T>(spec: NotationDisplaySpec<T>): {
 export interface NotationDefinition<T> {
     id: string;
     name: string;
+    simple_name?: string;
     display: NotationDisplaySpec<T>;
     display_equiv?: Record<string, NotationDisplaySpec<T>>;
     is_limit: (a: T) => boolean;

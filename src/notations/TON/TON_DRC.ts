@@ -94,6 +94,7 @@ var TON_gen = function* (term: any): any {
 export const TON_DRC: NotationDefinition<any> = {
     id: 'ton-drc',
     name: 'Degrees of Reflection (reflection configuration)',
+    simple_name: 'TON_DRC',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

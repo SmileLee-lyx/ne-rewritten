@@ -503,6 +503,7 @@ const data: Record<string, Expr[]> = {};
 export const Y_seq: NotationDefinition<Expr> = {
     id: 'y-seq',
     name: 'Y sequence',
+    simple_name: 'Y',
     display: { plain: sequence_display, from_display: sequence_from_display },
     is_limit: is_limit,
     compare: (a, b) => lex_compare(a, b, number_compare),

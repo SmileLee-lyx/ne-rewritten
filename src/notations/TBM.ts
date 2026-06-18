@@ -348,6 +348,7 @@ function Limit(index: number): Expr {
 export const TBM: NotationDefinition<Expr> = {
     id: 'tbm',
     name: 'Transfinite Bashicu matrix (TBMS)',
+    simple_name: 'TBMS',
     display: {
         plain: (m) => display(m, false),
         html: (m) => display(m, true),

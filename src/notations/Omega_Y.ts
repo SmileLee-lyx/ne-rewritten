@@ -518,14 +518,11 @@ function to_dbms_display(seq: Expr): string {
     return result;
 }
 
-function create_magma_notation(
-    id: string,
-    name: string,
-    magma: (seq: Expr, index: number) => Expr,
-): NotationDefinition<Expr> {
+function create_magma_notation(type: string, magma: (seq: Expr, index: number) => Expr): NotationDefinition<Expr> {
     return {
-        id,
-        name,
+        id: 'omega-y-' + type,
+        name: 'ω-Y (' + type + ' magma)',
+        simple_name: 'ωY ' + type,
         display: {
             plain: sequence_display,
             from_display: sequence_from_display,
@@ -538,26 +535,10 @@ function create_magma_notation(
     };
 }
 
-export const omega_Y_weak: NotationDefinition<Expr> = create_magma_notation(
-    'omega-y-weak',
-    'ω-Y (weak magma)',
-    expand_weak_magma,
-);
+export const omega_Y_weak: NotationDefinition<Expr> = create_magma_notation('weak', expand_weak_magma);
 
-export const omega_Y_actual: NotationDefinition<Expr> = create_magma_notation(
-    'omega-y-actual',
-    'ω-Y (actual magma)',
-    expand_actual_magma,
-);
+export const omega_Y_actual: NotationDefinition<Expr> = create_magma_notation('actual', expand_actual_magma);
 
-export const omega_Y_medium: NotationDefinition<Expr> = create_magma_notation(
-    'omega-y-medium',
-    'ω-Y (medium magma)',
-    expand_medium_magma,
-);
+export const omega_Y_medium: NotationDefinition<Expr> = create_magma_notation('medium', expand_medium_magma);
 
-export const omega_Y_strong: NotationDefinition<Expr> = create_magma_notation(
-    'omega-y-strong',
-    'ω-Y (strong magma)',
-    expand_strong_magma,
-);
+export const omega_Y_strong: NotationDefinition<Expr> = create_magma_notation('strong', expand_strong_magma);

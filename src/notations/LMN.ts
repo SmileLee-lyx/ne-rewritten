@@ -264,6 +264,7 @@ function LMN_FS(x: Expr, index: number): Expr {
 export const LMN: NotationDefinition<Expr> = {
     id: 'lmn',
     name: 'lifting M-notation (LMN)',
+    simple_name: 'LMN',
     display: {
         plain: (e) => LMN_display(e, 'plain'),
         html: (e) => LMN_display(e, 'html-psi'),
