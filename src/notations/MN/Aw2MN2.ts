@@ -1,4 +1,5 @@
-import { create_FS_variants_provided, deepcopy, lex_compare, NotationDefinition } from '@/utils.ts';
+import { deepcopy, lex_compare, NotationDefinition } from '@/utils.ts';
+import { sequence_FS_variants } from "@/notations/FS_util.ts";
 
 export type Sep = Expr;
 export type Vertical = Expr[];
@@ -375,7 +376,7 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
     display: mountain_display,
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    ...create_FS_variants_provided(expand, is_infinite, Limit, mountain_is_limit, mountain_display),
+    ...sequence_FS_variants(expand, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[[Infinity] as unknown as Entry]], []],
 };
 
@@ -389,6 +390,6 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     },
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    ...create_FS_variants_provided(expand_weak, is_infinite, Limit, mountain_is_limit, mountain_display),
+    ...sequence_FS_variants(expand_weak, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[[Infinity] as unknown as Entry]], []],
 };

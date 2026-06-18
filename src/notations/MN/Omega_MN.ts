@@ -1,4 +1,6 @@
 import { deepcopy, lex_compare, NotationDefinition, number_compare } from '@/utils.ts';
+import { MN_FS_variants } from "@/notations/FS_util.ts";
+import { is_limit } from "@/notations/Y/Omega_Y.ts";
 
 const data = new Map<string, Expr>();
 const data_shorter = new Map<string, Expr>();
@@ -322,12 +324,6 @@ export const omega_MN: NotationDefinition<Expr> = {
     },
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    FS: (m: Expr, index: number) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        const key = mountain_display(m) + '@' + index;
-        if (!FS_cache[key]) FS_cache[key] = expand(m, index, true);
-        return FS_cache[key];
-    },
+    ...MN_FS_variants(expand, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[[Infinity] as any]], [[]], []],
 };

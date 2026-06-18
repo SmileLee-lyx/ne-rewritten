@@ -1,4 +1,4 @@
-import { create_FS_variants_provided, deepcopy, NotationDefinition } from '@/utils';
+import { deepcopy, NotationDefinition } from '@/utils';
 import {
     column_verticals,
     convert_to_layer,
@@ -18,6 +18,7 @@ import {
     vertical_compare,
     vertical_increase,
 } from '@/notations/MN/Aw2MN2.ts';
+import { sequence_FS_variants } from "@/notations/FS_util.ts";
 
 function subtract1(A0: Expr, V0: Vertical[][]): Expr {
     let rightmost = A0.length - 1;
@@ -177,7 +178,7 @@ export const A_omega2_MN3: NotationDefinition<Expr> = {
     simple_name: 'Aω2MN3',
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    ...create_FS_variants_provided(expand, is_infinite, Limit, mountain_is_limit, mountain_display),
+    ...sequence_FS_variants(expand, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[Infinity] as any], []],
 };
 
@@ -191,6 +192,6 @@ export const wA_omega2_MN3: NotationDefinition<Expr> = {
     simple_name: 'wAω2MN3',
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    ...create_FS_variants_provided(expand_weak, is_infinite, Limit, mountain_is_limit, mountain_display),
+    ...sequence_FS_variants(expand_weak, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[Infinity] as any], []],
 };

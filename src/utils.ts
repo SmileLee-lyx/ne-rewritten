@@ -3,6 +3,14 @@ export function number_compare(a: number, b: number): number {
     return a === b ? 0 : a < b ? -1 : 1;
 }
 
+export function boolean_compare(a: boolean, b: boolean): number {
+    return (a ? 1 : 0) - (b ? 1 : 0);
+}
+
+export function compare_ignore<T>(a: T, b: T): number {
+    return 0;
+}
+
 /** 字典序比较（通用）。 */
 export function lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): number {
     let len = Math.min(a.length, b.length);
@@ -11,6 +19,26 @@ export function lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): num
         if (result !== 0) return result;
     }
     return number_compare(a.length, b.length);
+}
+
+export function anti_lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): number {
+    if (a.length !== b.length) return number_compare(a.length, b.length);
+    let len = a.length;
+    for (let i = len - 1; i >= 0; i--) {
+        const result = cmp(a[i], b[i]);
+        if (result !== 0) return result;
+    }
+    return 0;
+}
+
+export function tuple_lex_compare<T extends any[]>(a: T, b: T, cmp: { [i in keyof T]: (a: T[i], b: T[i]) => number }): number;
+
+export function tuple_lex_compare(a: any[], b: any[], cmp: ((a: any, b: any) => number)[]): number {
+    for (let i = 0; i < cmp.length; i++) {
+        const result = cmp[i](a[i], b[i]);
+        if (result !== 0) return result;
+    }
+    return 0;
 }
 
 import type { Diagram } from './core/diagram_types';
@@ -39,10 +67,10 @@ export type NotationDisplay<T> = (a: T) => string;
 export type NotationDisplaySpec<T> =
     | NotationDisplay<T>
     | {
-          plain: NotationDisplay<T>;
-          html?: NotationDisplay<T>;
-          from_display?: (str: string) => T;
-      };
+    plain: NotationDisplay<T>;
+    html?: NotationDisplay<T>;
+    from_display?: (str: string) => T;
+};
 
 export function resolve_display<T>(spec: NotationDisplaySpec<T>): {
     plain: NotationDisplay<T>;
@@ -84,103 +112,6 @@ export interface DiagramControl<T, DataType> {
     default_data: DataType;
     draw_diagram: (expr: T, data: DataType) => Diagram | undefined;
     handle_action?: (data: DataType, action: DiagramAction) => DataType | null;
-}
-
-export function create_FS_variants<T>(
-    expand_longer: (seq: T[], index: number) => T[],
-    is_infinite: (seq: T[]) => boolean,
-    Limit: (index: number) => T[],
-    is_limit: (seq: T[]) => boolean,
-    display: (seq: T[]) => string,
-): Record<'FS' | 'FS_alter' | 'FS_short', (seq: T[], index: number) => T[]> {
-    const data: Record<string, T[][]> = {};
-    const data_short: Record<string, boolean> = {};
-
-    const core = {
-        FS: (seq: T[], index: number): T[] => {
-            if (!seq.length) return [];
-            if (is_infinite(seq)) return Limit(index);
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            const data_key = display(seq);
-            if (data[data_key] === undefined) data[data_key] = [];
-            else if (data[data_key][index] !== undefined) return data[data_key][index];
-            return (data[data_key][index] = expand_longer(seq, index));
-        },
-        FS_alter: (seq: T[], index: number): T[] => {
-            if (!seq.length) return [];
-            if (is_infinite(seq)) return Limit(index);
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            const result = core.FS(seq, index);
-            return result.slice(0, result.length - 1);
-        },
-        FS_short: (seq: T[], index: number): T[] => {
-            if (!seq.length) return [];
-            if (is_infinite(seq)) return Limit(index);
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            if (index === 0) return seq.slice(0, seq.length - 1);
-            if (index === 1) {
-                const result = core.FS(seq, 1);
-                return result.slice(0, seq.length);
-            }
-            const data_key = display(seq);
-            const d = data_short[data_key];
-            if (d === undefined) {
-                data_short[data_key] = core.FS_alter(seq, 1).length === seq.length;
-            }
-            return core.FS_alter(seq, index - (data_short[data_key] ? 0 : 1));
-        },
-    };
-    return core;
-}
-
-export function create_FS_variants_provided<T>(
-    expand: (seq: T[], index: number, shorter: boolean) => T[],
-    is_infinite: (seq: T[]) => boolean,
-    Limit: (index: number) => T[],
-    is_limit: (seq: T[]) => boolean,
-    display: (seq: T[]) => string,
-): Record<'FS' | 'FS_alter' | 'FS_short', (seq: T[], index: number) => T[]> {
-    const data: Record<string, T[][]> = {};
-    const data_alter: Record<string, T[][]> = {};
-    const data_short: Record<string, boolean> = {};
-
-    const core = {
-        FS: (seq: T[], index: number): T[] => {
-            if (!seq.length) return [];
-            if (is_infinite(seq)) return Limit(index);
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            const data_key = display(seq);
-            if (data[data_key] === undefined) data[data_key] = [];
-            else if (data[data_key][index] !== undefined) return data[data_key][index];
-            return (data[data_key][index] = expand(seq, index, false));
-        },
-        FS_alter: (seq: T[], index: number): T[] => {
-            if (!seq.length) return [];
-            if (is_infinite(seq)) return Limit(index);
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            const data_key = display(seq);
-            if (data_alter[data_key] === undefined) data_alter[data_key] = [];
-            else if (data_alter[data_key][index] !== undefined) return data_alter[data_key][index];
-            return (data_alter[data_key][index] = expand(seq, index, true));
-        },
-        FS_short: (seq: T[], index: number): T[] => {
-            if (!seq.length) return [];
-            if (is_infinite(seq)) return Limit(index);
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            if (index === 0) return seq.slice(0, seq.length - 1);
-            if (index === 1) {
-                const result = core.FS(seq, 1);
-                return result.slice(0, seq.length);
-            }
-            const data_key = display(seq);
-            const d = data_short[data_key];
-            if (d === undefined) {
-                data_short[data_key] = core.FS_alter(seq, 1).length === seq.length;
-            }
-            return core.FS_alter(seq, index - (data_short[data_key] ? 0 : 1));
-        },
-    };
-    return core;
 }
 
 export function index_of_first<T>(array: T[], predicate: (_: T) => boolean): number {

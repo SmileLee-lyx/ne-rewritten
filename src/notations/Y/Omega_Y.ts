@@ -1,5 +1,6 @@
 import type { NotationDefinition } from '@/utils.ts';
-import { create_FS_variants, lex_compare, number_compare } from '@/utils.ts';
+import { lex_compare, number_compare } from '@/utils.ts';
+import { Y_FS_variants } from "@/notations/FS_util.ts";
 
 type Expr = number[];
 type Vertical = number[];
@@ -530,7 +531,7 @@ function create_magma_notation(type: string, magma: (seq: Expr, index: number) =
         display_equiv: { DBMS: to_dbms_display },
         is_limit,
         compare: seq_compare,
-        ...create_FS_variants(magma, is_infinite, (index) => [1, index + 1], is_limit, sequence_display),
+        ...Y_FS_variants(magma, is_infinite, (index) => [1, index + 1], is_limit, sequence_display),
         init: () => [[Infinity], [1], []],
     };
 }

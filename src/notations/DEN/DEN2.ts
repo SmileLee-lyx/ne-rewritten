@@ -1,6 +1,5 @@
 import type { DiagramControl, NotationDefinition } from '@/utils.ts';
 import {
-    create_FS_variants_provided,
     deepcopy,
     index_of_first,
     index_of_last,
@@ -8,6 +7,7 @@ import {
     number_compare,
 } from '@/utils.ts';
 import type { Diagram, Rgba } from '@/core/diagram_types.ts';
+import { sequence_FS_variants } from "@/notations/FS_util.ts";
 
 type Expr = Row[];
 type Row = [number, Entry[]];
@@ -373,7 +373,7 @@ export const DEN2: NotationDefinition<Expr> = {
     display: { plain: display, from_display },
     is_limit: is_limit,
     compare,
-    ...create_FS_variants_provided(expand, is_infinite, Limit, is_limit, display),
+    ...sequence_FS_variants(expand, is_infinite, Limit, is_limit, display),
     draw_diagram: draw_diagram_control,
     init: () => [[Infinity] as any, []],
 };
