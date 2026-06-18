@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { omega_Y_actual, omega_Y_medium, omega_Y_strong, omega_Y_weak } from '@/notations/Omega_Y.ts';
+import { omega_Y_actual, omega_Y_medium, omega_Y_strong, omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
 
 describe('expand', () => {
     it('1343', () => {

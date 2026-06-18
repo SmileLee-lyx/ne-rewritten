@@ -1,4 +1,4 @@
-import type { DiagramControl, NotationDefinition } from '@/utils';
+import type { DiagramControl, NotationDefinition } from '@/utils.ts';
 import {
     create_FS_variants_provided,
     deepcopy,
@@ -6,8 +6,8 @@ import {
     index_of_last,
     lex_compare,
     number_compare,
-} from '@/utils';
-import type { Diagram, Rgba } from '@/core/diagram_types';
+} from '@/utils.ts';
+import type { Diagram, Rgba } from '@/core/diagram_types.ts';
 
 type Expr = Row[];
 type Row = [number, Entry[]];

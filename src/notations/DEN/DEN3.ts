@@ -1,5 +1,5 @@
-import type { NotationDefinition } from '@/utils';
-import { lex_compare, number_compare } from '@/utils';
+import type { NotationDefinition } from '@/utils.ts';
+import { lex_compare, number_compare } from '@/utils.ts';
 
 const data: any = {};
 const data_alter: any = {};

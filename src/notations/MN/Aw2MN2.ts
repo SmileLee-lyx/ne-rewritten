@@ -1,38 +1,38 @@
-import { deepcopy, lex_compare, NotationDefinition } from '@/utils.ts';
+import { create_FS_variants_provided, deepcopy, lex_compare, NotationDefinition } from '@/utils.ts';
 
-type Sep = Expr;
-type Vertical = Expr[];
-type Entry = [number, Sep, boolean?];
-type Column = Entry[];
-type Expr = Column[];
+export type Sep = Expr;
+export type Vertical = Expr[];
+export type Entry = [number, Sep, boolean?];
+export type Column = Entry[];
+export type Expr = Column[];
 
-function is_infinite(a: Expr) {
+export function is_infinite(a: Expr) {
     return '' + a === 'Infinity';
 }
 
-function entry_compare(a: Entry, b: Entry): number {
+export function entry_compare(a: Entry, b: Entry): number {
     if (a[0] < b[0]) return -1;
     if (a[0] > b[0]) return 1;
     return mountain_compare(a[1], b[1]);
 }
 
-function column_compare(a: Column, b: Column): number {
+export function column_compare(a: Column, b: Column): number {
     return lex_compare(a, b, entry_compare);
 }
 
-function mountain_compare(a: Expr, b: Expr): number {
+export function mountain_compare(a: Expr, b: Expr): number {
     return lex_compare(a, b, column_compare);
 }
 
-function mountain_is_limit(m: Expr): boolean {
+export function mountain_is_limit(m: Expr): boolean {
     return m.length > 0 && m[m.length - 1].length > 0;
 }
 
-function mountain_is_one(m: Expr): boolean {
+export function mountain_is_one(m: Expr): boolean {
     return m.length === 1 && m[0].length === 0;
 }
 
-function sep_display(sep: Expr): string {
+export function sep_display(sep: Expr): string {
     if (sep.every((column) => !column.length)) return ','.repeat(sep.length);
     if (
         mountain_display(sep.slice(0, 2)) === mountain_display([[], [[1, [[]]]]]) &&
@@ -42,30 +42,30 @@ function sep_display(sep: Expr): string {
     return mountain_display(sep);
 }
 
-function entry_display(entry: Entry): string {
+export function entry_display(entry: Entry): string {
     return sep_display(entry[1]) + (entry[2] ? '*' : '') + entry[0];
 }
 
-function column_display(col: Column): string {
+export function column_display(col: Column): string {
     return '(' + col.map(entry_display).join('') + ')';
 }
 
-function mountain_display(m: Expr): string {
+export function mountain_display(m: Expr): string {
     if (is_infinite(m)) return 'Limit';
     return m.map(column_display).join('');
 }
 
-function vertical_compare(a: Vertical, b: Vertical): number {
+export function vertical_compare(a: Vertical, b: Vertical): number {
     return lex_compare(a, b, mountain_compare);
 }
 
-function vertical_increase(v: Vertical, m: Sep) {
+export function vertical_increase(v: Vertical, m: Sep) {
     let i = v.length - 1;
     while (i >= 0 && mountain_compare(v[i], m) < 0) --i;
     return v.slice(0, i + 1).concat([m]);
 }
 
-function find_index_below_row(verticals: Vertical[], y: Vertical): number {
+export function find_index_below_row(verticals: Vertical[], y: Vertical): number {
     let working: Vertical[] = [[], ...verticals];
     let i1 = 0,
         i2 = working.length - 1;
@@ -77,19 +77,19 @@ function find_index_below_row(verticals: Vertical[], y: Vertical): number {
     return i1;
 }
 
-function Parent(A: Expr, V: Vertical[][], [i, j]: [number, number]): [number, number] {
+export function Parent(A: Expr, V: Vertical[][], [i, j]: [number, number]): [number, number] {
     let target_column = A[i][j][0] - 1;
     let target_j = find_index_below_row(V[target_column], V[i][j]);
     return [target_column, target_j];
 }
 
-function column_verticals(column: Column): Vertical[] {
+export function column_verticals(column: Column): Vertical[] {
     let v: Vertical[] = [[]];
     for (let j = 0; j < column.length; ++j) v.push(vertical_increase(v[j], column[j][1]));
     return v.slice(1);
 }
 
-function get_references(A: Expr, rtops: Vertical[]): number[] {
+export function get_references(A: Expr, rtops: Vertical[]): number[] {
     let verticals = column_verticals(A[A.length - 1]);
     verticals.unshift([]);
     let ref = [],
@@ -106,7 +106,7 @@ function get_references(A: Expr, rtops: Vertical[]): number[] {
     return ref;
 }
 
-function S(A: Expr, i: number, j: number): Sep {
+export function S(A: Expr, i: number, j: number): Sep {
     return A[i]?.[j] ? (A[i][j][2] ? A[i][j][1] : S(A, i, j - 1)) : [];
 }
 
@@ -272,21 +272,9 @@ function expand_weak(A0: Expr, index: number, shorter = false): Expr {
     return shorter ? A.slice(0, -1) : extend(A, true, true);
 }
 
-function Limit(n: number): Expr {
+export function Limit(n: number): Expr {
     let Omega: Expr = [[], [[1, [[]]]]];
-    return [
-        [],
-        [
-            [
-                1,
-                Omega.concat(
-                    Array(n)
-                        .fill(0)
-                        .map(() => []),
-                ),
-            ],
-        ],
-    ];
+    return [[], [[1, [...Omega, ...Array.from({ length: n }, () => [])]]]];
 }
 
 function calc_ancestor_depths(m: Expr): number[][] {
@@ -318,7 +306,7 @@ function calc_ancestor_depths(m: Expr): number[][] {
     return depthMap;
 }
 
-function convert_to_layer(om: Expr): Expr {
+export function convert_to_layer(om: Expr): Expr {
     if (is_infinite(om)) return om;
 
     const depthMap = calc_ancestor_depths(om);
@@ -336,7 +324,7 @@ function convert_to_layer(om: Expr): Expr {
     return dm;
 }
 
-function convert_from_layer(dm: Expr): Expr {
+export function convert_from_layer(dm: Expr): Expr {
     if (is_infinite(dm)) return dm;
 
     const om = deepcopy(dm);
@@ -387,34 +375,7 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
     display: mountain_display,
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    FS: (m, index) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        if (m[m.length - 1].length === 0) return m.slice(0, -1);
-        return expand(m, index, true);
-    },
-    FS_alter: (m, index) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        if (m[m.length - 1].length === 0) return m.slice(0, -1);
-        return expand(m, index);
-    },
-    FS_short: (m: Expr, index: number) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        if (m[m.length - 1].length === 0) return m.slice(0, -1);
-        if (index === 0) return expand(m, 0, true);
-        if (index === 1) {
-            if (mountain_compare(expand(m, 0, true), expand(m, 0, false)) === 0) return expand(m, 1, true);
-            else return expand(m, 0, false);
-        }
-        if (
-            mountain_compare(expand(m, 0, true), expand(m, 0, false)) === 0 ||
-            mountain_compare(expand(m, 1, true), expand(m, 0, false)) === 0
-        )
-            return expand(m, index, true);
-        return expand(m, index - 1, true);
-    },
+    ...create_FS_variants_provided(expand, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[[Infinity] as unknown as Entry]], []],
 };
 
@@ -428,34 +389,6 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     },
     is_limit: mountain_is_limit,
     compare: mountain_compare,
-    FS: (m, index) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        if (m[m.length - 1].length === 0) return m.slice(0, -1);
-        return expand_weak(m, index, true);
-    },
-    FS_alter: (m, index) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        if (m[m.length - 1].length === 0) return m.slice(0, -1);
-        return expand_weak(m, index);
-    },
-    FS_short: (m: Expr, index: number) => {
-        if (is_infinite(m)) return Limit(index);
-        if (m.length === 0) return [];
-        if (m[m.length - 1].length === 0) return m.slice(0, -1);
-        if (index === 0) return expand_weak(m, 0, true);
-        if (index === 1) {
-            if (mountain_compare(expand_weak(m, 0, true), expand_weak(m, 0, false)) === 0)
-                return expand_weak(m, 1, true);
-            else return expand_weak(m, 0, false);
-        }
-        if (
-            mountain_compare(expand(m, 0, true), expand_weak(m, 0, false)) === 0 ||
-            mountain_compare(expand_weak(m, 1, true), expand_weak(m, 0, false)) === 0
-        )
-            return expand_weak(m, index, true);
-        return expand_weak(m, index - 1, true);
-    },
+    ...create_FS_variants_provided(expand_weak, is_infinite, Limit, mountain_is_limit, mountain_display),
     init: () => [[[[Infinity] as unknown as Entry]], []],
 };

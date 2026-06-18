@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BM4, display, from_display } from '@/notations/BM';
+import { BM4, display, from_display } from '@/notations/BM-like/BM.ts';
 
 // ===========================================================================
 // display 测试

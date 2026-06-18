@@ -1,5 +1,5 @@
-import { compare, display, Expr, from_display, is_infinite, matrix_is_limit } from '@/notations/BM';
-import type { NotationDefinition } from '@/utils';
+import { compare, display, Expr, from_display, is_infinite, matrix_is_limit } from '@/notations/BM-like/BM.ts';
+import type { NotationDefinition } from '@/utils.ts';
 
 const data: Record<string, Expr[]> = {};
 
@@ -22,7 +22,7 @@ function expand(m: Expr, index: number): Expr {
     }
 
     function delta(r: number, LNZ: number) {
-        return m[r].map((value, y) => (y < LNZ ? child[y] - value : 0));
+        return m[r].map((value, y) => (y < LNZ ? child[y] - value : y === LNZ ? child[y] - value - 1 : 0));
     }
 
     function expansion(
@@ -72,23 +72,31 @@ function expand(m: Expr, index: number): Expr {
 
     const parent_cache: Record<string, number> = {};
     const ascend_cache: Record<string, boolean> = {};
-    const special_root = parent(parent(end_col, LNZ, parent_cache), LNZ, parent_cache);
+    const special_roots: number[] = [];
     const roots: number[] = [];
-    for (let n = end_col; (n = LNZ ? parent(n, LNZ - 1, parent_cache) : n - 1) > special_root; ) {
-        if (parent(n, LNZ, parent_cache) === special_root) roots.push(n);
+    for (let n = end_col; n >= 0; ) {
+        special_roots.push((n = parent(n, LNZ, parent_cache)));
     }
+    for (let n = special_roots[0]; n >= 0; n = LNZ ? parent(n, LNZ - 1, parent_cache) : n - 1) {
+        if (special_roots.includes(parent(n, LNZ, parent_cache))) roots.push(n);
+    }
+    const test_root = m[roots[0]].slice(LNZ + 1);
     const threshold = expansion_append(roots[0], LNZ, parent_cache, ascend_cache, roots);
-    let n = roots.findIndex((r) => compare(expansion_append(r, LNZ, parent_cache, ascend_cache, roots), threshold) < 0);
+    let n = roots.findIndex((r) =>
+        special_roots.includes(r)
+            ? m[r].slice(LNZ + 1).some((value, dy) => value !== test_root[dy])
+            : compare(expansion_append(r, LNZ, parent_cache, ascend_cache, roots), threshold) < 0,
+    );
     if (n === -1) n = roots.length;
     let res = expansion(roots[n - 1], index, LNZ, parent_cache, ascend_cache, roots);
     if (y_max > 0 && res.every((col) => col[y_max] === 0)) res = res.map((col) => col.slice(0, y_max));
     return res;
 }
 
-export const BHM: NotationDefinition<Expr> = {
-    id: 'bhm',
-    name: 'Bashicu hyper matrix (BHM)',
-    simple_name: 'BHM',
+export const BSM: NotationDefinition<Expr> = {
+    id: 'bsm',
+    name: 'Bashicu sudden matrix (BSM)',
+    simple_name: 'BSM',
     display: { plain: display, from_display },
     is_limit: matrix_is_limit,
     compare: compare,

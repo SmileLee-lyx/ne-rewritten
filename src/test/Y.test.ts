@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Y_seq } from '@/notations/Y.ts';
+import { Y_seq } from '@/notations/Y/Y.ts';
 
 describe('expand', () => {
     it('1343', () => {

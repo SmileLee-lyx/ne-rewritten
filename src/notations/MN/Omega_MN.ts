@@ -1,4 +1,4 @@
-import { deepcopy, lex_compare, NotationDefinition, number_compare } from '@/utils';
+import { deepcopy, lex_compare, NotationDefinition, number_compare } from '@/utils.ts';
 
 const data = new Map<string, Expr>();
 const data_shorter = new Map<string, Expr>();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEN2 } from '@/notations/DEN2.ts';
+import { DEN2 } from '@/notations/DEN/DEN2.ts';
 import { resolve_display } from '@/utils.ts';
 
 describe('expand', () => {

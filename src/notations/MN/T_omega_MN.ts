@@ -1,4 +1,4 @@
-import { deepcopy, lex_compare, NotationDefinition } from '@/utils';
+import { deepcopy, lex_compare, NotationDefinition } from '@/utils.ts';
 
 type Sep = Expr;
 type Vertical = Sep[];

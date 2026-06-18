@@ -1,5 +1,5 @@
-import type { NotationDefinition } from '@/utils';
-import { display, from_display, convert_to_0Y, Expr } from '@/notations/BM';
+import type { NotationDefinition } from '@/utils.ts';
+import { convert_to_0Y, display, Expr, from_display } from '@/notations/BM-like/BM.ts';
 
 const isPseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';
 const cloneColumn = (col: number[]) => col.slice();

@@ -1,6 +1,6 @@
-import { deepcopy, lex_compare, number_compare } from '@/utils';
-import type { NotationDefinition } from '@/utils';
-import { sequence_display, is_limit, sequence_from_display } from '@/notations/Omega_Y.ts';
+import type { NotationDefinition } from '@/utils.ts';
+import { deepcopy, lex_compare, number_compare } from '@/utils.ts';
+import { is_limit, sequence_display, sequence_from_display } from '@/notations/Y/Omega_Y.ts';
 
 export type Expr = number[];
 

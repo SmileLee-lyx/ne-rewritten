@@ -1,4 +1,4 @@
-import { lex_compare, type NotationDefinition, number_compare } from '@/utils';
+import { lex_compare, type NotationDefinition, number_compare } from '@/utils.ts';
 
 /** Bashicu 矩阵表达式：number[][]，其中 [[Infinity]] 表示极限。 */
 export type Expr = number[][];

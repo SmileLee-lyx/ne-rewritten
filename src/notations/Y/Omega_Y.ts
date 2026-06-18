@@ -1,5 +1,5 @@
-import type { NotationDefinition } from '@/utils';
-import { create_FS_variants, lex_compare, number_compare } from '@/utils';
+import type { NotationDefinition } from '@/utils.ts';
+import { create_FS_variants, lex_compare, number_compare } from '@/utils.ts';
 
 type Expr = number[];
 type Vertical = number[];

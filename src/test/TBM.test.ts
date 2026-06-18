@@ -9,7 +9,7 @@ import {
     expand,
     Expr,
     parents,
-} from '@/notations/TBM';
+} from '@/notations/BM-like/TBM.ts';
 
 describe('parents', () => {
     it('parents', () => {
