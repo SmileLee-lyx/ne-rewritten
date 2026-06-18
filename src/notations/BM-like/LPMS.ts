@@ -78,6 +78,17 @@ const phaseColGt = (matrix: Expr, index: number, col: number[], rows: number): b
 const phaseColGe = (matrix: Expr, index: number, col: number[], rows: number): boolean =>
     phaseColCompare(matrix, index, col, rows) >= 0;
 
+const phaseColsCompare = (matrix: Expr, startIndex: number, cols: number[][], rows: number): number => {
+    for (let i = 0; i < cols.length; i++) {
+        const cmp = phaseColCompare(matrix, startIndex + i, cols[i], rows);
+        if (cmp) return cmp;
+    }
+    return 0;
+};
+
+const phaseColsLt = (matrix: Expr, startIndex: number, cols: number[][], rows: number): boolean =>
+    phaseColsCompare(matrix, startIndex, cols, rows) < 0;
+
 const matrixCompare = (m1: Expr, m2: Expr): number => {
     const inf1 = pseudoInfinity(m1),
         inf2 = pseudoInfinity(m2);
@@ -580,7 +591,11 @@ const lpmsSingle = (matrix: Expr): Expr => {
                 Mp = state.Mp;
                 mSwitch = false;
                 let a = M[t][0];
-                if (phaseColLt(M, t + 1, constCol(a + 1, rows), rows) && ctx.getBParent(t, 2) === r) mSwitch = true;
+                if (
+                    phaseColsLt(M, t + 1, [constCol(a + 1, rows), constCol(a + 2, rows)], rows) &&
+                    ctx.getBParent(t, 2) === r
+                )
+                    mSwitch = true;
                 a = Mp.length ? Mp[Mp.length - 1][0] : 0;
                 Mp = upmsSingle(Mp, l, rows);
                 if (mSwitch) Mp.push(constCol(a + 1, rows));
@@ -613,7 +628,8 @@ const lpmsSingle = (matrix: Expr): Expr => {
             markSkipRange(skip, t + 1, t + d - 2, alpha);
             mSwitch = false;
             let a = M[t][0];
-            if (kp === 2 && phaseColLt(M, t + d - 1, constCol(a + 1, rows), rows)) mSwitch = true;
+            if (kp === 2 && phaseColsLt(M, t + d - 1, [constCol(a + 1, rows), constCol(a + 2, rows)], rows))
+                mSwitch = true;
             if (t !== r + l) {
                 appendS(state, prep, t);
                 Mp = state.Mp;
@@ -632,7 +648,7 @@ const lpmsSingle = (matrix: Expr): Expr => {
             Mp = state.Mp;
             mSwitch = false;
             let a = M[t][0];
-            if (phaseColLt(M, t + d, constCol(a + 1, rows), rows)) mSwitch = true;
+            if (phaseColsLt(M, t + d, [constCol(a + 1, rows), constCol(a + 2, rows)], rows)) mSwitch = true;
             a = Mp.length ? Mp[Mp.length - 1][0] : 0;
             Mp = upmsSingle(Mp, l, rows);
             if (mSwitch) Mp.push(constCol(a + 1, rows));

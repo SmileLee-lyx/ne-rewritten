@@ -79,6 +79,16 @@ const file_input = ref<HTMLInputElement>();
 
 const ANALYSIS_STORAGE_PREFIX = 'ne-analysis-';
 let auto_save_timer: ReturnType<typeof setInterval> | null = null;
+let save_indicator_timer: ReturnType<typeof setInterval> | null = null;
+
+const last_save_time = ref(Date.now());
+const save_indicator = ref('');
+
+function update_save_indicator() {
+    const elapsed = Math.floor((Date.now() - last_save_time.value) / 1000);
+    if (elapsed < 60) save_indicator.value = elapsed + 's';
+    else save_indicator.value = Math.floor(elapsed / 60) + 'm' + (elapsed % 60) + 's';
+}
 
 function save_analysis() {
     const n = notation.value;
@@ -86,6 +96,8 @@ function save_analysis() {
     if (!n || !r) return;
     const entries = export_analysis(r);
     localStorage.setItem(ANALYSIS_STORAGE_PREFIX + n.id, JSON.stringify(entries));
+    last_save_time.value = Date.now();
+    update_save_indicator();
 }
 
 function load_analysis(id: string, r: TreeNode<unknown>) {
@@ -215,10 +227,15 @@ onMounted(() => {
     document.addEventListener('keydown', on_global_keydown);
     auto_save_timer = setInterval(save_analysis, 30000);
     window.addEventListener('beforeunload', save_analysis);
+    update_save_indicator();
+    save_indicator_timer = setInterval(update_save_indicator, 1000);
+    const r = root.value;
+    if (r) load_analysis(current_id.value, r);
 });
 onUnmounted(() => {
     document.removeEventListener('keydown', on_global_keydown);
     if (auto_save_timer !== null) clearInterval(auto_save_timer);
+    if (save_indicator_timer !== null) clearInterval(save_indicator_timer);
     window.removeEventListener('beforeunload', save_analysis);
 });
 </script>
@@ -290,6 +307,7 @@ onUnmounted(() => {
                     <button class="reset-btn" @mousedown="handle_reset">Reset</button>
                     <button @mousedown="handle_export">Export</button>
                     <button @mousedown="handle_import">Import</button>
+                    <button @mousedown="save_analysis">Save</button>
                     <input
                         ref="file_input"
                         type="file"
@@ -363,10 +381,6 @@ onUnmounted(() => {
                             {{ settings.show_input ? 'show' : 'hide' }}
                         </button>
                     </span>
-                    <label>
-                        <input type="checkbox" v-model="settings.use_delete_to_clear" />
-                        Use 'Delete' key to clear analysis
-                    </label>
                     <label v-if="settings.show_input">
                         Input width:
                         <input
@@ -377,6 +391,10 @@ onUnmounted(() => {
                             style="vertical-align: middle"
                         />
                         {{ settings.input_width }}px
+                    </label>
+                    <label>
+                        <input type="checkbox" v-model="settings.use_delete_to_clear" />
+                        Use 'Delete' key to clear analysis
                     </label>
                 </div>
                 <div v-if="!settings_collapsed" class="toolbar-row">
@@ -408,6 +426,7 @@ onUnmounted(() => {
             <button class="diagram-close" @mousedown.stop="hide">✕</button>
             <DiagramViewer :diagram="diagram" />
         </div>
+        <div v-if="save_indicator" class="save-indicator">saved {{ save_indicator }} ago</div>
     </div>
 </template>
 
@@ -734,6 +753,19 @@ body::after {
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     padding: 8px;
+}
+
+.save-indicator {
+    position: fixed;
+    left: 8px;
+    bottom: 8px;
+    font-size: 12px;
+    color: #888;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 2px 8px;
+    border-radius: 4px;
+    z-index: 9999;
+    pointer-events: none;
 }
 
 .diagram-close {
