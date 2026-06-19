@@ -1,6 +1,5 @@
 import { deepcopy, lex_compare, NotationDefinition, number_compare } from '@/utils.ts';
 import { MN_FS_variants } from '@/notations/FS_util.ts';
-import { is_limit } from '@/notations/Y/Omega_Y.ts';
 
 const data = new Map<string, Expr>();
 const data_shorter = new Map<string, Expr>();
@@ -320,7 +319,10 @@ export const omega_MN: NotationDefinition<Expr> = {
     simple_name: 'ωMN',
     display: { plain: mountain_display, from_display: mountain_from_display },
     display_equiv: {
-        layer: (m) => mountain_display(convert_to_layer(m)),
+        layer: {
+            plain: (m) => mountain_display(convert_to_layer(m)),
+            from_display: (str) => convert_from_layer(mountain_from_display(str)),
+        },
     },
     is_limit: mountain_is_limit,
     compare: mountain_compare,

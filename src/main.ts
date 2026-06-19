@@ -34,6 +34,7 @@ import { TON_MPC } from '@/notations/TON/TON_MPC.ts';
 import { aSAN2 } from '@/notations/aSAN/aSAN2.ts';
 import { aSAN3 } from '@/notations/aSAN/aSAN3.ts';
 import { aSAN_tilde3plus } from '@/notations/aSAN/aSAN_tilde3plus.ts';
+import { n_MN } from '@/notations/SMN/n_MN.ts';
 
 register_notation(omega);
 register_notation(BM4);
@@ -44,6 +45,9 @@ register_notation(omega_Y_actual);
 register_notation(omega_Y_medium);
 register_notation(omega_Y_strong);
 register_notation(omega_MN);
+register_notation(n_MN(1));
+register_notation(n_MN(2));
+register_notation(n_MN(3));
 register_notation(T_omega_MN);
 register_notation(A_omega2_MN2);
 register_notation(wA_omega2_MN2);

@@ -71,8 +71,8 @@ function extend(A0: Expr, small: boolean = false, weak: boolean = false): Expr {
     let magma_checks_list: number[][] = [];
     for (let i = BR_ij[0] + 1; i <= rightmost; ++i) {
         magma_checks_list[i] = [];
-        for (var j = 0; j < A0[i].length; ++j) {
-            var working: [number, number] = [i, j];
+        for (let j = 0; j < A0[i].length; ++j) {
+            let working: [number, number] = [i, j];
             while (working[0] > BR_ij[0]) {
                 if (A0[working[0]].length <= working[1]) --working[1];
                 working = Parent(A0, V0, working);
@@ -87,7 +87,7 @@ function extend(A0: Expr, small: boolean = false, weak: boolean = false): Expr {
     }
     let Br_i = BR_ij[0];
     magma_checks_list[Br_i] = [];
-    for (var j = 0; j < A0[Br_i].length; ++j) {
+    for (let j = 0; j < A0[Br_i].length; ++j) {
         magma_checks_list[Br_i][j] = -1;
     }
 
@@ -108,7 +108,8 @@ function extend(A0: Expr, small: boolean = false, weak: boolean = false): Expr {
             stretch_threshold[i] = S(A0, BR_ij[0], i - 1).concat([[]]);
         }
 
-        for (j = refs[i], stretch_value[i] = 0; j - 1 > refs[i - 1]; --j) {
+        stretch_value[i] = 0;
+        for (let j = refs[i]; j - 1 > refs[i - 1]; --j) {
             let M = A[rightmost][j - 1]?.[1] ?? [];
             if (mountain_compare(M, top_separators[i]) < 0 && mountain_compare(M, stretch_threshold[i]) >= 0) {
                 stretch_value[i] = M.length - stretch_threshold[i].length + 1;
