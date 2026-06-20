@@ -339,6 +339,7 @@ export function copy_column(
     V0i: Vertical[],
     mr: Column,
     MIr: number[],
+    [Ri, Rj]: Position,
     SD: (StretchData | undefined)[],
     offset: number,
     stretch_v_max: Vertical,
@@ -346,10 +347,11 @@ export function copy_column(
     const result: Column = [];
     let last_mi = -1;
     let ref_j = 0;
-    const Rj = SD.length - 1;
     for (let j = 0; j < m0i.length; j++) {
         if (j >= MI0i.length) {
-            result.push(deepcopy(m0i[j]));
+            let entry = deepcopy(m0i[j]);
+            if (entry[0] >= Ri + 1) entry[0] += offset;
+            result.push(entry);
         } else {
             const [value, sep, mark] = m0i[j];
             const new_value = value + offset;
@@ -388,7 +390,7 @@ export function extend(m0: Mountain): Mountain {
 
     const offset = right - Ri;
     for (let i = Ri + 1; i < m0.length; i++) {
-        m.push(copy_column(m0[i], MI0[i], V0[i], m[right], MI[right], SD0, offset, V0[right][top]));
+        m.push(copy_column(m0[i], MI0[i], V0[i], m[right], MI[right], [Ri, Rj], SD0, offset, V0[right][top]));
     }
     return m;
 }

@@ -238,7 +238,7 @@ export function copy_column(
     MI0i: number[],
     mr: Column,
     MIr: number[],
-    Rj: number,
+    [Ri, Rj]: Position,
     offset: number,
 ): Column {
     const result: Column = [];
@@ -246,7 +246,9 @@ export function copy_column(
     let ref_j = 0;
     for (let j = 0; j < m0i.length; j++) {
         if (j >= MI0i.length) {
-            result.push(deepcopy(m0i[j]));
+            let entry = deepcopy(m0i[j]);
+            if (entry[0] >= Ri + 1) entry[0] += offset;
+            result.push(entry);
         } else {
             const [value, sep] = m0i[j];
             const new_value = value + offset;
@@ -283,7 +285,7 @@ export function extend(m0: Mountain): Mountain {
 
     const offset = right - Ri;
     for (let i = Ri + 1; i < m0.length; i++) {
-        m.push(copy_column(m0[i], MI0[i], m[right], MI[right], Rj, offset));
+        m.push(copy_column(m0[i], MI0[i], m[right], MI[right], [Ri, Rj], offset));
     }
     return m;
 }

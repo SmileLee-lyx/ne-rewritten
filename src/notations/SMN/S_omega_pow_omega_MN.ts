@@ -232,9 +232,10 @@ export function magma_indices(m: Mountain, V: Vertical[][], [Ri, Rj]: Position, 
 }
 
 function S_default(bound: Sep): Sep {
+    let d = sep_dimension(bound);
+    if (d === bound.length - 1 && bound[d] === 1) return [];
     let result = deepcopy(bound);
-    result[sep_dimension(bound)]--;
-    while (result.length > 0 && result[result.length - 1] === 0) result.pop();
+    result[d]--;
     return result;
 }
 
@@ -253,44 +254,46 @@ type StretchData = {
     force: boolean;
 };
 
-export function stretch_data_top(m: Mountain, V: Vertical[][]): StretchData | undefined {
+export function stretch_data_top(m: Mountain, V: Vertical[][]): StretchData {
     const right: number = m.length - 1;
     const top: number = m[right].length - 1;
     const [Ri, Rj] = parent(m, V, [right, top]);
 
     let top_right_sep = m[right][top][1];
 
-    if (sep_dimension(top_right_sep) > 0) {
-        const threshold = S(m[Ri], Rj - 1, top_right_sep);
-        let stretch_to = S(m[right], top - 1, top_right_sep);
-        let force = false;
-        if (sep_compare(stretch_to, threshold) <= 0) {
+    const threshold = S(m[Ri], Rj - 1, top_right_sep);
+    let stretch_to = S(m[right], top - 1, top_right_sep);
+    let force = false;
+    if (sep_is_one(top_right_sep)) {
+        // do nothing
+    } else if (sep_dimension(top_right_sep) > 0) {
+        if (sep_compare(stretch_to, sep_increase(threshold, sep_dimension(top_right_sep) - 1)) < 0) {
             stretch_to = sep_increase(stretch_to, sep_dimension(top_right_sep) - 1);
             force = true;
         }
-        return { threshold, stretch_to, force };
     } else {
-        return undefined;
+        const v_parent = Rj === 0 ? [] : V[Ri][Rj - 1];
+        const v_bottom = top === 0 ? [] : V[right][top - 1];
+        if (vertical_compare(vertical_increase(v_parent, stretch_to), v_bottom) > 0) {
+            force = true;
+        }
     }
+    return { threshold, stretch_to, force };
 }
 
-export function stretch_data_list(m: Mountain, V: Vertical[][], MI: number[][]): (StretchData | undefined)[] {
+export function stretch_data_list(m: Mountain, V: Vertical[][], MI: number[][]): StretchData[] {
     const right: number = m.length - 1;
     const top: number = m[right].length - 1;
     const [Ri, Rj] = parent(m, V, [right, top]);
-    const result: (StretchData | undefined)[] = [];
+    const result: StretchData[] = [];
 
     let ref_j = -1;
     for (let j = 0; j < Rj; j++) {
         while (ref_j + 1 <= top && MI[right][ref_j + 1] <= j) ref_j++;
         let current_top_sep = m[Ri][j][1];
-        if (sep_dimension(current_top_sep) === 0) {
-            result[j] = undefined;
-        } else {
-            const threshold = S(m[Ri], j - 1, current_top_sep);
-            const stretch_to = S(m[right], ref_j - 1, current_top_sep);
-            result[j] = { threshold, stretch_to, force: false };
-        }
+        const threshold = S(m[Ri], j - 1, current_top_sep);
+        const stretch_to = S(m[right], ref_j - 1, current_top_sep);
+        result[j] = { threshold, stretch_to, force: false };
     }
 
     result[Rj] = stretch_data_top(m, V);
@@ -303,25 +306,13 @@ export function subtract_1(m: Mountain, V?: Vertical[][], SD_top?: StretchData):
     SD_top = SD_top ?? stretch_data_top(m, V);
     const right: number = m.length - 1;
     const top: number = m[right].length - 1;
-    const top_right_sep: Sep = m[right][top][1];
     const [Ri, Rj] = parent(m, V, [right, top]);
 
     const result = deepcopy(m);
     result[right].pop();
 
-    const top_right_sep_dimension = sep_dimension(top_right_sep);
-    if (sep_is_one(top_right_sep)) {
-        // do nothing
-    } else if (top_right_sep_dimension === 0) {
-        const new_sep = [top_right_sep[0] - 1, ...top_right_sep.slice(1)];
-
-        const v_parent = Rj === 0 ? [] : V[Ri][Rj - 1];
-        const v_bottom = top === 0 ? [] : V[right][top - 1];
-        if (vertical_compare(vertical_increase(v_parent, new_sep), v_bottom) > 0) {
-            result[right].push([Ri + 1, new_sep]);
-        }
-    } else if (SD_top!.force) {
-        const new_sep = SD_top!.stretch_to;
+    if (SD_top.force) {
+        const new_sep = SD_top.stretch_to;
         result[right].push([Ri + 1, new_sep]);
     }
 
@@ -348,6 +339,7 @@ export function copy_column(
     V0i: Vertical[],
     mr: Column,
     MIr: number[],
+    [Ri, Rj]: Position,
     SD: (StretchData | undefined)[],
     offset: number,
     stretch_v_max: Vertical,
@@ -355,10 +347,11 @@ export function copy_column(
     const result: Column = [];
     let last_mi = -1;
     let ref_j = 0;
-    const Rj = SD.length - 1;
     for (let j = 0; j < m0i.length; j++) {
         if (j >= MI0i.length) {
-            result.push(deepcopy(m0i[j]));
+            let entry = deepcopy(m0i[j]);
+            if (entry[0] >= Ri + 1) entry[0] += offset;
+            result.push(entry);
         } else {
             const [value, sep] = m0i[j];
             const new_value = value + offset;
@@ -397,7 +390,7 @@ export function extend(m0: Mountain): Mountain {
 
     const offset = right - Ri;
     for (let i = Ri + 1; i < m0.length; i++) {
-        m.push(copy_column(m0[i], MI0[i], V0[i], m[right], MI[right], SD0, offset, V0[right][top]));
+        m.push(copy_column(m0[i], MI0[i], V0[i], m[right], MI[right], [Ri, Rj], SD0, offset, V0[right][top]));
     }
     return m;
 }
