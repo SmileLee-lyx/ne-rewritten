@@ -1,5 +1,6 @@
 import type { NotationDefinition } from '@/utils';
 import { convert_to_0Y, from_display } from '@/notations/BM-like/BM.ts';
+import { sequence_FS_variants } from '@/notations/FS_util.ts';
 
 export type Expr = number[][];
 
@@ -684,6 +685,10 @@ const lpmsSingle = (matrix: Expr): Expr => {
     return standardize(Mp, rows);
 };
 
+const lpmsInfinityFs = (n: number): Expr => {
+    return [zeroCol(n), onesCol(n)];
+};
+
 const lpmsFS = (() => {
     const cache = new Map<string, Expr>();
     const inner = (expr: Expr, n: number): Expr => {
@@ -720,6 +725,6 @@ export const LPMS: NotationDefinition<Expr> = {
     },
     is_limit: lpmsLimit,
     compare: matrixCompare,
-    FS: lpmsFS,
+    ...sequence_FS_variants(lpmsFS, pseudoInfinity, lpmsInfinityFs, lpmsLimit, display),
     init: () => [[[Infinity] as any], []],
 };

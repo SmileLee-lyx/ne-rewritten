@@ -10,7 +10,7 @@ import {
 } from '@/utils.ts';
 import { MN_FS_variants } from '@/notations/FS_util.ts';
 
-export type Sep = [number, number];
+export type Sep = number[];
 export type Vertical = Sep[];
 export type Entry = [number, Sep, boolean];
 export type Column = Entry[];
@@ -115,6 +115,46 @@ export function compare(a: Mountain, b: Mountain): number {
     return mountain_compare(a, b);
 }
 
+export function sep_is_one(s: Sep): boolean {
+    return s.length === 1 && s[0] === 1;
+}
+
+export function sep_dimension(s: Sep): number {
+    let d = 0;
+    while (s[d] === 0) d++;
+    return d;
+}
+
+export function sep_add(a: Sep, b: Sep): Sep {
+    if (b.length === 0) return a;
+    let result = deepcopy(a);
+    while (result.length < b.length) result.push(0);
+    result[b.length - 1] += b[b.length - 1];
+    for (let d = 0; d < b.length - 1; d++) {
+        result[d] = b[d];
+    }
+    return result;
+}
+
+export function sep_sub(a: Sep, b: Sep): Sep {
+    if (a.length > b.length) return a;
+    if (a.length < b.length) return [];
+    let d = a.length;
+    while (d > 0 && a[d - 1] === b[d - 1]) d--;
+    if (d === 0 || a[d - 1] < b[d - 1]) return [];
+    let result = a.slice(0, d);
+    result[d - 1] -= b[d - 1];
+    return result;
+}
+
+export function sep_increase(a: Sep, d: number): Sep {
+    let result = deepcopy(a);
+    while (result.length <= d) result.push(0);
+    result[d]++;
+    result.fill(0, 0, d);
+    return result;
+}
+
 export function vertical_increase(v: Vertical, s: Sep): Vertical {
     let i = v.length;
     while (i - 1 >= 0 && sep_compare(v[i - 1], s) < 0) i--;
@@ -190,17 +230,36 @@ export function magma_indices(m: Mountain, V: Vertical[][], [Ri, Rj]: Position, 
 
 function S(c: Column, j: number): Sep {
     if (j > c.length) return S(c, j - 1);
-    if (j < 0) return [0, 0];
-    if (c[j][1][1]) return [0, 0];
+    if (j < 0) return [];
+    if (c[j][1][1]) return [];
     if (c[j][2]) return c[j][1];
     return S(c, j - 1);
 }
 
 type StretchData = {
-    target: Sep;
     threshold: Sep;
-    value: number;
+    stretch_to: Sep;
+    force: boolean;
 };
+
+export function stretch_data_top(m: Mountain, V: Vertical[][]): StretchData | undefined {
+    const right: number = m.length - 1;
+    const top: number = m[right].length - 1;
+    const [Ri, Rj] = parent(m, V, [right, top]);
+
+    if (m[right][top][1][0] === 0) {
+        const threshold = S(m[Ri], Rj - 1);
+        let stretch_to = S(m[right], top - 1);
+        let force = false;
+        if (sep_compare(stretch_to, threshold) <= 0) {
+            stretch_to = sep_increase(stretch_to, 0);
+            force = true;
+        }
+        return { threshold, stretch_to, force };
+    } else {
+        return undefined;
+    }
+}
 
 export function stretch_data_list(m: Mountain, V: Vertical[][], MI: number[][]): (StretchData | undefined)[] {
     const right: number = m.length - 1;
@@ -215,29 +274,19 @@ export function stretch_data_list(m: Mountain, V: Vertical[][], MI: number[][]):
             result[j] = undefined;
         } else {
             const threshold = S(m[Ri], j - 1);
-            const target = S(m[right], ref_j - 1);
-            result[j] = {
-                target: m[Ri][j][1],
-                threshold,
-                value: target[0] - threshold[0],
-            };
+            const stretch_to = S(m[right], ref_j - 1);
+            result[j] = { threshold, stretch_to, force: false };
         }
     }
 
-    if (m[right][top][1][0] === 0) {
-        result[Rj] = {
-            target: m[right][top][1],
-            threshold: S(m[Ri], Rj - 1),
-            value: Math.max(S(m[right], top - 1)[0] - S(m[Ri], Rj - 1)[0], 1),
-        };
-    } else {
-        result[Rj] = undefined;
-    }
+    result[Rj] = stretch_data_top(m, V);
+
     return result;
 }
 
-export function subtract_1(m: Mountain, V?: Vertical[][]): Mountain {
+export function subtract_1(m: Mountain, V?: Vertical[][], SD_top?: StretchData): Mountain {
     V = V ?? m.map(column_verticals);
+    SD_top = SD_top ?? stretch_data_top(m, V);
     const right: number = m.length - 1;
     const top: number = m[right].length - 1;
     const top_right_sep: Sep = m[right][top][1];
@@ -246,21 +295,20 @@ export function subtract_1(m: Mountain, V?: Vertical[][]): Mountain {
     const result = deepcopy(m);
     result[right].pop();
 
-    if (top_right_sep[0] === 1 && top_right_sep[1] === 0) {
+    const top_right_sep_dimension = sep_dimension(top_right_sep);
+    if (sep_is_one(top_right_sep)) {
         // do nothing
-    } else {
-        let new_sep: Sep;
-        if (top_right_sep[0] > 0) {
-            new_sep = [top_right_sep[0] - 1, top_right_sep[1]];
-        } else {
-            const threshold = S(m[Ri], Rj - 1);
-            new_sep = [threshold[0] + 1, threshold[1]];
-        }
+    } else if (top_right_sep_dimension === 0) {
+        const new_sep = [top_right_sep[0] - 1, ...top_right_sep.slice(1)];
+
         const v_parent = Rj === 0 ? [] : V[Ri][Rj - 1];
         const v_bottom = top === 0 ? [] : V[right][top - 1];
         if (vertical_compare(vertical_increase(v_parent, new_sep), v_bottom) > 0) {
             result[right].push([Ri + 1, new_sep, top_right_sep[0] === 0]);
         }
+    } else if (SD_top!.force) {
+        const new_sep = SD_top!.stretch_to;
+        result[right].push([Ri + 1, new_sep, true]);
     }
 
     for (let j = Rj; j < m[Ri].length; j++) {
@@ -272,13 +320,11 @@ export function subtract_1(m: Mountain, V?: Vertical[][]): Mountain {
 
 export function compute_stretch(sep: Sep, data: StretchData | undefined): Sep {
     if (data === undefined) return sep;
-    let { target, threshold, value: value } = data;
-    if (sep_compare(sep, target) >= 0) {
-        return sep;
-    } else if (sep_compare(sep, threshold) <= 0) {
+    let { threshold, stretch_to } = data;
+    if (sep_compare(sep, threshold) <= 0) {
         return sep;
     } else {
-        return [sep[0] + value, sep[1]];
+        return sep_add(stretch_to, sep_sub(sep, threshold));
     }
 }
 
@@ -331,7 +377,7 @@ export function extend(m0: Mountain): Mountain {
     const MI0 = magma_indices(m0, V0, [Ri, Rj]);
     const SD0 = stretch_data_list(m0, V0, MI0);
 
-    const m = subtract_1(m0, V0);
+    const m = subtract_1(m0, V0, SD0[Rj]);
     const V = [...V0.slice(0, right), column_verticals(m[right])];
     const MI = magma_indices(m, V, [Ri, Rj], MI0.slice(0, right));
 

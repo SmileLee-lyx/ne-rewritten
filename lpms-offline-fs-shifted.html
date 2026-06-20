@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Notation Explorer</title>
+<style>
+.tooltip{
+	display: inline-block;
+	position: absolute;
+	z-index: 1073741824;
+	bottom: 100%;
+	padding: 2px 5px;
+	background-color: #dfd;
+	text-align: left;
+}
+.shown-item{
+	position: relative;
+}
+.shown-item>.tooltip{
+	display: none;
+}
+.shown-item:hover>.tooltip{
+	display: inline-block;
+}
+.shown-item:hover{
+	background-color: #cff;
+}
+.tab>button{
+	padding: 0 6px 2px;
+	border: 2px solid #90f;
+	border-radius: 10px;
+	background-color: #daf;
+	font-size: 20px;
+}
+.tab>button[disabled]{
+	background-color: #60a;
+	color: #fff;
+}
+.nowrap{
+	white-space: nowrap;
+}
+
+</style>
+<meta charset="UTF-8">
+<meta name="author" content="hyp_cos">
+</head><body><script>
+;(() => {
+  // Tiny offline compatibility layer for the subset of Vue.createApp used by
+  // notation-explorer's original framework.js.  It exists only so this single
+  // HTML file can remain offline; the NE framework code below is otherwise kept
+  // in the same structure and method flow as upstream.
+  window.Vue = {
+    createApp(options) {
+      const components = new Map();
+      const data = options.data ? options.data() : {};
+      const root = data;
+      root.__componentDefs = components;
+      root.__instances = new WeakMap();
+      root.__rendering = false;
+      root.__pending = false;
+      root.__el = null;
+
+      const triggerRender = () => {
+        if (!root.__el) return;
+        if (root.__rendering) { root.__pending = true; return; }
+        renderRoot();
+      };
+
+      if (options.methods) {
+        for (const [name, fn] of Object.entries(options.methods)) {
+          root[name] = function(...args) {
+            const out = fn.apply(root, args);
+            triggerRender();
+            return out;
+          };
+        }
+      }
+      if (options.computed) {
+        for (const [name, getter] of Object.entries(options.computed)) {
+          Object.defineProperty(root, name, { get: () => getter.call(root), configurable: true });
+        }
+      }
+
+      const text = s => document.createTextNode(String(s));
+      const bindComponentMethods = instance => {
+        const methods = instance.__def.methods || {};
+        for (const [name, fn] of Object.entries(methods)) {
+          instance[name] = function(...args) { return fn.apply(instance, args); };
+        }
+      };
+      const makeInstance = (def, props, parent) => {
+        const inst = Object.assign({}, props);
+        if (def.data) Object.assign(inst, def.data());
+        inst.__def = def;
+        inst.$root = root;
+        inst.$parent = parent;
+        bindComponentMethods(inst);
+        return inst;
+      };
+      const sameExpr = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const getNotationByComponent = componentName => {
+        const id = componentName.replace(/-list$/, '');
+        return register.find(n => n.id === id);
+      };
+      const renderListComponent = (componentName, props, parent) => {
+        const def = components.get(componentName);
+        const notation = getNotationByComponent(componentName);
+        const item = props;
+        let instance = root.__instances.get(item);
+        if (!instance || instance.__def !== def) {
+          instance = makeInstance(def, item, parent);
+          root.__instances.set(item, instance);
+        } else {
+          Object.assign(instance, item);
+          instance.$parent = parent;
+        }
+
+        const li = document.createElement('li');
+        const shown = document.createElement('div');
+        shown.className = 'shown-item';
+        shown.addEventListener('mouseenter', event => {
+          // Keep the original NE recalculate hook alive.  The offline file also
+          // pre-renders the tooltip below, so old browsers that mishandle the
+          // tiny compatibility layer still show the FS window on CSS hover.
+          instance.recalculate(event);
+        });
+        shown.addEventListener('mouseleave', () => {
+          instance.unshow();
+        });
+        shown.addEventListener('mousedown', event => {
+          instance.expand(event);
+          triggerRender();
+        });
+
+        const label = document.createElement('span');
+        label.innerHTML = notation.display(instance.expr);
+        shown.appendChild(label);
+
+        // Robust offline tooltip: same content as NE's component tooltip, but
+        // materialized in the DOM and displayed by .shown-item:hover>.tooltip.
+        // This avoids relying on a full Vue reactivity runtime in the single-file build.
+        if (notation.able(instance.expr)) {
+          const tip = document.createElement('div');
+          tip.className = 'tooltip';
+          tip.style.left = '15px';
+          tip.addEventListener('mousedown', e => e.stopPropagation());
+          const head = document.createElement('span');
+          head.innerHTML = notation.display(instance.expr);
+          tip.appendChild(head);
+          tip.appendChild(text(' fundamental sequence:'));
+          const nmax = root.FS_shown[root.current_tab];
+          for (let n = 0; n <= nmax; n++) {
+            const line = document.createElement('div');
+            line.innerHTML = n + ':&nbsp;' + notation.display(notation.FS(instance.expr, n));
+            tip.appendChild(line);
+          }
+          shown.appendChild(tip);
+        }
+        li.appendChild(shown);
+
+        const ul = document.createElement('ul');
+        for (const subitem of instance.subitems || []) {
+          ul.appendChild(renderListComponent(componentName, subitem, instance));
+        }
+        li.appendChild(ul);
+        return li;
+      };
+      const renderNotationComponent = (componentName, subitems, parent) => {
+        const id = componentName;
+        const ul = document.createElement('ul');
+        ul.className = 'nowrap';
+        for (const item of subitems || []) {
+          ul.appendChild(renderListComponent(id + '-list', item, parent));
+        }
+        return ul;
+      };
+
+      function renderRoot() {
+        root.__rendering = true;
+        const el = root.__el;
+        el.innerHTML = '';
+
+        const tabDiv = document.createElement('div');
+        tabDiv.className = 'tab';
+        root.tab_names.forEach((tab, idx) => {
+          const btn = document.createElement('button');
+          btn.textContent = tab;
+          btn.disabled = root.current_tab == idx;
+          btn.addEventListener('mousedown', () => { root.current_tab = idx; triggerRender(); });
+          tabDiv.appendChild(btn);
+        });
+        el.appendChild(tabDiv);
+
+        const reset = document.createElement('button');
+        reset.textContent = 'Reset the list';
+        reset.addEventListener('mousedown', () => root.reset_list());
+        el.appendChild(reset);
+
+        const tier = document.createElement('div');
+        tier.appendChild(text('Expansion tier: '));
+        const tierMinus = document.createElement('button'); tierMinus.textContent = '-'; tierMinus.addEventListener('mousedown', () => root.decr_tier()); tier.appendChild(tierMinus);
+        tier.appendChild(text(' ' + root.tiername + ' '));
+        const tierPlus = document.createElement('button'); tierPlus.textContent = '+'; tierPlus.addEventListener('mousedown', () => root.incr_tier()); tier.appendChild(tierPlus);
+        tier.appendChild(text(' (Press 0~9 to select tier)'));
+        el.appendChild(tier);
+
+        const extra = document.createElement('div');
+        extra.appendChild(text('Extra FS terms when expand: '));
+        const extraMinus = document.createElement('button'); extraMinus.textContent = '-'; extraMinus.addEventListener('mousedown', () => root.decr_extra()); extra.appendChild(extraMinus);
+        extra.appendChild(text(' ' + root.extra_FS[root.current_tab] + ' '));
+        const extraPlus = document.createElement('button'); extraPlus.textContent = '+'; extraPlus.addEventListener('mousedown', () => root.incr_extra()); extra.appendChild(extraPlus);
+        extra.appendChild(text(' (Press "-" to decrease, and "+" to increase)'));
+        el.appendChild(extra);
+
+        const shown = document.createElement('div');
+        shown.appendChild(text('FS terms shown in tooltip: '));
+        const shownMinus = document.createElement('button'); shownMinus.textContent = '-'; shownMinus.addEventListener('mousedown', () => root.decrFS()); shown.appendChild(shownMinus);
+        shown.appendChild(text(' ' + root.FS_shown[root.current_tab] + ' '));
+        const shownPlus = document.createElement('button'); shownPlus.textContent = '+'; shownPlus.addEventListener('mousedown', () => root.incrFS()); shown.appendChild(shownPlus);
+        shown.appendChild(text(' (Press "<" to decrease, and ">" to increase)'));
+        el.appendChild(shown);
+
+        el.appendChild(renderNotationComponent(root.current_notation, root.datasets[root.current_tab], { subitems: root.datasets[root.current_tab] }));
+        root.__rendering = false;
+        if (root.__pending) { root.__pending = false; renderRoot(); }
+      }
+
+      return {
+        component(name, def) { components.set(name, def); return this; },
+        mount(selector) { root.__el = document.querySelector(selector); renderRoot(); return root; }
+      };
+    }
+  };
+})();
+</script>
+<script>var register=[];</script>
+<div id="app">
+	<div class="tab">
+		<button v-for="(tab,idx) in tab_names" @mousedown="current_tab=idx" :disabled="current_tab==idx">{{tab}}</button>
+	</div>
+	<button @mousedown="reset_list()">Reset the list</button>
+	<div>
+		Expansion tier: <button @mousedown="decr_tier()">-</button> {{tiername}} <button @mousedown="incr_tier()">+</button>
+		(Press 0~9 to select tier)
+	</div>
+	<div>
+		Extra FS terms when expand: <button @mousedown="decr_extra()">-</button> {{extra_FS[current_tab]}} <button @mousedown="incr_extra()">+</button>
+		(Press "-" to decrease, and "+" to increase)
+	</div>
+	<div>
+		FS terms shown in tooltip: <button @mousedown="decrFS()">-</button> {{FS_shown[current_tab]}} <button @mousedown="incrFS()">+</button>
+		(Press "&lt;" to decrease, and "&gt;" to increase)
+	</div>
+	<component :is="current_notation" :subitems="datasets[current_tab]"></component>
+</div>
+<script>
+;(() => {
+  'use strict';
+
+  const pseudoInfinity = expr => '' + expr === 'Infinity';
+  const cloneCol = col => col.slice();
+  const cloneMatrix = m => m.map(cloneCol);
+  const isNat = x => Number.isInteger(x) && x >= 0 && Number.isFinite(x);
+
+  const maxRows = matrix => {
+    if (!Array.isArray(matrix) || matrix.length === 0) return 0;
+    let rows = 0;
+    for (const col of matrix) rows = Math.max(rows, Array.isArray(col) ? col.length : 0);
+    return rows;
+  };
+
+  const standardize = (matrix, rows = undefined) => {
+    if (!Array.isArray(matrix)) return [];
+    const r = rows === undefined ? maxRows(matrix) : rows;
+    return matrix.map(col => {
+      const out = Array.isArray(col) ? col.slice(0, r) : [];
+      while (out.length < r) out.push(0);
+      return out;
+    });
+  };
+
+  const zeroCol = rows => Array(rows).fill(0);
+  const onesCol = rows => Array(rows).fill(1);
+  const constCol = (a, rows) => {
+    const col = Array(rows).fill(0);
+    if (rows > 0) col[0] = a;
+    return col;
+  };
+
+  const colValue = (matrix, colIndex, rowIndex, rows = maxRows(matrix), missing = 0) => {
+    if (colIndex < 0 || colIndex >= matrix.length) return missing;
+    const col = matrix[colIndex];
+    return rowIndex < col.length ? col[rowIndex] : 0;
+  };
+
+  const colCompare = (a, b, rows = Math.max(a ? a.length : 0, b ? b.length : 0), missingA = 0, missingB = 0) => {
+    for (let r = 0; r < rows; r++) {
+      const av = a ? (r < a.length ? a[r] : 0) : missingA;
+      const bv = b ? (r < b.length ? b[r] : 0) : missingB;
+      if (av < bv) return -1;
+      if (av > bv) return 1;
+    }
+    return 0;
+  };
+
+  const getPhaseColumn = (matrix, index, rows) =>
+    (index >= 0 && index < matrix.length) ? matrix[index] : Array(rows).fill(-1);
+
+  const phaseColCompare = (matrix, index, col, rows) =>
+    colCompare(getPhaseColumn(matrix, index, rows), col, rows, -1, 0);
+
+  const phaseColEq = (matrix, index, col, rows) => phaseColCompare(matrix, index, col, rows) === 0;
+  const phaseColLt = (matrix, index, col, rows) => phaseColCompare(matrix, index, col, rows) < 0;
+  const phaseColLe = (matrix, index, col, rows) => phaseColCompare(matrix, index, col, rows) <= 0;
+  const phaseColGt = (matrix, index, col, rows) => phaseColCompare(matrix, index, col, rows) > 0;
+  const phaseColGe = (matrix, index, col, rows) => phaseColCompare(matrix, index, col, rows) >= 0;
+  const phaseColsCompare = (matrix, startIndex, cols, rows) => {
+    for (let i = 0; i < cols.length; i++) {
+      const cmp = phaseColCompare(matrix, startIndex + i, cols[i], rows);
+      if (cmp) return cmp;
+    }
+    return 0;
+  };
+  const phaseColsLt = (matrix, startIndex, cols, rows) => phaseColsCompare(matrix, startIndex, cols, rows) < 0;
+
+  const matrixCompare = (m1, m2) => {
+    const inf1 = pseudoInfinity(m1), inf2 = pseudoInfinity(m2);
+    if (inf1 || inf2) return inf1 === inf2 ? 0 : (inf1 ? 1 : -1);
+    const rows = Math.max(maxRows(m1), maxRows(m2));
+    const len = Math.max(m1.length, m2.length);
+    for (let c = 0; c < len; c++) {
+      if (c >= m1.length) return -1;
+      if (c >= m2.length) return 1;
+      const cmp = colCompare(m1[c], m2[c], rows);
+      if (cmp) return cmp;
+    }
+    return 0;
+  };
+
+  const display = expr => {
+    if (pseudoInfinity(expr)) return 'Limit';
+    return expr.map(col => '(' + col.join(',') + ')').join('');
+  };
+
+  const legal = matrix => {
+    if (pseudoInfinity(matrix)) return true;
+    if (!Array.isArray(matrix)) return false;
+    for (const col of matrix) {
+      if (!Array.isArray(col)) return false;
+      for (const v of col) if (!isNat(v)) return false;
+    }
+    if (matrix.length === 0) return true;
+    const rows = maxRows(matrix);
+    const m = standardize(matrix, rows);
+    for (let r = 0; r < rows; r++) if (m[0][r] !== 0) return false;
+    for (let c = 0; c < m.length; c++) {
+      for (let r = 1; r < rows; r++) if (m[c][r] > m[c][r - 1]) return false;
+    }
+    return true;
+  };
+
+  const makeCtx = (matrix, rows = maxRows(matrix)) => {
+    const m = standardize(matrix, rows);
+    const cols = m.length;
+    const parentCache = Array.from({ length: rows + 1 }, () => Array(cols).fill(-2));
+    const ancCache = Array.from({ length: rows + 1 }, () => Array(cols).fill(null));
+
+    const getBParent = (col, b) => {
+      if (b < 1 || b > rows || col < 0 || col >= cols) return -1;
+      const cached = parentCache[b][col];
+      if (cached !== -2) return cached;
+      const row = b - 1;
+      const value = m[col][row];
+      const ancestors = getAAncestors(col, b - 1).list;
+      let best = -1;
+      for (let i = 0; i < ancestors.length; i++) {
+        const cand = ancestors[i];
+        if (cand >= col) continue;
+        if (m[cand][row] < value) { best = cand; break; }
+      }
+      parentCache[b][col] = best;
+      return best;
+    };
+
+    const getAAncestors = (col, a) => {
+      if (a < 0 || a > rows || col < 0 || col >= cols) return { list: [], mask: new Uint8Array(cols) };
+      const cached = ancCache[a][col];
+      if (cached) return cached;
+      const list = [];
+      const mask = new Uint8Array(cols);
+      let current = col, guard = 0;
+      while (current !== -1 && !mask[current] && guard++ <= cols + 2) {
+        list.push(current); mask[current] = 1;
+        current = a === 0 ? (current > 0 ? current - 1 : -1) : getBParent(current, a);
+      }
+      return ancCache[a][col] = { list, mask };
+    };
+
+    return { m, rows, cols, getBParent, getAAncestors };
+  };
+
+  const lastNonZeroRow = matrix => {
+    if (matrix.length === 0) return -1;
+    const last = matrix[matrix.length - 1];
+    for (let r = last.length - 1; r >= 0; r--) if (last[r] !== 0) return r + 1;
+    return -1;
+  };
+
+  const lastAllZero = matrix => matrix.length === 0 || matrix[matrix.length - 1].every(v => v === 0);
+
+  const computeDelta = (ctx, root, t) => {
+    const alpha = ctx.cols - 1;
+    const delta = Array(ctx.rows).fill(0);
+    for (let r = 0; r < ctx.rows; r++) delta[r] = r >= t - 1 ? 0 : ctx.m[alpha][r] - ctx.m[root][r];
+    return delta;
+  };
+
+  const maxEntry = m => {
+    let max = 0;
+    for (const col of m) for (const v of col) if (v > max) max = v;
+    return max;
+  };
+
+  const findRoot = ctx => {
+    const t = lastNonZeroRow(ctx.m);
+    if (t < 1) return null;
+    const root = ctx.getBParent(ctx.cols - 1, t);
+    if (root < 0) return null;
+    return { root, t };
+  };
+
+  const upmsPrepare = (matrix, rows = maxRows(matrix)) => {
+    const ctx = makeCtx(matrix, rows);
+    if (ctx.cols === 0) return null;
+    const fr = findRoot(ctx);
+    if (!fr) return null;
+    const { root, t } = fr;
+    const alpha = ctx.cols - 1;
+    const G = ctx.m.slice(0, root).map(cloneCol);
+    const B = ctx.m.slice(root, alpha).map(cloneCol);
+    const delta = computeDelta(ctx, root, t);
+    const maxTwice = maxEntry(ctx.m) * 2;
+
+    const vr = new Int8Array(ctx.cols * Math.max(1, ctx.rows));
+    vr.fill(-1);
+    const vri = (c, r) => c * Math.max(1, ctx.rows) + r;
+    const inBad = (c, r) => c >= root && c < alpha && r < t - 1;
+    const getVR = (c, r) => inBad(c, r) ? vr[vri(c, r)] : -1;
+    const setVR = (c, r, val) => { vr[vri(c, r)] = val; };
+
+    const baseColFor = (col, k) => {
+      const base = Array(ctx.rows).fill(0);
+      for (let r = 0; r < ctx.rows; r++) base[r] = r <= k ? ctx.m[col][r] : 0;
+      for (let r = 0; r < k; r++) base[r]++;
+      return base;
+    };
+
+    const buildXY = (col, k) => {
+      // k is a 1-based row label.
+      const base = baseColFor(col, k);
+      let u = -1;
+      let uMissing = false;
+      for (let c = col + 1; c <= alpha; c++) {
+        if (colCompare(ctx.m[c], base, ctx.rows) < 0) { u = c; break; }
+      }
+      if (u < 0) { u = alpha + 1; uMissing = true; }
+
+      const Ayk = ctx.m[root][k - 1];
+      const alphaAnc = ctx.getAAncestors(alpha, k).list;
+      let j = -1;
+      for (const c of alphaAnc) {
+        if (ctx.m[c][k - 1] === Ayk + 1) { j = c; break; }
+      }
+      if (j < 0) j = alpha;
+
+      const xStart = col, xEnd = u - 1, yStart = j, yEnd = alpha;
+      const X = [], Y = [];
+      for (let c = xStart; c <= xEnd; c++) {
+        const out = ctx.m[c].slice();
+        for (let s = 1; s <= k - 1; s++) {
+          const r = s - 1;
+          if (getVR(c, r) === 1) out[r] += maxTwice - ctx.m[col][r];
+        }
+        X.push(out);
+      }
+      for (let c = yStart; c <= yEnd; c++) {
+        const out = ctx.m[c].slice();
+        for (let s = 1; s <= k - 1; s++) {
+          const r = s - 1;
+          if (c === j || ctx.getAAncestors(c, s).mask[j] === 1) out[r] += maxTwice - ctx.m[j][r];
+        }
+        Y.push(out);
+      }
+      return { X, Y, u, j, uMissing };
+    };
+
+    const matrixLexCompare = (X, Y) => {
+      const len = Math.max(X.length, Y.length);
+      for (let c = 0; c < len; c++) {
+        const xc = c < X.length ? X[c] : Array(ctx.rows).fill(-1);
+        const yc = c < Y.length ? Y[c] : Array(ctx.rows).fill(-1);
+        const cmp = colCompare(xc, yc, ctx.rows);
+        if (cmp) return cmp;
+      }
+      return 0;
+    };
+
+    for (let row = 0; row < t - 1; row++) {
+      const k = row + 1;
+      for (let col = root; col < alpha; col++) {
+        if (col === root || row === 0) { setVR(col, row, 1); continue; }
+        const ancestors = ctx.getAAncestors(col, k);
+        let has0 = false;
+        for (const a of ancestors.list) if (getVR(a, row) === 0) { has0 = true; break; }
+        const parent = ctx.getBParent(col, k);
+        if (ancestors.mask[root] !== 1 || has0 || parent < 0) { setVR(col, row, 0); continue; }
+        if (parent !== root) { setVR(col, row, 1); continue; }
+
+        let earlier0 = false;
+        for (let r = 0; r < row; r++) if (getVR(col, r) === 0) { earlier0 = true; break; }
+        if (earlier0) { setVR(col, row, 0); continue; }
+
+        let higherEscapes = false;
+        for (let r = row + 1; r < t - 1; r++) if (ctx.getBParent(col, r + 1) !== root) { higherEscapes = true; break; }
+        if (higherEscapes) { setVR(col, row, 0); continue; }
+
+        const { X, Y, u, uMissing } = buildXY(col, k);
+        if (u === alpha + 1 || uMissing) { setVR(col, row, 1); continue; }
+        setVR(col, row, matrixLexCompare(X, Y) < 0 ? 0 : 1);
+      }
+    }
+
+    const Bhs = h => B.map((col, local) => {
+      const original = root + local;
+      const out = Array(ctx.rows);
+      for (let r = 0; r < ctx.rows; r++) out[r] = col[r] + h * delta[r] * (r < t - 1 && getVR(original, r) === 1 ? 1 : 0);
+      return out;
+    });
+
+    const B1 = Bhs(1), B2 = Bhs(2);
+    return { ctx, root, t, alpha, G, B, B1, B2, delta, vr, getVR, buildXY };
+  };
+
+  const upmsFS = (matrix, n, rows = maxRows(matrix)) => {
+    const m = standardize(matrix, rows);
+    if (m.length === 0) return [];
+    if (lastAllZero(m)) return m.slice(0, -1).map(cloneCol);
+    const prep = upmsPrepare(m, rows);
+    if (!prep) return [];
+    const result = [...prep.G.map(cloneCol), ...prep.B.map(cloneCol)];
+    for (let h = 1; h <= n; h++) {
+      const Bh = h === 1 ? prep.B1 : (h === 2 ? prep.B2 : prep.B.map((col, local) => {
+        const original = prep.root + local;
+        return col.map((v, r) => v + h * prep.delta[r] * (r < prep.t - 1 && prep.getVR(original, r) === 1 ? 1 : 0));
+      }));
+      for (const col of Bh) result.push(col.slice());
+    }
+    return standardize(result, rows);
+  };
+
+  const upmsSingle = (matrix, l = Infinity, rows = maxRows(matrix)) => {
+    const m = standardize(matrix, rows);
+    if (m.length === 0 || lastAllZero(m)) return m.slice(0, -1).map(cloneCol);
+    const prep = upmsPrepare(m, rows);
+    if (!prep) return [];
+    const take = Math.min(prep.B1.length, Number.isFinite(l) ? l : prep.B1.length);
+    return standardize([...prep.G.map(cloneCol), ...prep.B.map(cloneCol), ...prep.B1.slice(0, take).map(cloneCol)], rows);
+  };
+
+  const bmsFS = (matrix, n, rows = maxRows(matrix)) => {
+    const m = standardize(matrix, rows);
+    if (m.length === 0) return [];
+    if (lastAllZero(m)) return m.slice(0, -1).map(cloneCol);
+    const ctx = makeCtx(m, rows);
+    const fr = findRoot(ctx);
+    if (!fr) return [];
+    const { root, t } = fr;
+    const alpha = ctx.cols - 1;
+    const G = ctx.m.slice(0, root).map(cloneCol);
+    const B = ctx.m.slice(root, alpha).map(cloneCol);
+    const delta = computeDelta(ctx, root, t);
+    const ancestorContainsRoot = (col, rowLabel) => ctx.getAAncestors(col, rowLabel).mask[root] === 1;
+    const result = [...G, ...B.map(cloneCol)];
+    for (let h = 1; h <= n; h++) {
+      for (let local = 0; local < B.length; local++) {
+        const original = root + local;
+        const out = B[local].map((v, r) => v + h * delta[r] * (r < t - 1 && ancestorContainsRoot(original, r + 1) ? 1 : 0));
+        result.push(out);
+      }
+    }
+    return standardize(result, rows);
+  };
+
+  const firstDifferentColumn = (X, Y, rows) => {
+    const len = Math.max(X.length, Y.length);
+    for (let i = 0; i < len; i++) {
+      const xc = i < X.length ? X[i] : Array(rows).fill(-1);
+      const yc = i < Y.length ? Y[i] : Array(rows).fill(-1);
+      if (colCompare(xc, yc, rows, -1, -1) !== 0) return i + 1;
+    }
+    return X.length + 1;
+  };
+
+  const matricesEqual = (X, Y, rows) => firstDifferentColumn(X, Y, rows) === X.length + 1 && X.length === Y.length;
+
+  const columnCPrime = (M, r, n, rows) => {
+    const out = Array(rows).fill(0);
+    for (let i = 0; i < rows; i++) out[i] = i < n ? M[r][i] + 1 : 0;
+    return out;
+  };
+
+  const columnC = (M, t, n, rows) => {
+    const out = M[t].slice();
+    for (let i = 0; i < rows; i++) {
+      if (i < n - 1) out[i]++;
+      else if (i >= n) out[i] = 0;
+    }
+    return out;
+  };
+
+  const appendS = (state, prep, phase) => {
+    const local = phase - prep.root;
+    if (local < 0 || local >= prep.B1.length) return;
+    const col = prep.B1[local].slice();
+    for (let r = 0; r < state.rows; r++) if (state.desc[phase * state.rows + r]) col[r]--;
+    state.Mp.push(col);
+  };
+
+  const markSkipRange = (skip, from, to, alpha) => {
+    for (let c = from; c <= to && c < alpha; c++) if (c >= 0) skip[c] = true;
+  };
+
+  const findMinParentRoot = (ctx, col, root) => {
+    for (let k = 1; k <= ctx.rows; k++) if (ctx.getBParent(col, k) === root) return k;
+    return ctx.rows;
+  };
+
+  const findAdjustedD = (ctx, t, d) => {
+    const idx = t + d - 1;
+    if (idx < 0 || idx >= ctx.cols) return d;
+    const p1 = ctx.getBParent(idx, 1);
+    if (p1 <= t) return d;
+    const ancestors = ctx.getAAncestors(idx, 1).list;
+    for (const tp of ancestors) {
+      if (ctx.getBParent(tp, 1) === t) return tp + 1 - t;
+    }
+    return d;
+  };
+
+  const lpmsSingle = matrix => {
+    let rows = maxRows(matrix);
+    let M = standardize(matrix, rows);
+    if (M.length === 0) return [];
+    if (lastAllZero(M)) return M.slice(0, -1).map(cloneCol);
+
+    // Special contraction for (0^n)(1^n), n>1.
+    if (M.length === 2 && rows > 1 && M[0].every(x => x === 0) && M[1].every(x => x === 1)) {
+      const nr = rows - 1;
+      return [zeroCol(nr), onesCol(nr), Array(nr).fill(2), constCol(3, nr)];
+    }
+
+    const prep = upmsPrepare(M, rows);
+    if (!prep) return [];
+    const { ctx, root: r, t: n, alpha } = prep;
+    let Mp = [...prep.G.map(cloneCol), ...prep.B.map(cloneCol)];
+    let mSwitch = true, bSwitch = true, l = 0;
+    const skip = Array(ctx.cols).fill(false);
+    const desc = new Uint8Array(ctx.cols * Math.max(1, rows));
+    const state = { Mp, rows, desc };
+    const cPrime = columnCPrime(M, r, n, rows);
+    const last2ParentIsRoot = ctx.getBParent(alpha, 2) === r;
+
+    const markDescent = (col, row) => {
+      for (let c = 0; c < ctx.cols; c++) {
+        if (ctx.getAAncestors(c, row + 1).mask[col] === 1) desc[c * rows + row] = 1;
+      }
+    };
+
+    for (let t = r; t < alpha; t++) {
+      state.Mp = Mp;
+      // case 1
+      if (skip[t]) continue;
+
+      // case 2
+      if (bSwitch) {
+        appendS(state, prep, t); Mp = state.Mp;
+        if ((n >= rows || M[r][n] === 0) || phaseColLe(M, t + 1, cPrime, rows)) {
+          bSwitch = false;
+          l = t + 1 - r;
+        }
+        continue;
+      }
+
+      // case 3
+      const nMinusParent = n > 1 ? ctx.getBParent(t, n - 1) : -1;
+      const nMinusVR = n > 1 ? prep.getVR(t, n - 2) : 0;
+      if (nMinusParent !== r || nMinusVR === 0) {
+        appendS(state, prep, t); Mp = state.Mp;
+        continue;
+      }
+
+      const c = columnC(M, t, n, rows);
+      // case 4
+      if (last2ParentIsRoot) {
+        if (n < rows && M[t][n] > 0) {
+          appendS(state, prep, t); Mp = state.Mp; continue;
+        }
+        if (phaseColEq(M, t + 1, c, rows) && phaseColLe(M, t + 2, c, rows)) {
+          if (t + 1 < alpha) skip[t + 1] = true;
+          appendS(state, prep, t); Mp = state.Mp; continue;
+        }
+        const threshold = constCol(c[0] + 1, rows);
+        if (phaseColGt(M, t + 1, c, rows) || (phaseColEq(M, t + 1, c, rows) && phaseColGe(M, t + 2, threshold, rows))) {
+          appendS(state, prep, t); Mp = state.Mp; continue;
+        }
+        if (phaseColLt(M, t + 1, c, rows)) {
+          appendS(state, prep, t); Mp = state.Mp;
+          mSwitch = false;
+          let a = M[t][0];
+          if (phaseColsLt(M, t + 1, [constCol(a + 1, rows), constCol(a + 2, rows)], rows) && ctx.getBParent(t, 2) === r) mSwitch = true;
+          a = Mp.length ? Mp[Mp.length - 1][0] : 0;
+          Mp = upmsSingle(Mp, l, rows);
+          if (mSwitch) Mp.push(constCol(a + 1, rows));
+          continue;
+        }
+      }
+
+      // case 5
+      let k = findMinParentRoot(ctx, t, r);
+      let kp = k === 1 ? 2 : k;
+      const xy = prep.buildXY(t, kp);
+      const eqXY = matricesEqual(xy.X, xy.Y, rows);
+      let d = eqXY ? xy.X.length + 1 : firstDifferentColumn(xy.X, xy.Y, rows);
+      if (!eqXY) {
+        if (xy.uMissing && t + d - 1 >= alpha) {
+          d = xy.X.length + 1;
+        } else {
+          const adjusted = findAdjustedD(ctx, t, d);
+          d = (xy.uMissing && adjusted === d) ? xy.X.length + 1 : adjusted;
+        }
+      }
+
+      if (d === 1) {
+        appendS(state, prep, t); Mp = state.Mp; continue;
+      }
+
+      if (phaseColLt(M, t + d - 1, c, rows)) {
+        markSkipRange(skip, t + 1, t + d - 2, alpha);
+        mSwitch = false;
+        let a = M[t][0];
+        if (kp === 2 && phaseColsLt(M, t + d - 1, [constCol(a + 1, rows), constCol(a + 2, rows)], rows)) mSwitch = true;
+        if (t !== r + l) {
+          appendS(state, prep, t); Mp = state.Mp;
+          if (Mp.length) for (let rr = k; rr < rows; rr++) Mp[Mp.length - 1][rr] = 0;
+          Mp = upmsSingle(Mp, l, rows);
+        }
+        a = l > 0 && Mp.length >= l ? Mp[Mp.length - l][0] : (Mp.length ? Mp[Mp.length - 1][0] : 0);
+        if (mSwitch) Mp.push(constCol(a + 1, rows));
+        for (let rr = k - 1; rr <= n - 2 && rr < rows; rr++) markDescent(t, rr);
+        continue;
+      }
+
+      if (n === 3 && phaseColEq(M, t + d - 1, c, rows) && phaseColLt(M, t + d, c, rows)) {
+        markSkipRange(skip, t + 1, t + d - 1, alpha);
+        appendS(state, prep, t); Mp = state.Mp;
+        mSwitch = false;
+        let a = M[t][0];
+        if (phaseColsLt(M, t + d, [constCol(a + 1, rows), constCol(a + 2, rows)], rows)) mSwitch = true;
+        a = Mp.length ? Mp[Mp.length - 1][0] : 0;
+        Mp = upmsSingle(Mp, l, rows);
+        if (mSwitch) Mp.push(constCol(a + 1, rows));
+        continue;
+      }
+
+      markSkipRange(skip, t + 1, t + d - 2, alpha);
+      if (n === 3 && phaseColEq(M, t + d - 1, c, rows) && phaseColEq(M, t + d, c, rows)) {
+        if (t + d - 1 < alpha) skip[t + d - 1] = true;
+        if (t + d < alpha) skip[t + d] = true;
+      }
+      if (n > 3 && phaseColEq(M, t + d - 1, c, rows) && phaseColLt(M, t + d, constCol(c[0] + 1, rows), rows)) {
+        if (t + d - 1 < alpha) skip[t + d - 1] = true;
+      }
+      appendS(state, prep, t); Mp = state.Mp;
+    }
+
+    if (bSwitch) l = ctx.cols - r - 1;
+
+    if (last2ParentIsRoot) {
+      const take = Math.min(l, prep.B2.length);
+      for (let i = 0; i < take; i++) Mp.push(prep.B2[i].slice());
+      const a = prep.B2.length ? prep.B2[0][0] : (Mp.length ? Mp[Mp.length - 1][0] : 0);
+      Mp.push(constCol(a + 1, rows));
+    } else {
+      const blen = ctx.cols - r - 1;
+      if (l === blen) {
+        const source = Mp[ctx.cols - 1] || Mp[Mp.length - 1] || [0];
+        Mp.push(constCol(source[0] + 1, rows));
+      }
+    }
+    return standardize(Mp, rows);
+  };
+
+  const lpmsFS = (() => {
+    const cache = new Map();
+    const inner = (expr, n) => {
+      n = Math.max(0, Math.floor(n));
+      if (pseudoInfinity(expr)) return n === 0 ? [[]] : [zeroCol(n), onesCol(n)];
+      if (!legal(expr)) return [];
+      const rows = maxRows(expr);
+      const M = standardize(expr, rows);
+      if (M.length === 0) return [];
+      if (lastAllZero(M)) return M.slice(0, -1).map(cloneCol);
+      if (rows < 3 || M[M.length - 1][2] === 0) return bmsFS(M, n, rows);
+      if (n === 0) return M.slice(0, -1).map(cloneCol);
+      return inner(lpmsSingle(M), n - 1);
+    };
+    return (expr, n) => {
+      if (pseudoInfinity(expr)) return inner(expr, n);
+      const key = display(standardize(expr, maxRows(expr))) + '[' + Math.max(0, Math.floor(n)) + ']';
+      if (cache.has(key)) return cloneMatrix(cache.get(key));
+      const out = inner(expr, n);
+      cache.set(key, cloneMatrix(out));
+      return out;
+    };
+  })();
+
+  const lpmsLimit = expr => pseudoInfinity(expr) || (legal(expr) && !lastAllZero(standardize(expr, maxRows(expr))));
+
+  const api = {
+    id: 'lpms',
+    name: 'Lifting projection matrix system',
+    display,
+    able: lpmsLimit,
+    compare: matrixCompare,
+    FS: lpmsFS,
+    init: () => ([
+      { expr: [[Infinity]], low: [[]], subitems: [] },
+      { expr: [], low: [[]], subitems: [] }
+    ]),
+    _debug: { standardize, makeCtx, upmsPrepare, upmsSingle, bmsFS, lpmsSingle, lpmsFS, display }
+  };
+
+  if (typeof register !== 'undefined') register.push(api);
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (typeof window !== 'undefined') window.LPMSNotation = api;
+})();
+
+</script>
+<script>
+;const FSbounded = (FS,compare,seq,low)=>{
+	var res,n=0
+	while(true){
+		res = FS(seq,n)
+		if(compare(res,low[0])>0) return res
+		n++
+	}
+}
+,app = Vue.createApp({
+	data:()=>({
+		current_tab:0
+		,FS_shown:register.map(()=>3)
+		,extra_FS:register.map(()=>0)
+		,tier:register.map(()=>1)
+		,datasets:register.map(notation=>notation.init())
+	})
+	,computed:{
+		current_notation(){return register[this.current_tab].id}
+		,tab_names:()=>register.map(notation=>notation.name)
+		,tiername(){
+			var n=this.tier[this.current_tab]
+			if(0<=n&&n<=8) return ['small','single','double','triple','quadruple','quintuple','sextuple','septuple','octuple'][n]+' expansion'
+			return n+'-fold expansion'
+		}
+	}
+	,methods:{
+		incrFS(){
+			this.FS_shown.splice(this.current_tab,1,this.FS_shown[this.current_tab]+1)
+		}
+		,decrFS(){
+			this.FS_shown.splice(this.current_tab,1,Math.max(this.FS_shown[this.current_tab]-1,0))
+		}
+		,incr_extra(){
+			this.extra_FS.splice(this.current_tab,1,this.extra_FS[this.current_tab]+1)
+		}
+		,decr_extra(){
+			this.extra_FS.splice(this.current_tab,1,Math.max(this.extra_FS[this.current_tab]-1,0))
+		}
+		,incr_tier(){
+			this.tier.splice(this.current_tab,1,this.tier[this.current_tab]+1)
+		}
+		,decr_tier(){
+			this.tier.splice(this.current_tab,1,Math.max(this.tier[this.current_tab]-1,0))
+		}
+		,reset_list(){
+			this.datasets.splice(this.current_tab,1,register[this.current_tab].init())
+		}
+	}
+})
+register.forEach((notation,index)=>{
+	app.component(notation.id+'-list',{
+		props:['expr','low','subitems']
+		,data:()=>({
+			display:notation.display
+			,able:notation.able
+			,semiable:notation.semiable
+			,compare:notation.compare
+			,FS:notation.FS
+			,FSalter:notation.FSalter
+			,shownFS:[]
+			,tooltip:false
+			,tooltipX:{}
+		})
+		,methods:{
+			recalculate(event){
+				if(!this.able(this.expr)) return;
+				var FS = event.shiftKey&&this.FSalter?this.FSalter:this.FS
+				var res=[]
+				,nmax=this.$root.FS_shown[index]
+				for(var n=0;n<=nmax;++n) res.push(n+':&nbsp;'+this.display(FS(this.expr,n)))
+				this.shownFS = res
+				this.tooltipX = {left:(event.offsetX+15)+'px'}
+				this.tooltip = true
+			}
+			,unshow(){
+				if(!this.able(this.expr)) return;
+				this.tooltip = false
+			}
+			,expand(event){
+				var FS = event.shiftKey&&this.FSalter?this.FSalter:this.FS
+				var expand_extra = item=>{
+					var working_low = item.low
+					for(var i=this.$root.extra_FS[index];i--;){
+						item.subitems.unshift({
+							expr:FSbounded(FS,this.compare,item.expr,working_low)
+							,low:JSON.parse(JSON.stringify(working_low))
+							,subitems:[]
+						})
+						working_low = [item.subitems[0].expr]
+					}
+					if(item.subitems[0]) item.low[0] = item.subitems[0].expr
+				}
+				,expand_tier = (tier,item,append)=>{
+					if(!(this.able(item.expr)&&extras.add(item)||this.semiable&&this.semiable(item.expr)&&this.compare(FS(item.expr,0),item.low[0])>0)) return;
+					var newitem={
+						expr:FSbounded(FS,this.compare,item.expr,item.low)
+						,low:JSON.parse(JSON.stringify(item.low))
+						,subitems:[]
+					}
+					append.splice(append.map(x=>JSON.stringify(x.expr)).indexOf(JSON.stringify(item.expr))+1,0,newitem)
+					item.low[0] = newitem.expr
+					if(tier>0){
+						expand_tier(tier,newitem,JSON.stringify(append[append.length-1].expr)===JSON.stringify(newitem.expr)?append:newitem.subitems)
+						tier>1&&expand_tier(tier-1,newitem.subitems.length?newitem.subitems[newitem.subitems.length-1]:newitem,newitem.subitems)
+					}
+				}
+				,extras=new Set()
+				,parentsubs = this.$parent.subitems
+				expand_tier(this.$root.tier[index],this,JSON.stringify(parentsubs[parentsubs.length-1].expr)===JSON.stringify(this.expr)?parentsubs:this.subitems)
+				extras.forEach(expand_extra)
+			}
+		}
+		,template:`<li><div class="shown-item" @mouseenter="recalculate" @mouseleave="unshow()" @mousedown="expand"><span v-html="display(expr)"></span>
+			<div class="tooltip" v-if="tooltip" :style="tooltipX" @mousedown.stop>
+				<span v-html="display(expr)"></span> fundamental sequence:
+				<div v-for="term in shownFS" v-html="term"></div>
+			</div></div>
+			<ul>
+				<`+notation.id+`-list v-for="subitem in subitems" v-bind="subitem"></`+notation.id+`-list>
+			</ul>
+		</li>`
+	})
+	app.component(notation.id,{
+		props:['subitems']
+		,template:`<ul class="nowrap"><`+notation.id+`-list v-for="item in subitems" v-bind="item"></`+notation.id+`-list></ul>`
+	})
+})
+var root=app.mount('#app')
+window.addEventListener('keydown',e=>{
+	if(e.ctrlKey||e.altKey||e.shiftKey||e.metaKey) return;
+	var k=e.key
+	if(0<=k&&k<=9){
+		root.tier.splice(root.current_tab,1,+k)
+	}else{
+		switch(k){
+			case ',':
+			case '<':
+				root.decrFS()
+				break
+			case '.':
+			case '>':
+				root.incrFS()
+				break
+			case '-':
+			case '_':
+				root.decr_extra()
+				break
+			case '=':
+			case '+':
+				root.incr_extra()
+				break
+		}
+	}
+})
+</script>
+</body>
+</html>

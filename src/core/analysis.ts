@@ -19,6 +19,7 @@ export function export_analysis<T>(root: TreeNode<T>): AnalysisEntry<T>[] {
     function walk(nodes: TreeNode<T>[]) {
         for (let i = nodes.length - 1; i >= 0; i--) {
             const node = nodes[i];
+            walk(node.children);
             const ed = node.extraData as TreeNodeExtra | undefined;
             if (ed?.analysis?.some((a) => a !== undefined)) {
                 result.push({
@@ -26,7 +27,6 @@ export function export_analysis<T>(root: TreeNode<T>): AnalysisEntry<T>[] {
                     analysis: [...ed.analysis],
                 });
             }
-            walk(node.children);
         }
     }
 
