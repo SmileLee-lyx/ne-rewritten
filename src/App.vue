@@ -11,6 +11,7 @@ import { download_buffer, export_to_xlsx, import_from_xlsx } from '@/core/xlsx_i
 import { resolve_display } from '@/utils';
 import { use_diagram } from '@/composables/use_diagram.ts';
 import DiagramViewer from '@/components/DiagramViewer.vue';
+import HotkeyDialog from '@/components/HotkeyDialog.vue';
 
 const settings = inject(SETTINGS_KEY)!;
 const { diagram, visible, pos_x, pos_y, hide } = use_diagram();
@@ -76,6 +77,7 @@ const tier_name = computed(() => {
 });
 
 const file_input = ref<HTMLInputElement>();
+const show_hotkeys = ref(false);
 
 const ANALYSIS_STORAGE_PREFIX = 'ne-analysis-';
 let auto_save_timer: ReturnType<typeof setInterval> | null = null;
@@ -308,6 +310,7 @@ onUnmounted(() => {
                     <button @mousedown="handle_export">Export</button>
                     <button @mousedown="handle_import">Import</button>
                     <button @mousedown="save_analysis">Save</button>
+                    <button @mousedown="show_hotkeys = true">Hotkeys</button>
                     <input
                         ref="file_input"
                         type="file"
@@ -427,6 +430,7 @@ onUnmounted(() => {
             <DiagramViewer :diagram="diagram" />
         </div>
         <div v-if="save_indicator" class="save-indicator">saved {{ save_indicator }} ago</div>
+        <HotkeyDialog :show="show_hotkeys" @close="show_hotkeys = false" />
     </div>
 </template>
 
