@@ -3,7 +3,7 @@ import { deepcopy, index_of_first, index_of_last, lex_compare, number_compare } 
 import type { Diagram, Rgba } from '@/core/diagram_types.ts';
 import { sequence_FS_variants } from '@/notations/FS_util.ts';
 
-type Expr = Row[];
+export type Expr = Row[];
 type Row = [number, Entry[]];
 type Entry = [number, boolean?];
 
@@ -283,7 +283,7 @@ function Limit(n: number): Expr {
     );
 }
 
-const draw_diagram_control: DiagramControl<Expr, { offset: number }> = {
+export const draw_diagram_control: DiagramControl<Expr, { offset: number }> = {
     default_data: { offset: 0 },
     draw_diagram: (expr: Expr, data: { offset: number }): Diagram | undefined => {
         if (is_infinite(expr) || expr.length === 0) return undefined;

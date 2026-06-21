@@ -1,5 +1,6 @@
-import type { NotationDefinition } from '@/utils.ts';
+import type { DiagramControl, NotationDefinition } from '@/utils.ts';
 import { lex_compare, number_compare } from '@/utils.ts';
+import { draw_diagram_control as den2_diagram_control, type Expr as DEN2_Expr } from './DEN2.ts';
 
 type Row = number[];
 type Expr = Row[];
@@ -225,6 +226,34 @@ function Limit(n: number): Expr {
     );
 }
 
+/** 将 DEN1 的 Expr 转换为 DEN2 的 Expr。mark_list[ri] 为 0 时该行无标记，否则标记值相等的 entry。 */
+function den1_to_den2(expr: Expr): DEN2_Expr {
+    const marks = expr[0];
+    return expr.slice(1).map((row, ri) => {
+        const step = row[0];
+        const mark_val = marks[ri];
+        const entries: [number, boolean?][] = [];
+        if (mark_val === 0) {
+            // 该行无标记
+            for (let j = 1; j < row.length; j++) {
+                entries.push([row[j]]);
+            }
+        } else {
+            for (let j = 1; j < row.length; j++) {
+                const val = row[j];
+                entries.push(val === mark_val ? [val, true] : [val]);
+            }
+        }
+        return [step, entries];
+    });
+}
+
+const diagram_control: DiagramControl<Expr, { offset: number }> = {
+    default_data: den2_diagram_control.default_data,
+    draw_diagram: (expr, data) => den2_diagram_control.draw_diagram(den1_to_den2(expr) as any, data),
+    handle_action: (data, action) => den2_diagram_control.handle_action!(data, action),
+};
+
 export const DEN: NotationDefinition<Expr> = {
     id: 'den',
     name: 'Defective embedding notation (DEN)',
@@ -232,6 +261,7 @@ export const DEN: NotationDefinition<Expr> = {
     display,
     is_limit: isLimit,
     compare,
+    draw_diagram: diagram_control,
     FS: (m, FSterm) => {
         if ('' + m === 'Infinity') return Limit(FSterm);
         if (m.length <= 1) return [[]];

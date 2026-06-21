@@ -200,7 +200,7 @@ function on_focus(e: FocusEvent) {
 
     const dc = props.notation.draw_diagram;
     if (dc) {
-        show_diagram(dc, props.node.expr, r.left, 100);
+        show_diagram(dc, props.node.expr, r.left, 60 + r.height);
     } else {
         hide_diagram();
     }

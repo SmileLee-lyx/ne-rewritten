@@ -1,5 +1,6 @@
-import type { NotationDefinition } from '@/utils.ts';
+import type { DiagramControl, NotationDefinition } from '@/utils.ts';
 import { lex_compare, number_compare } from '@/utils.ts';
+import { draw_diagram_control as den2_diagram_control, type Expr as DEN2_Expr } from './DEN2.ts';
 
 const data: any = {};
 const data_alter: any = {};
@@ -239,12 +240,24 @@ var Limit = (n: any) =>
             .map((x: any, nn: any) => Limit_row(1 + nn)),
     );
 
+/** 将 DEN3 的 Expr 转换为 DEN2 的 Expr。每行的 row[0] 是 step，row[1..] 即为 entry。 */
+function den3_to_den2(expr: any[][]): DEN2_Expr {
+    return expr.map((row) => [row[0], row.slice(1)]) as unknown as DEN2_Expr;
+}
+
+const diagram_control: DiagramControl<any, { offset: number }> = {
+    default_data: den2_diagram_control.default_data,
+    draw_diagram: (expr, data) => den2_diagram_control.draw_diagram(den3_to_den2(expr), data),
+    handle_action: (data, action) => den2_diagram_control.handle_action!(data, action),
+};
+
 export const DEN3: NotationDefinition<any> = {
     id: 'den3',
     name: 'DEN3',
     display,
     is_limit: isLimit,
     compare,
+    draw_diagram: diagram_control,
     FS: (m: any, FSterm: any) => {
         if ('' + m === 'Infinity') return Limit(FSterm);
         if (!m.length) return [];
