@@ -7,8 +7,8 @@ import {
     DisplaySet,
     DisplayMap,
 } from '@/utils.ts';
-import type { Diagram, Rgba } from '@/core/diagram_types.ts';
 import { MN_FS_variants } from '@/notations/FS_util.ts';
+import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 
 const data = new Map<string, Expr>();
 const data_shorter = new Map<string, Expr>();
@@ -100,24 +100,23 @@ function mountain_from_display(str: string): Expr {
 }
 
 function vertical_compare(a: Vertical, b: Vertical): number {
-    return lex_compare(a, b, number_compare);
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+        if (a[i] !== b[i]) return a[i] - b[i];
+    }
+    return a.length - b.length;
+}
+
+function vertical_diff(v1: Vertical, v2: Vertical): Sep {
+    let i = 0;
+    while (i < v2.length && v1[i] === v2[i]) i++;
+    return v1[i];
 }
 
 function vertical_increase(v: Vertical, s: Sep): Vertical {
     let i = v.length;
     while (i > 0 && v[i - 1] < s) --i;
     return v.slice(0, i).concat([s]);
-}
-
-/**
- * assume v1 > v2
- * @param v1
- * @param v2
- */
-function vertical_diff(v1: Vertical, v2: Vertical): Sep {
-    let i = 0;
-    while (i < v2.length && v1[i] === v2[i]) i++;
-    return v1[i];
 }
 
 function find_index_below_row(Vi: Vertical[], v: Vertical): number {
@@ -340,180 +339,63 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
+/** 计算层：将 ωMN 的 Expr 转为 MountainDiagramData。 */
+function compute_mountain_diagram(expr: Expr, current_equiv?: string): MountainDiagramData | undefined {
+    if (is_infinite(expr) || expr.length === 0) return undefined;
+
+    const m = expr;
+    const m_display = current_equiv === 'layer' ? convert_to_layer(expr) : expr;
+    const V = m.map(column_verticals);
+
+    const vertical_set = new DisplaySet<Vertical>(vertical_display);
+    vertical_set.add([]);
+    for (const Vi of V) for (const v of Vi) vertical_set.add(v);
+    const sorted = vertical_set.values().sort(vertical_compare);
+    const sorted_verticals = sorted.map(vertical_display);
+    const vertical_index = new DisplayMap<Vertical, number>(vertical_display);
+    for (let i = 0; i < sorted.length; i++) {
+        vertical_index.set(sorted[i], i);
+    }
+
+    // 计算行高
+    const H = 40,
+        HS = 5;
+    const line_heights: number[] = [];
+    const heights: number[] = [0];
+    for (let i = 1; i < sorted.length; i++) {
+        const sep = vertical_diff(sorted[i], sorted[i - 1]);
+        const d_height = H + HS * sep;
+        heights.push(heights[i - 1] + d_height);
+        for (let k = 0; k <= sep; k++) line_heights.push(heights[i - 1] + H / 2 + HS * k);
+    }
+
+    const entries: (string | undefined)[][] = Array.from({ length: m.length }, () =>
+        Array.from({ length: vertical_index.size }, () => undefined),
+    );
+    const left_legs: ([number, number] | undefined)[][] = Array.from({ length: m.length }, () =>
+        Array.from({ length: vertical_index.size }, () => undefined),
+    );
+
+    for (let i = 0; i < m.length; ++i) {
+        entries[i][0] = '*';
+        for (let j = 0; j < m[i].length; j++) {
+            const vj = vertical_index.get(V[i][j])!;
+            entries[i][vj] = entry_display(m_display[i][j]);
+            const [pi, pj] = parent(m, V, [i, j]);
+            const pvj = pj === 0 ? 0 : vertical_index.get(V[pi][pj - 1])!;
+            left_legs[i][vj] = [pi, pvj];
+        }
+    }
+
+    return { sorted_verticals, heights, line_heights, entries, left_legs };
+}
+
 const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     default_data: { current_equiv: undefined, invert_vertical: undefined },
-    draw_diagram: (_expr: Expr, _data: DiagramData): Diagram | undefined => {
-        if (is_infinite(_expr) || _expr.length === 0) return undefined;
-
-        const invert_vertical = _data.invert_vertical ?? false;
-
-        const vertical_set = new DisplaySet<Vertical>(vertical_display);
-        const m = _expr;
-        const m_display = _data.current_equiv === 'layer' ? convert_to_layer(_expr) : _expr;
-        const V = m.map(column_verticals);
-
-        vertical_set.add([]);
-        for (let Vi of V) for (let v of Vi) vertical_set.add(v);
-        const sorted_verticals = vertical_set.values().sort(vertical_compare);
-        const vertical_index = new DisplayMap<Vertical, number>(vertical_display);
-        for (let i = 0; i < sorted_verticals.length; i++) {
-            vertical_index.set(sorted_verticals[i], i);
-        }
-
-        const diagram_entries: (string | undefined)[][] = Array.from({ length: m.length }, () =>
-            Array.from({ length: vertical_index.size }, () => undefined),
-        );
-
-        const diagram_left_legs: ([number, number] | undefined)[][] = Array.from({ length: m.length }, () =>
-            Array.from({ length: vertical_index.size }, () => undefined),
-        );
-
-        for (let i = 0; i < m.length; ++i) {
-            diagram_entries[i][0] = '*';
-            for (let j = 0; j < m[i].length; j++) {
-                const vj = vertical_index.get(V[i][j])!;
-
-                diagram_entries[i][vj] = entry_display(m_display[i][j]);
-
-                const [pi, pj] = parent(m, V, [i, j]);
-                const pvj = pj === 0 ? 0 : vertical_index.get(V[pi][pj - 1])!;
-
-                diagram_left_legs[i][vj] = [pi, pvj];
-            }
-        }
-
-        const H = 40;
-        const HS = 5;
-        const W = 30;
-        const WV = 50;
-        const H_off = 10;
-        const padding = 10;
-        const text_size = 14;
-
-        const line_heights: number[] = [];
-        const heights: number[] = [0];
-        for (let i = 1; i < sorted_verticals.length; i++) {
-            const sep: Sep = vertical_diff(sorted_verticals[i], sorted_verticals[i - 1]);
-            const d_height = H + HS * sep;
-            heights.push(heights[i - 1] + d_height);
-
-            for (let k = 0; k <= sep; k++) line_heights.push(heights[i - 1] + H / 2 + HS * k);
-        }
-
-        const height_last = heights[heights.length - 1] + padding;
-        const total_height = height_last + padding;
-        const width = WV + m.length * W;
-        const calc_cy = (vj: number) => (invert_vertical ? padding + heights[vj] : height_last - heights[vj]);
-
-        const elements: Diagram['elements'] = [];
-        const lines: Diagram['elements'] = [];
-        const extra_text: Diagram['extra_text'] = [];
-        const black: Rgba = { r: 0, g: 0, b: 0 };
-        const gray: Rgba = { r: 200, g: 200, b: 200 };
-        // 翻转时连接方向取反：原 "中心下方" 为 cy+H_off，翻转后 "下方" 变为 cy-H_off
-        const h_off_vec = invert_vertical ? -H_off : H_off;
-
-        // horizontal grid lines
-        for (const h of line_heights) {
-            const y = invert_vertical ? h + padding : height_last - h;
-            lines.push({
-                type: 'line',
-                x1: 0,
-                y1: y,
-                x2: width,
-                y2: y,
-                stroke: true,
-                stroke_color: gray,
-                width: 1,
-            });
-        }
-
-        for (let vj = 0; vj < sorted_verticals.length; vj++) {
-            const cx = WV / 2;
-            const cy = calc_cy(vj);
-            extra_text.push({
-                text: vertical_display(sorted_verticals[vj]),
-                x: cx,
-                y: cy,
-                size: text_size,
-                color: black,
-                align: 'center',
-            });
-        }
-
-        for (let i = 0; i < m.length; i++) {
-            for (let vj = 0; vj < sorted_verticals.length; vj++) {
-                const text = diagram_entries[i][vj];
-                if (text === undefined) continue;
-
-                const cx = WV + W * i + W / 2;
-                const cy = calc_cy(vj);
-
-                // right leg: connect to the nearest existing node below
-                if (vj > 0) {
-                    let kv = vj - 1;
-                    while (kv > 0 && diagram_entries[i][kv] === undefined) kv--;
-                    if (diagram_entries[i][kv] !== undefined) {
-                        const cy_below = calc_cy(kv);
-                        lines.push({
-                            type: 'line',
-                            x1: cx,
-                            y1: cy + h_off_vec,
-                            x2: cx,
-                            y2: cy_below - h_off_vec,
-                            stroke: true,
-                            stroke_color: black,
-                            width: 1,
-                        });
-                    }
-                }
-
-                // left leg fold line
-                const leg = diagram_left_legs[i][vj];
-                if (leg !== undefined && vj > 0) {
-                    const [pi, pvj] = leg;
-                    const p_cx = WV + W * pi + W / 2;
-                    const cy_mid = calc_cy(vj - 1);
-                    const cy_target = calc_cy(pvj);
-
-                    // segment 1: (i, vj) → (pi, vj-1)
-                    lines.push({
-                        type: 'line',
-                        x1: cx,
-                        y1: cy + h_off_vec,
-                        x2: p_cx,
-                        y2: cy_mid - h_off_vec,
-                        stroke: true,
-                        stroke_color: black,
-                        width: 1,
-                    });
-                    // segment 2: (pi, vj-1) → (pi, pvj)
-                    lines.push({
-                        type: 'line',
-                        x1: p_cx,
-                        y1: cy_mid - h_off_vec,
-                        x2: p_cx,
-                        y2: cy_target - h_off_vec,
-                        stroke: true,
-                        stroke_color: black,
-                        width: 1,
-                    });
-                }
-
-                // value text
-                extra_text.push({
-                    text: text,
-                    x: cx,
-                    y: cy,
-                    size: text_size,
-                    color: black,
-                    align: 'center',
-                });
-            }
-        }
-
-        elements.unshift(...lines);
-        return { width, height: total_height, elements, extra_text };
+    draw_diagram: (_expr, _data) => {
+        const mountain = compute_mountain_diagram(_expr, _data.current_equiv);
+        if (!mountain) return undefined;
+        return draw_mountain_diagram(mountain, { invert_vertical: _data.invert_vertical ?? false });
     },
     handle_action: (data: DiagramData, action): DiagramData | null => {
         if (action.type === 'scroll') {
