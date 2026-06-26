@@ -48,7 +48,7 @@ function on_keydown(e: KeyboardEvent) {
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
     min-width: 300px;
-    max-width: 90vw;
+    max-width: 95vw;
     max-height: 85vh;
     overflow-y: auto;
 }

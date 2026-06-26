@@ -5,6 +5,7 @@ import { find_next, find_prev } from '@/core/tree';
 import type { TreeNodeExtra } from '@/core/extra';
 import { type NotationDefinition, resolve_display } from '@/utils';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
+import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { expand_item } from '@/core/expander';
 import { focus_node, focus_node_input, set_last_focus } from '@/composables/use_focus_tracker.ts';
 import { use_diagram } from '@/composables/use_diagram.ts';
@@ -33,6 +34,7 @@ const analysis0 = computed({
 });
 
 const settings = inject(SETTINGS_KEY)!;
+const t = inject(I18N_KEY)!;
 const node_path = props.node.path ?? '' + props.node.index;
 const equiv_name = computed(() => settings.equiv_active[props.notation.id] ?? '');
 const equiv_display = computed(() => {
@@ -251,7 +253,7 @@ function on_blur() {
                 v-html="expr_display_original(node.expr)"
             ></span>
             <div v-if="tooltip" class="tooltip" @mousedown.stop>
-                <span v-html="expr_display(node.expr)" /> fundamental sequence:
+                <span v-html="expr_display(node.expr)" />{{ t('notation-tree.fundamental-sequence') }}
                 <div v-for="term in tooltipFS" :key="term" v-html="term" />
             </div>
         </div>

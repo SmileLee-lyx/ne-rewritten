@@ -1,4 +1,4 @@
-import { boolean_compare, lex_compare, NotationDefinition, tuple_lex_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, NotationDefinition } from '@/utils.ts';
 
 type Expr = [0] | [1, Expr, Expr];
 

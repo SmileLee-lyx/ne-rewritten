@@ -1,5 +1,5 @@
 import type { DiagramControl, NotationDefinition } from '@/utils.ts';
-import { lex_compare, number_compare, DisplaySet, DisplayMap } from '@/utils.ts';
+import { DisplayMap, DisplaySet, lex_compare, number_compare } from '@/utils.ts';
 import { Y_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 

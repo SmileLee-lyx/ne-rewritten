@@ -13,6 +13,9 @@ export interface Settings {
     max_find_fs: number;
     equiv_active: Record<string, string | undefined>;
     equiv_hide_original: Record<string, boolean>;
+    language: 'zh' | 'en';
+    shown_notations: string[];
+    hidden_notations: string[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -28,4 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
     max_find_fs: 10,
     equiv_active: {},
     equiv_hide_original: {},
+    language: 'zh',
+    shown_notations: [],
+    hidden_notations: [],
 };

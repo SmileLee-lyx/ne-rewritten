@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, inject, onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { get_notation, list_notations } from '@/core/registry';
 import type { TreeNode } from '@/core/tree';
@@ -12,8 +12,12 @@ import { resolve_display } from '@/utils';
 import { use_diagram } from '@/composables/use_diagram.ts';
 import DiagramViewer from '@/components/DiagramViewer.vue';
 import HotkeyDialog from '@/components/HotkeyDialog.vue';
+import NotationSelector from '@/components/NotationSelector.vue';
+import { create_t, I18N_KEY } from '@/composables/use_i18n';
 
 const settings = inject(SETTINGS_KEY)!;
+const t = (key: string) => create_t(settings.language)(key);
+provide(I18N_KEY, t);
 const {
     diagram,
     visible,
@@ -24,6 +28,7 @@ const {
     dispatch_action: dispatch_diagram_action,
 } = use_diagram();
 const settings_collapsed = ref(true);
+const show_notation_selector = ref(false);
 const is_flashing = ref(false);
 const flash_show_simple = ref(false);
 let flash_timer: ReturnType<typeof setInterval> | null = null;
@@ -53,7 +58,12 @@ watch(
 );
 const font_options = ['Comic Sans MS', 'Consolas', 'Microsoft YaHei UI'];
 
-const notations = list_notations();
+const notations = computed(() => {
+    const shown = settings.shown_notations;
+    if (shown.length === 0) return list_notations();
+    const hidden = new Set(settings.hidden_notations);
+    return shown.map((id) => get_notation(id)).filter(Boolean) as ReturnType<typeof list_notations>;
+});
 
 const trees: Map<string, TreeNode<unknown>> = reactive(new Map());
 
@@ -76,12 +86,12 @@ const equiv_options = computed(() => {
     return n?.display_equiv ? Object.keys(n.display_equiv) : [];
 });
 
-const tier_names = ['small', 'single', 'double', 'triple', 'quadruple', 'quintuple', 'sextuple', 'septuple', 'octuple'];
-
 const tier_name = computed(() => {
-    const t = settings.tier;
-    if (0 <= t && t <= 7) return tier_names[t] + ' expansion';
-    return t + '-fold expansion';
+    const ti = settings.tier;
+    const key = 'tier.' + ti;
+    const label = t(key);
+    if (label !== key) return label;
+    return ti + '-fold expansion';
 });
 
 const file_input = ref<HTMLInputElement>();
@@ -321,20 +331,24 @@ onUnmounted(() => {
                         @mouseenter="settings.notation_name_mode === 'full' && start_flash()"
                         @mouseleave="stop_flash"
                     >
-                        Notation name:
+                        {{ t('notation-name.mode-label') }}
                         <button
                             class="toggle-btn"
                             @mousedown="
                                 settings.notation_name_mode = settings.notation_name_mode === 'full' ? 'simple' : 'full'
                             "
                         >
-                            {{ settings.notation_name_mode }}
+                            {{ t('notation-name.' + settings.notation_name_mode) }}
                         </button>
+                    </span>
+                    <span style="margin-left: 12px">
+                        {{ t('selector.config-label') }}
+                        <button @mousedown="show_notation_selector = true">{{ t('selector.config-btn') }}</button>
                     </span>
                 </div>
                 <div class="toolbar-row">
                     <label>
-                        Navigate to:
+                        {{ t('find-notation.label') }}
                         <input
                             ref="find_input"
                             type="text"
@@ -342,10 +356,10 @@ onUnmounted(() => {
                             @input="on_find_input"
                             @keydown="on_find_keydown"
                         />
-                        <button @mousedown.prevent="handle_find">Find</button>
+                        <button @mousedown.prevent="handle_find">{{ t('find-notation.find') }}</button>
                     </label>
                     <label>
-                        max FS:
+                        {{ t('find-notation.max-fs') }}
                         <input
                             type="number"
                             min="1"
@@ -357,20 +371,20 @@ onUnmounted(() => {
                 </div>
                 <div class="toolbar-row">
                     <label>
-                        FS variant:
+                        {{ t('fs-variant.label') }}
                         <select v-model="settings.variant" @mousedown.stop>
-                            <option value="FS">normal</option>
-                            <option value="FS_alter">alternative</option>
-                            <option value="FS_short">short</option>
+                            <option value="FS">{{ t('fs-variant.normal') }}</option>
+                            <option value="FS_alter">{{ t('fs-variant.alternative') }}</option>
+                            <option value="FS_short">{{ t('fs-variant.short') }}</option>
                         </select>
                     </label>
                 </div>
                 <div class="toolbar-row">
-                    <button class="reset-btn" @mousedown="handle_reset">Reset</button>
-                    <button @mousedown="handle_export">Export</button>
-                    <button @mousedown="handle_import">Import</button>
-                    <button @mousedown="save_analysis">Save</button>
-                    <button @mousedown="show_hotkeys = true">Hotkeys</button>
+                    <button class="reset-btn" @mousedown="handle_reset">{{ t('toolbar.reset') }}</button>
+                    <button @mousedown="handle_export">{{ t('toolbar.export') }}</button>
+                    <button @mousedown="handle_import">{{ t('toolbar.import') }}</button>
+                    <button @mousedown="save_analysis">{{ t('toolbar.save') }}</button>
+                    <button @mousedown="show_hotkeys = true">{{ t('toolbar.hotkeys') }}</button>
                     <input
                         ref="file_input"
                         type="file"
@@ -381,7 +395,7 @@ onUnmounted(() => {
                 </div>
                 <div v-if="!settings_collapsed && equiv_options.length > 0" class="toolbar-row">
                     <label>
-                        Equivalent notation:
+                        {{ t('equiv.label') }}
                         <select
                             :value="settings.equiv_active[current_id] ?? ''"
                             @mousedown.stop
@@ -394,7 +408,7 @@ onUnmounted(() => {
                                 }
                             "
                         >
-                            <option value="">(none)</option>
+                            <option value="">{{ t('equiv.none') }}</option>
                             <option v-for="k in equiv_options" :key="k" :value="k">
                                 {{ k }}
                             </option>
@@ -413,21 +427,21 @@ onUnmounted(() => {
                                 }
                             "
                         />
-                        Hide original
+                        {{ t('equiv.hide-original') }}
                     </label>
                 </div>
                 <div v-if="!settings_collapsed" class="toolbar-row">
                     <span style="margin-right: 8px">
-                        Display:
+                        {{ t('display.label') }}
                         <button
                             class="toggle-btn"
                             @mousedown="settings.display_html_mode = !settings.display_html_mode"
                         >
-                            {{ settings.display_html_mode ? 'html' : 'plain' }}
+                            {{ settings.display_html_mode ? t('display.html') : t('display.plain') }}
                         </button>
                     </span>
                     <span>
-                        Tier:
+                        {{ t('tier.label') }}
                         <button class="tier-btn" @mousedown="settings.tier = Math.max(settings.tier - 1, 0)">
                             <span class="tier-icon">−</span>
                         </button>
@@ -439,13 +453,13 @@ onUnmounted(() => {
                 </div>
                 <div v-if="!settings_collapsed" class="toolbar-row">
                     <span style="margin-right: 8px">
-                        Analysis input:
+                        {{ t('analysis-input.label') }}
                         <button class="toggle-btn" @mousedown="settings.show_input = !settings.show_input">
-                            {{ settings.show_input ? 'show' : 'hide' }}
+                            {{ settings.show_input ? t('analysis-input.show') : t('analysis-input.hide') }}
                         </button>
                     </span>
                     <label v-if="settings.show_input">
-                        Input width:
+                        {{ t('analysis-input.width') }}
                         <input
                             type="range"
                             min="60"
@@ -457,29 +471,36 @@ onUnmounted(() => {
                     </label>
                     <label>
                         <input type="checkbox" v-model="settings.use_delete_to_clear" />
-                        Use 'Delete' key to clear analysis
+                        {{ t('analysis-input.use-delete') }}
                     </label>
                 </div>
                 <div v-if="!settings_collapsed" class="toolbar-row">
                     <label>
-                        Font:
+                        {{ t('font.label') }}
                         <select v-model="settings.font_family" @mousedown.stop>
                             <option v-for="f in font_options" :key="f" :value="f">
                                 {{ f }}
                             </option>
                         </select>
                     </label>
+                    <label style="margin-left: 8px">
+                        {{ t('language.label') }}
+                        <select v-model="settings.language" @mousedown.stop>
+                            <option value="zh">中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </label>
                 </div>
             </div>
             <button class="collapse-btn" @mousedown="settings_collapsed = !settings_collapsed">
-                {{ settings_collapsed ? '▼ More' : '▲ Less' }}
+                {{ settings_collapsed ? t('settings.more') : t('settings.less') }}
             </button>
         </div>
 
         <div v-if="root && notation" class="preview-container">
             <NotationTree :root="root" :notation="notation as any" :tier="settings.tier" />
         </div>
-        <div v-else>No notation selected</div>
+        <div v-else>{{ t('notation-tree.empty') }}</div>
         <div
             v-if="visible && diagram"
             class="diagram-floating"
@@ -489,7 +510,10 @@ onUnmounted(() => {
             <button class="diagram-close" @mousedown.stop="hide">✕</button>
             <DiagramViewer :diagram="diagram" />
         </div>
-        <div v-if="save_indicator" class="save-indicator">saved {{ save_indicator }} ago</div>
+        <div v-if="save_indicator" class="save-indicator">
+            {{ t('autosave.last-save.1') }}{{ save_indicator }}{{ t('autosave.last-save.2') }}
+        </div>
+        <NotationSelector :show="show_notation_selector" @close="show_notation_selector = false" />
         <HotkeyDialog :show="show_hotkeys" @close="show_hotkeys = false" />
     </div>
 </template>

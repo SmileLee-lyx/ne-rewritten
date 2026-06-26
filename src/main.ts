@@ -106,10 +106,25 @@ function load_settings(): Partial<Settings> {
     }
 }
 
+function init_notation_lists(settings: Settings) {
+    if (settings.shown_notations.length === 0 && settings.hidden_notations.length === 0) {
+        // 首次加载：用所有记号
+        settings.shown_notations = list_notations().map((n) => n.id);
+    } else {
+        // 已有配置：新记号追加到 shown 尾部
+        const all_ids = new Set(list_notations().map((n) => n.id));
+        const known = new Set([...settings.shown_notations, ...settings.hidden_notations]);
+        for (const id of all_ids) {
+            if (!known.has(id)) settings.shown_notations.push(id);
+        }
+    }
+}
+
 const settings: Settings = reactive({
     ...DEFAULT_SETTINGS,
     ...load_settings(),
 });
+init_notation_lists(settings);
 
 watch(
     () => settings,

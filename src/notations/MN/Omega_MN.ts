@@ -1,11 +1,11 @@
 import {
     deepcopy,
+    type DiagramControl,
+    DisplayMap,
+    DisplaySet,
     lex_compare,
     NotationDefinition,
     number_compare,
-    type DiagramControl,
-    DisplaySet,
-    DisplayMap,
 } from '@/utils.ts';
 import { MN_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
