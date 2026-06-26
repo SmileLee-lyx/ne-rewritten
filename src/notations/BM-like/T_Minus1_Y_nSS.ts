@@ -134,6 +134,15 @@ function FS(e: Expr, index: number, n: number): Expr {
     return result;
 }
 
+function is_zero_column(c: Column): boolean {
+    return c[0].every((x) => x === 0) && c[1].length === 0;
+}
+
+function is_one_column(c: Column): boolean {
+    let n = c[0].length;
+    return n === 0 ? c[1].length === 1 : c[0][0] === 1 && c[0].slice(1).every((x) => x === 0) && c[1].length === 0;
+}
+
 function column_display(c: Column): string {
     return '(' + c[0].join(',') + ',' + display(c[1], false) + ')';
 }
@@ -141,8 +150,14 @@ function column_display(c: Column): string {
 function display(e: Expr, top_level: boolean = true): string {
     if (is_infinity(e)) return 'Limit';
 
-    if (!top_level && e.every((c) => c[1].length === 0 && c[0].every((x) => x === 0))) {
-        return '' + e.length;
+    if (!top_level) {
+        if (e.every(is_zero_column)) {
+            return '' + e.length;
+        }
+        if (is_one_column(e[1]) && e.slice(2).every(is_zero_column)) {
+            let m = e.length - 2;
+            return m === 0 ? 'ω' : 'ω+' + m;
+        }
     }
 
     return e.map(column_display).join('');
