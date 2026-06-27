@@ -126,7 +126,9 @@ function FS(e: Expr, index: number, n: number): Expr {
 }
 
 function column_display(c: Column): string {
-    return '(' + c[0].join(',') + ',' + c[1] + ')';
+    let result_list = [...c[0], c[1]];
+    while (result_list.length > 0 && result_list[result_list.length - 1] === 0) result_list.pop();
+    return '(' + result_list.join(',') + ')';
 }
 
 function display(e: Expr): string {

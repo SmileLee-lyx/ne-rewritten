@@ -144,7 +144,9 @@ function is_one_column(c: Column): boolean {
 }
 
 function column_display(c: Column): string {
-    return '(' + c[0].join(',') + ',' + display(c[1], false) + ')';
+    let result_list = [...c[0].map((x) => '' + x), display(c[1], false)];
+    while (result_list.length > 0 && result_list[result_list.length - 1] === '0') result_list.pop();
+    return '(' + result_list.join(',') + ')';
 }
 
 function display(e: Expr, top_level: boolean = true): string {
@@ -154,9 +156,8 @@ function display(e: Expr, top_level: boolean = true): string {
         if (e.every(is_zero_column)) {
             return '' + e.length;
         }
-        if (is_one_column(e[1]) && e.slice(2).every(is_zero_column)) {
-            let m = e.length - 2;
-            return m === 0 ? 'ω' : 'ω+' + m;
+        if (e.length === 2 && is_one_column(e[1])) {
+            return 'ω';
         }
     }
 

@@ -44,6 +44,7 @@ import { Minus1_Y } from '@/notations/Y/minus1_Y.ts';
 import { T_Minus1_Y } from '@/notations/Y/T_minus1_Y.ts';
 import { Minus1_Y_nSS } from '@/notations/BM-like/Minus1_Y_nSS.ts';
 import { T_Minus1_Y_nSS } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
+import { BT_Minus1_Y_nSS } from '@/notations/BM-like/BT_Minus1_Y_nSS.ts';
 
 register_notation(omega);
 register_notation(BM4);
@@ -62,6 +63,9 @@ register_notation(Minus1_Y_nSS(3));
 register_notation(T_Minus1_Y_nSS(1));
 register_notation(T_Minus1_Y_nSS(2));
 register_notation(T_Minus1_Y_nSS(3));
+register_notation(BT_Minus1_Y_nSS(1));
+register_notation(BT_Minus1_Y_nSS(2));
+register_notation(BT_Minus1_Y_nSS(3));
 register_notation(omega_MN);
 register_notation(n_MN(1));
 register_notation(n_MN(2));
