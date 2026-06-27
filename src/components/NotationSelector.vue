@@ -222,6 +222,7 @@ watch(
 }
 
 .default-order-btn {
+    font-family: inherit;
     font-size: 11px;
     border: 1px solid #aaa;
     border-radius: 4px;
