@@ -20,7 +20,7 @@ const input_hotkeys = [
     { keys: 'Shift+Enter', desc: 'Expand current expression (tier 1)' },
     { keys: 'Ctrl+H', desc: 'Hide/show children' },
     { keys: '↑ / ↓', desc: 'Move between inputs' },
-    { keys: 'Ctrl+↑ / ↓', desc: 'Scroll diagram viewport' },
+    { keys: 'Ctrl+↑ / ↓', desc: 'Diagram operations' },
     { keys: 'Delete', desc: 'Clear analysis text (toggle in settings)' },
 ];
 </script>

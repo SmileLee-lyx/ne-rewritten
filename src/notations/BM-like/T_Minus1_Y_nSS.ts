@@ -21,6 +21,10 @@ function EMPTY_COLUMN(n: number): Column {
     return [Array.from({ length: n }, () => 0), []];
 }
 
+function ONE_COLUMN(n: number): Column {
+    return n === 0 ? [[], [EMPTY_COLUMN(n)]] : [[1, ...Array.from({ length: n - 1 }, () => 0)], []];
+}
+
 function is_infinity(e: Expr): boolean {
     return '' + e === 'Infinity';
 }
@@ -164,12 +168,104 @@ function display(e: Expr, top_level: boolean = true): string {
     return e.map(column_display).join('');
 }
 
+export function from_display(s: string, n: number): Expr {
+    let i = 0;
+
+    function error(): never {
+        throw new Error(`Illegal input string: ${s}`);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    function parseNumber(): number {
+        skip_spaces();
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parseExpr(top_level: boolean): Expr {
+        skip_spaces();
+
+        if (i + 5 <= s.length && s.substring(i, i + 5) === 'Limit') {
+            i += 5;
+            return INFINITY();
+        }
+
+        if (!top_level) {
+            if (i < s.length && s[i] >= '0' && s[i] <= '9') {
+                const num = parseNumber();
+                return Array.from({ length: num }, () => EMPTY_COLUMN(n));
+            }
+            if (i < s.length && (s[i] === 'ω' || s[i] === 'w')) {
+                i++;
+                return [EMPTY_COLUMN(n), ONE_COLUMN(n)];
+            }
+        }
+
+        const result: Expr = [];
+        skip_spaces();
+        while (i < s.length && s[i] === '(') {
+            result.push(parseColumn());
+            skip_spaces();
+        }
+        return result;
+    }
+
+    function parseColumn(): Column {
+        skip_spaces();
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+
+        skip_spaces();
+
+        const arr: number[] = [];
+        for (let j = 0; j < n; j++) {
+            if (j > 0) {
+                skip_spaces();
+                if (i >= s.length || s[i] !== ',') {
+                    arr.push(0);
+                    continue;
+                }
+                i++;
+            }
+            skip_spaces();
+            if (i < s.length && s[i] >= '0' && s[i] <= '9') {
+                arr.push(parseNumber());
+            } else {
+                arr.push(0);
+            }
+        }
+
+        skip_spaces();
+        let step: Expr = [];
+        if (i < s.length && s[i] === ',') {
+            i++;
+            step = parseExpr(false);
+        }
+
+        skip_spaces();
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+
+        return [arr, step];
+    }
+
+    const result = parseExpr(true);
+    skip_spaces();
+    if (i !== s.length) error();
+    return result;
+}
+
 export function T_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
         id: 't--1y-' + (n + 1) + 'ss',
         name: 'T(-1)Y-' + (n + 1) + 'SS',
 
-        display: { plain: display },
+        display: { plain: display, from_display: (s) => from_display(s, n) },
         is_limit: (e) => is_limit(e, n),
         compare,
         FS: (e, index) => FS(e, index, n),

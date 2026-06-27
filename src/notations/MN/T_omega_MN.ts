@@ -40,6 +40,92 @@ function is_infinity(m: Column[]) {
     return '' + m === 'Infinity';
 }
 
+function INFINITY(): Expr {
+    return [[[Infinity] as any]];
+}
+
+function mountain_from_display(s: string): Expr {
+    let i = 0;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    function parse_number(): number {
+        skip_spaces();
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_sep(): Sep {
+        skip_spaces();
+        if (i < s.length && s[i] === ',') {
+            let count = 0;
+            while (i < s.length && s[i] === ',') {
+                count++;
+                i++;
+            }
+            return Array.from({ length: count }, () => []);
+        }
+        if (i < s.length && s[i] === '(') {
+            return parse_expr();
+        }
+        error();
+    }
+
+    function parse_entry(): Entry {
+        const sep = parse_sep();
+        const v = parse_number();
+        return [v, sep];
+    }
+
+    function parse_column(): Column {
+        skip_spaces();
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+
+        const col: Column = [];
+        skip_spaces();
+        while (i < s.length && s[i] !== ')') {
+            col.push(parse_entry());
+            skip_spaces();
+        }
+
+        if (i >= s.length) error();
+        i++;
+        return col;
+    }
+
+    function parse_expr(): Expr {
+        const result: Expr = [];
+        skip_spaces();
+        while (i < s.length && s[i] === '(') {
+            result.push(parse_column());
+            skip_spaces();
+        }
+        return result;
+    }
+
+    skip_spaces();
+    if (i + 5 <= s.length && s.substring(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY();
+    }
+
+    const result = parse_expr();
+    skip_spaces();
+    if (i !== s.length) error();
+    return result;
+}
+
 function mountain_display(m: Expr): string {
     if (is_infinity(m)) return 'Limit';
     return m.map((col) => '(' + col.map(([v, sep]) => sep_display(sep) + v).join('') + ')').join('');
@@ -307,7 +393,7 @@ function convert_from_layer(dm: Expr): Expr {
 export const T_omega_MN: NotationDefinition<Expr> = {
     id: 't-omega-mn',
     name: 'TωMN',
-    display: mountain_display,
+    display: { plain: mountain_display, from_display: mountain_from_display },
     display_equiv: {
         layer: (m) => mountain_display(convert_to_layer(m)),
     },
@@ -338,5 +424,5 @@ export const T_omega_MN: NotationDefinition<Expr> = {
             return expand(m, index, true);
         return expand(m, index - 1, true);
     },
-    init: () => [[[Infinity] as any], []],
+    init: () => [INFINITY(), []],
 };

@@ -1,4 +1,5 @@
 import { index_of_last, lex_compare, type NotationDefinition, number_compare, tuple_lex_compare } from '@/utils.ts';
+import { from_display } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
 
 export type ExprData<Data> = [Data, ExprData<Data>][];
 export type Expr = ExprData<number[]>;
@@ -280,7 +281,7 @@ export function BT_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
         id: 'bt--1y-' + (n + 1) + 'ss',
         name: 'BT(-1)Y-' + (n + 1) + 'SS',
 
-        display: { plain: display },
+        display: { plain: display, from_display: (s) => from_display(s, n) },
         is_limit: (e) => is_limit(e),
         compare,
         FS: (e, index) => FS(e, index, n),

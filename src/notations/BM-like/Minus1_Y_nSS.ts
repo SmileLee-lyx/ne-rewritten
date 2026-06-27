@@ -136,12 +136,80 @@ function display(e: Expr): string {
     return e.map(column_display).join('');
 }
 
+function from_display(s: string, n: number): Expr {
+    if (s.trim() === 'Limit') return INFINITY();
+
+    let i = 0;
+
+    function error(): never {
+        throw new Error(`Illegal input string: ${s}`);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    function parse_number(): number {
+        skip_spaces();
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_column(): Column {
+        skip_spaces();
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+
+        skip_spaces();
+        const values: number[] = [];
+
+        if (i < s.length && s[i] !== ')') {
+            values.push(parse_number());
+            while (true) {
+                skip_spaces();
+                if (i >= s.length || s[i] !== ',') break;
+                i++;
+                skip_spaces();
+                if (i < s.length && s[i] === ')') break;
+                values.push(parse_number());
+            }
+        }
+
+        skip_spaces();
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+
+        const arr = values.slice(0, n);
+        while (arr.length < n) arr.push(0);
+        const step = values.length > n ? values[n] : 0;
+        return [arr, step];
+    }
+
+    function parse_expr(): Expr {
+        const result: Expr = [];
+        skip_spaces();
+        while (i < s.length) {
+            if (s[i] !== '(') break;
+            result.push(parse_column());
+            skip_spaces();
+        }
+        return result;
+    }
+
+    const result = parse_expr();
+    skip_spaces();
+    if (i !== s.length) error();
+    return result;
+}
+
 export function Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
         id: '-1y-' + (n + 1) + 'ss',
         name: '(-1)Y-' + (n + 1) + 'SS',
 
-        display: { plain: display },
+        display: { plain: display, from_display: (s) => from_display(s, n) },
         is_limit: (e) => is_limit(e, n),
         compare,
         FS: (e, index) => FS(e, index, n),

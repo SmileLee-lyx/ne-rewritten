@@ -22,7 +22,6 @@ function vertical_compare(v1: Vertical, v2: Vertical): number {
     return lex_compare(v1, v2, compare);
 }
 
-/** 找首个 V[k] > pos 的 k，即覆盖位置 pos 的项下标。 */
 function index_after(V: Vertical[], pos: Vertical): number {
     for (let k = 0; k < V.length; k++) {
         if (vertical_compare(V[k], pos) > 0) return k;
@@ -30,10 +29,6 @@ function index_after(V: Vertical[], pos: Vertical): number {
     return V.length;
 }
 
-/**
- * 在列 p 的父链中，找覆盖位置 pos 的项所对应的父项。
- * 即返回 P[p][k] 其中 k 是首个 V[p][k] ≥ pos 的项。
- */
 function vertical_parent(v: Vertical, Pi: [number, number][], Vi: Vertical[]): [number, number] | undefined {
     for (let k = 0; k < Vi.length; k++) {
         if (vertical_compare(Vi[k], v) >= 0) return Pi[k];
@@ -41,7 +36,6 @@ function vertical_parent(v: Vertical, Pi: [number, number][], Vi: Vertical[]): [
     return undefined;
 }
 
-/** 序数加法：a + b。使用 CNF 截断规则。 */
 function vertical_add(v1: Vertical, v2: Vertical): Vertical {
     if (v1.length === 0) return v2.slice();
     if (v2.length === 0) return v1.slice();
@@ -51,13 +45,6 @@ function vertical_add(v1: Vertical, v2: Vertical): Vertical {
     return v1.slice(0, i).concat(v2);
 }
 
-/**
- * 计算各列各项的父项 (col, entry_in_col)。
- *
- * 对列 i 的项 j，P(i,j) 必须是 i 的 (j-1)-祖先，
- * 故搜索从 P(i,j-1) 的列开始（j=0 时从 i-1 开始）。
- * 然后沿父链左查直至找到值更小的项。
- */
 export function parents(m: Expr, V: Vertical[][]): [number, number][][] {
     const P: [number, number][][] = [];
     for (let i = 0; i < m.length; i++) {
@@ -109,12 +96,10 @@ export function column_verticals(col: Column): Vertical[] {
     return result;
 }
 
-/** 判断表达式是否表示 1（纯 ω-power ω^0）。即只有一个全零列。 */
 function is_one(expr: Expr): boolean {
     return expr.length === 1 && expr[0].length === 0;
 }
 
-/** 在全零列处拆分表达式，返回各 ω 幂段。 */
 function to_vertical(m: Expr): Vertical {
     const v: Vertical = [];
     let prev = 0;
@@ -127,7 +112,6 @@ function to_vertical(m: Expr): Vertical {
     return v;
 }
 
-/** 展开极限列：将末项的高度展开，分解后替换末项。 */
 function expand_limit(m: Expr, index: number, N: number): Expr {
     const col = m[N];
     const last_idx = col.length - 1;
@@ -141,15 +125,6 @@ function expand_limit(m: Expr, index: number, N: number): Expr {
     return result;
 }
 
-/**
- * 展开后继列：BM4 式 bad part 复制。
- *
- * 关键类型：
- *   j_max — 模板顶部位置 (Vertical)
- *   offset — 列式偏移量（[δ, 模板高度]）
- *   A[i]   — 列 i 的递增截止位置 (Vertical)
- *   copy_column(m[i], V[i], offset, A[i], w) — 仅需源列、源位置、偏移、阈值
- */
 function expand_successor(m: Expr, index: number): Expr {
     const V = m.map(column_verticals);
     const P = parents(m, V);
@@ -171,7 +146,6 @@ function expand_successor(m: Expr, index: number): Expr {
     return result;
 }
 
-/** 计算偏移列：offset[j] = [δ, template_h] */
 function compute_offset(m: Expr, V: Vertical[][], N: number, r: number): Column {
     const off: Column = [];
     for (let j = 0; j < m[N].length; j++) {
@@ -183,13 +157,6 @@ function compute_offset(m: Expr, V: Vertical[][], N: number, r: number): Column 
     return off;
 }
 
-/**
- * 计算 A[i]：递增截止位置 (Vertical)。
- * A[r] = j_max；对 i > r，逐项检查 i 自身的 entry：
- *   pos = V[i][j-1]（entry j 的起始位置）
- *   若父链经 r 且在 A[col_p] 内 → 继续；否则 A[i] = pos。
- *   全部通过 → A[i] = j_max。
- */
 export function ascending_threshold(V: Vertical[][], P: [number, number][][], r: number, j_max: Vertical): Vertical[] {
     const A: Vertical[] = [];
     for (let i = 0; i < V.length; i++) {
@@ -224,18 +191,6 @@ export function ascending_threshold(V: Vertical[][], P: [number, number][][], r:
     return A;
 }
 
-/**
- * 两列之和：双指针消去法。
- *
- * 每次取两列当前项 (n^a, C) + (m^b, D)：
- *   1. 结果项 = ((m+n)^(min(a,b)), 后续)
- *   2. 若 a = b → 两项都消耗，递归计算 (C+D)
- *   3. 若 a < b → 消耗 a 项 (C + ((m+n)^b, D))
- *   4. 若 a > b → 消耗 b 项 (((m+n)^a, C) + D)
- *
- * 实现为双指针：ai, bi 分别指向 a, b 的当前项。
- * 每步取高度较小者，高度相等则两项同时消耗。
- */
 export function column_add(a: Column, b: Column): Column {
     const res: Column = [];
     let ai = 0,
@@ -260,12 +215,6 @@ export function column_add(a: Column, b: Column): Column {
     return res;
 }
 
-/**
- * 截断：在 j_max 处截断原列。
- *
- * 等同于 column_add(col, [[1,h] for h in v])，即把 j_max 看作全 1 向量，
- * 与 col 按 add 的消去规则配对；一侧耗尽即停止。
- */
 export function column_truncate(col: Column, j_max: Vertical): Column {
     const res: Column = [];
     let ci = 0,
@@ -286,10 +235,6 @@ export function column_mul(col: Column, w: number): Column {
     return col.map(([v, e]) => [v * w, e]);
 }
 
-/**
- * 单列复制：copy_column(col_i, offset, A_i, w) =
- *   column_add(col_i, column_mul(truncate(offset, A_i), w))
- */
 function copy_column(col_i: Column, offset: Column, A_i: Vertical, w: number): Column {
     return column_add(col_i, column_mul(column_truncate(offset, A_i), w));
 }
@@ -311,17 +256,26 @@ export function is_infinity(a: Expr): boolean {
     return a.length > 0 && a[0].length > 0 && a[0][0][0] === Infinity;
 }
 
-const ONE: Expr = [[]];
-const OMEGA: Expr = [[], [[1, ONE]]];
+function ONE(): Expr {
+    return [[]];
+}
 
-function sep_display(s: Expr, html: boolean): string | undefined {
+function OMEGA(): Expr {
+    return [[], [[1, ONE()]]];
+}
+
+function INFINITY(): Expr {
+    return [[[Infinity, []]]];
+}
+
+function height_display(s: Expr, html: boolean): string | undefined {
     if (s.length === 1) return undefined;
-    if (compare(s, OMEGA) === 0) return 'ω';
+    if (compare(s, OMEGA()) === 0) return 'ω';
     return display(s, html);
 }
 
 function entry_display([v, s]: Entry, html: boolean): string {
-    let sd = sep_display(s, html);
+    let sd = height_display(s, html);
     if (sd === undefined) return '' + v;
     if (html) return v + '<sup>' + sd + '</sup>';
     return v + '^' + sd;
@@ -337,7 +291,92 @@ export function display(m: Expr, html: boolean = false): string {
 }
 
 export function from_display(str: string): Expr {
-    throw new Error('TODO');
+    let i = 0;
+    const s = str;
+
+    function error(): never {
+        throw new Error(`Illegal input string: ${s}`);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    function parse_number(): number {
+        skip_spaces();
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_expr(): Expr {
+        const result: Expr = [];
+        skip_spaces();
+        while (i < s.length && s[i] === '(') {
+            result.push(parse_column());
+            skip_spaces();
+        }
+        return result;
+    }
+
+    function parse_column(): Column {
+        skip_spaces();
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+
+        const entries: Entry[] = [];
+        skip_spaces();
+        if (i < s.length && s[i] !== ')') {
+            entries.push(parse_entry());
+            skip_spaces();
+            while (i < s.length && s[i] === ',') {
+                i++;
+                skip_spaces();
+                if (i < s.length && s[i] === ')') break;
+                entries.push(parse_entry());
+                skip_spaces();
+            }
+        }
+
+        skip_spaces();
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+
+        return entries;
+    }
+
+    function parse_height(): Expr {
+        skip_spaces();
+        if (i < s.length && (s[i] === 'ω' || s[i] === 'w')) {
+            i++;
+            return OMEGA();
+        }
+        return parse_expr();
+    }
+
+    function parse_entry(): Entry {
+        const v = parse_number();
+        skip_spaces();
+        if (i < s.length && s[i] === '^') {
+            i++;
+            return [v, parse_height()];
+        }
+        return [v, ONE()];
+    }
+
+    skip_spaces();
+    if (i + 5 <= s.length && s.slice(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY();
+    }
+
+    const result = parse_expr();
+    skip_spaces();
+    if (i !== s.length) error();
+    return result;
 }
 
 function infinity_FS(index: number): Expr {
@@ -370,7 +409,6 @@ export const TBM: NotationDefinition<Expr> = {
     },
 
     init: (): Expr[] => {
-        const entry: Entry = [Infinity, []];
-        return [[[entry]]];
+        return [INFINITY(), []];
     },
 };
