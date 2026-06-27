@@ -30,6 +30,7 @@ const t = inject(I18N_KEY)!;
                     <li v-html="t('tips.q1')" />
                     <li v-html="t('tips.q2')" />
                     <li v-html="t('tips.q3')" />
+                    <li v-html="t('tips.q4')" />
                 </ol>
             </div>
         </div>
