@@ -183,14 +183,15 @@ function ascension_thresholds(
         const col = e[i];
         const iS = thresholds_stack.length;
 
-        if (iS < r) {
+        if (iS < r && i !== e.length - 1) {
             thresholds_stack.push(undefined);
             result[i] = [undefined, ascension_thresholds(col[1], [], undefined, b, [])];
         } else {
-            let Ai = 0;
+            let Ai: number | undefined = undefined;
             if (iS === r) {
                 Ai = b;
-            } else {
+            } else if (iS > r) {
+                Ai = 0;
                 while (P[i][0][Ai] >= r && thresholds_stack[P[i][0][Ai]]! > Ai) Ai++;
             }
             thresholds_stack.push(Ai);
