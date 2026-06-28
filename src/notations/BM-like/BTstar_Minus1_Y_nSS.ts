@@ -240,8 +240,8 @@ function ascension_thresholds(
     return result;
 }
 
-function ascend_vector(v: number[], A: number, V: number[], w: number, n: number, u: boolean): number[] {
-    return v.map((x, i) => x + (i < A && (!u || i !== n - 1) ? V[i] * w : 0));
+function ascend_vector(v: number[], A: number, V: number[], w: number): number[] {
+    return v.map((x, i) => x + (i < A ? V[i] * w : 0));
 }
 
 function ascend_replace(
@@ -251,8 +251,6 @@ function ascend_replace(
     A: ExprData<number | undefined>,
     V: number[],
     w: number,
-    n: number,
-    u: boolean,
 ): Expr {
     let result: Expr = [];
     for (let i = 0; i < e.length; i++) {
@@ -263,12 +261,12 @@ function ascend_replace(
             const Ai = A[i][0];
             const higher_right = col[1].length - 1;
 
-            const new_col_lower = ascend_vector(col[0], Ai ?? 0, V, w, n, u);
+            const new_col_lower = ascend_vector(col[0], Ai ?? 0, V, w);
             const new_tail_layer = i !== e.length - 1 || tail_layer === undefined ? undefined : tail_layer - 1;
             result[i] = [
                 new_col_lower,
                 col[1].map((x, ix) =>
-                    ascend_replace(x, tail, ix === higher_right ? new_tail_layer : undefined, A[i][1][ix], V, w, n, u),
+                    ascend_replace(x, tail, ix === higher_right ? new_tail_layer : undefined, A[i][1][ix], V, w),
                 ),
             ];
         }
@@ -297,7 +295,7 @@ function FS_special(e: Expr, tail_layer: number, index: number): Expr {
     ];
 }
 
-function FS(e: Expr, index: number, n: number, u: boolean): Expr {
+function FS(e: Expr, index: number, n: number): Expr {
     if (is_infinity(e)) return infinity_FS(index, n);
     if (e.length === 0) return e;
     if (!is_limit(e)) return e.slice(0, -1);
@@ -332,12 +330,12 @@ function FS(e: Expr, index: number, n: number, u: boolean): Expr {
 
     let result: Expr = [];
     for (let w = index; w > 0; w--) {
-        result = ascend_replace(copy_part, result, t_layer - r_layer, copy_part_A, V, w, n, u);
+        result = ascend_replace(copy_part, result, t_layer - r_layer, copy_part_A, V, w);
         if (b === n) {
-            result[0][1] = tail_top.map((x, ix) => ascend_replace(x, [], undefined, tail_top_A[ix], V, w - 1, n, u));
+            result[0][1] = tail_top.map((x, ix) => ascend_replace(x, [], undefined, tail_top_A[ix], V, w - 1));
         }
     }
-    result = ascend_replace(e, result, t_layer, A, V, 0, n, u);
+    result = ascend_replace(e, result, t_layer, A, V, 0);
     return result;
 }
 
@@ -431,10 +429,10 @@ function from_display(s: string, n: number): Expr {
     return result;
 }
 
-export function BT1_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
+export function BTstar_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
-        id: "bt'*--1y-" + (n + 1) + 'ss',
-        name: "BT'*(-1)Y-" + (n + 1) + 'SS',
+        id: 'bt*--1y-' + (n + 1) + 'ss',
+        name: 'BT*(-1)Y-' + (n + 1) + 'SS',
 
         display: {
             plain: (e) => display(e, false),
@@ -443,25 +441,7 @@ export function BT1_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
         },
         is_limit: (e) => is_limit(e),
         compare,
-        FS: (e, index) => FS(e, index, n, true),
-
-        init: () => [INFINITY(), []],
-    };
-}
-
-export function BT2_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
-    return {
-        id: 'bt*--1y-' + n + 'ss',
-        name: 'BT*(-1)Y-' + n + 'SS',
-
-        display: {
-            plain: (e) => display(e, false),
-            html: (e) => display(e, true),
-            from_display: (s) => from_display(s, n),
-        },
-        is_limit: (e) => is_limit(e),
-        compare,
-        FS: (e, index) => FS(e, index, n, false),
+        FS: (e, index) => FS(e, index, n),
 
         init: () => [INFINITY(), []],
     };
