@@ -507,6 +507,7 @@ interface DBMS_Entry {
     depth?: number;
 }
 
+type DBMSType = 'DBMS' | "DBMS'" | 'ADBMS';
 type DBMS_Mountain = DBMS_Entry[][];
 
 function draw_dbms_mountain(m: Mountain, Asheep: boolean): DBMS_Mountain {
@@ -526,9 +527,9 @@ function draw_dbms_mountain(m: Mountain, Asheep: boolean): DBMS_Mountain {
     return mountain;
 }
 
-function to_dbms_display(seq: Expr, Asheep: boolean): string {
+function to_dbms_display(seq: Expr, type: DBMSType): string {
     if ('' + seq === 'Infinity') return 'Limit';
-    let mountain = draw_dbms_mountain(draw_mountain(from_sequence(seq)), Asheep);
+    let mountain = draw_dbms_mountain(draw_mountain(from_sequence(seq)), type === 'ADBMS');
 
     let result = '';
 
@@ -536,9 +537,17 @@ function to_dbms_display(seq: Expr, Asheep: boolean): string {
         result += '(';
         for (let j = col.length - 3; j >= 0; j--) {
             let entry = col[j];
-            result += Asheep ? ','.repeat(entry.sep! + 1) + entry.depth : entry.depth + ','.repeat(entry.sep! + 1);
+            switch (type) {
+                case 'DBMS':
+                    result += entry.depth + ','.repeat(entry.sep! + 1);
+                    break;
+                case "DBMS'":
+                case 'ADBMS':
+                    result += ','.repeat(entry.sep! + 1) + entry.depth;
+                    break;
+            }
         }
-        if (!Asheep) result += '0';
+        if (type === 'DBMS') result += '0';
         result += ')';
     }
 
@@ -598,7 +607,7 @@ function compute_y_mountain_diagram(seq: Expr, current_equiv: string | undefined
                     entry.right_up !== undefined
                         ? '' + entry.right_up.depth + ','.repeat(entry.right_up.sep! + 1)
                         : '0';
-            } else if (current_equiv === 'ADBMS') {
+            } else if (current_equiv === 'ADBMS' || current_equiv === "DBMS'") {
                 entries[i][vj - 1] = entry.sep !== undefined ? ','.repeat(entry.sep + 1) + entry.depth : '*';
             } else {
                 entries[i][vj - 1] = '' + entry.value;
@@ -657,8 +666,9 @@ function create_magma_notation(type: string, magma: (seq: Expr, index: number) =
             from_display: sequence_from_display,
         },
         display_equiv: {
-            DBMS: (s) => to_dbms_display(s, false),
-            ADBMS: (s) => to_dbms_display(s, true),
+            DBMS: (s) => to_dbms_display(s, 'DBMS'),
+            "DBMS'": (s) => to_dbms_display(s, "DBMS'"),
+            ADBMS: (s) => to_dbms_display(s, 'ADBMS'),
         },
         is_limit,
         compare: seq_compare,
