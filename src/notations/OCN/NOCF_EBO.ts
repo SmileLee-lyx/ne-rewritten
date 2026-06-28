@@ -10,7 +10,7 @@ function is_infinity(a: Expr): boolean {
     return a[0] === Infinity;
 }
 
-function is_zero(a: Expr): boolean {
+function is_zero(a: Expr): a is [0] {
     return a[0] === 0;
 }
 
@@ -24,9 +24,9 @@ type DisplayType = 'plain' | 'html_psi';
 
 function display(e: Expr, type: DisplayType): string {
     if (is_infinity(e)) return 'Limit';
-    if (e[0] === 0) return '0';
+    if (is_zero(e)) return '0';
     let [, v, a] = e;
-    let v_display = v[0] === 0 ? undefined : display(v, type);
+    let v_display = is_zero(v) ? undefined : display(v, type);
     let a_display = display(a, type);
     switch (type) {
         case 'plain':
@@ -42,14 +42,14 @@ function compare(a: Expr, b: Expr): number {
     if (is_infinity(a) || is_infinity(b)) {
         return boolean_compare(is_infinity(a), is_infinity(b));
     }
-    if (a[0] === 0 || b[0] === 0) {
-        return boolean_compare(a[0] !== 0, b[0] !== 0);
+    if (is_zero(a) || is_zero(b)) {
+        return boolean_compare(!is_zero(a), !is_zero(b));
     }
     return lex_compare([a[1], a[2]], [b[1], b[2]], compare);
 }
 
 function cofinality(e: Expr): Expr | undefined {
-    if (e[0] === 0) return undefined;
+    if (is_zero(e)) return undefined;
     let [, v, a] = e;
     if (is_zero(a)) {
         if (is_zero(v)) return undefined;
@@ -76,14 +76,14 @@ function from_nat(n: number): Expr {
 }
 
 function to_nat(e: Expr): number {
-    if (e[0] === 0) return 0;
+    if (is_zero(e)) return 0;
     if (compare(e[1], ZERO()) !== 0) throw new Error('not a natural number');
     return 1 + to_nat(e[2]);
 }
 
 function FS(e: Expr, index: Expr): Expr {
     if (is_infinity(e)) return infinity_FS(to_nat(index));
-    if (e[0] === 0) return e;
+    if (is_zero(e)) return e;
 
     let [, v, a] = e;
     if (is_zero(a)) {

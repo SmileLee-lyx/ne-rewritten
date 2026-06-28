@@ -1,4 +1,11 @@
-import { type DiagramControl, lex_compare, type NotationDefinition, number_compare } from '@/utils.ts';
+import {
+    boolean_compare,
+    type DiagramControl,
+    lex_compare,
+    lex_compare_by,
+    type NotationDefinition,
+    number_compare,
+} from '@/utils.ts';
 import type { Diagram } from '@/core/diagram_types';
 import { Y_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
@@ -17,10 +24,10 @@ export function is_limit(a: Expr): boolean {
 
 /** 矩阵比较：先处理 Infinity，再按字典序逐列比较。 */
 export function compare(a: Expr, b: Expr): number {
-    if (is_infinity(a) && is_infinity(b)) return 0;
-    if (is_infinity(a)) return 1;
-    if (is_infinity(b)) return -1;
-    return lex_compare(a, b, (ca, cb) => lex_compare(ca, cb, number_compare));
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
+    return lex_compare(a, b, lex_compare_by(number_compare));
 }
 
 /** 矩阵显示为字符串。空列显示为 (0)。 */

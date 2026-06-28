@@ -21,6 +21,10 @@ export function lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): num
     return number_compare(a.length, b.length);
 }
 
+export function lex_compare_by<T>(cmp: (a: T, b: T) => number): (a: T[], b: T[]) => number {
+    return (a, b) => lex_compare(a, b, cmp);
+}
+
 export function anti_lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): number {
     if (a.length !== b.length) return number_compare(a.length, b.length);
     let len = a.length;
@@ -29,6 +33,10 @@ export function anti_lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number)
         if (result !== 0) return result;
     }
     return 0;
+}
+
+export function anti_lex_compare_by<T>(cmp: (a: T, b: T) => number): (a: T[], b: T[]) => number {
+    return (a, b) => anti_lex_compare(a, b, cmp);
 }
 
 export function tuple_lex_compare<T extends any[]>(

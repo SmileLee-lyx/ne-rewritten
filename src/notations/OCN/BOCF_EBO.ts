@@ -11,12 +11,12 @@ function is_infinity(a: Expr): boolean {
     return a[0] === Infinity;
 }
 
-function is_zero(a: Expr): boolean {
+function is_zero(a: Expr): a is [0] {
     return a[0] === 0;
 }
 
 function prim_list(e: Expr): PrimExpr[] {
-    return e[0] === 0 ? [] : [e[1], ...prim_list(e[2])];
+    return is_zero(e) ? [] : [e[1], ...prim_list(e[2])];
 }
 
 function from_prim_list(ps: PrimExpr[]) {
@@ -45,7 +45,7 @@ function display(e: Expr, type: DisplayType): string {
 
 function display_prim(p: PrimExpr, type: DisplayType): string {
     let [v, a] = p;
-    let v_display = v[0] === 0 ? undefined : display(v, type);
+    let v_display = is_zero(v) ? undefined : display(v, type);
     let a_display = display(a, type);
     switch (type) {
         case 'plain':
@@ -139,7 +139,7 @@ function prim_FS(p: PrimExpr, index: Expr): Expr {
 
 function FS(e: Expr, index: Expr): Expr {
     if (is_infinity(e)) return infinity_FS(to_nat(index));
-    if (e[0] === 0) return e;
+    if (is_zero(e)) return e;
     if (is_zero(e[2])) return prim_FS(e[1], index);
     return [1, e[1], FS(e[2], index)];
 }

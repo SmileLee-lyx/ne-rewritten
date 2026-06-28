@@ -1,4 +1,4 @@
-import { lex_compare, type NotationDefinition, number_compare } from '@/utils.ts';
+import { lex_compare, type NotationDefinition, number_compare, tuple_lex_compare } from '@/utils.ts';
 
 export type Entry = [number, Expr];
 export type Column = Entry[];
@@ -6,8 +6,7 @@ export type Expr = Column[];
 export type Vertical = Expr[];
 
 function entry_compare(e1: Entry, e2: Entry): number {
-    if (e1[0] !== e2[0]) return number_compare(e1[0], e2[0]);
-    return compare(e1[1], e2[1]);
+    return tuple_lex_compare(e1, e2, [number_compare, compare]);
 }
 
 function column_compare(c1: Column, c2: Column): number {

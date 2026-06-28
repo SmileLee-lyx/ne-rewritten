@@ -1,4 +1,11 @@
-import { index_of_last, lex_compare, type NotationDefinition, number_compare, tuple_lex_compare } from '@/utils.ts';
+import {
+    index_of_last,
+    lex_compare,
+    lex_compare_by,
+    type NotationDefinition,
+    number_compare,
+    tuple_lex_compare,
+} from '@/utils.ts';
 import { from_display } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
 
 export type ExprData<Data> = [Data, ExprData<Data>][];
@@ -31,7 +38,9 @@ function is_zero_column(c: Column): boolean {
 
 function is_one_column(c: Column): boolean {
     let n = c[0].length;
-    return n === 0 ? c[1].length === 1 : c[0][0] === 1 && c[0].slice(1).every((x) => x === 0) && c[1].length === 0;
+    return n === 0
+        ? c[1].length === 1 && is_zero_column(c[1][0])
+        : c[0][0] === 1 && c[0].slice(1).every((x) => x === 0) && c[1].length === 0;
 }
 
 function column_display(c: Column): string {
@@ -60,7 +69,7 @@ function is_limit(e: Expr): boolean {
 }
 
 function column_compare(a: Column, b: Column): number {
-    return tuple_lex_compare(a, b, [(x, y) => lex_compare(x, y, number_compare), compare]);
+    return tuple_lex_compare(a, b, [lex_compare_by(number_compare), compare]);
 }
 
 function compare(a: Expr, b: Expr): number {
