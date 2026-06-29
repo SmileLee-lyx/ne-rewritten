@@ -53,22 +53,35 @@ function is_zero_column(col: Column): boolean {
     return col.lower.every((x) => x === 0) && col.higher.length === 0;
 }
 
-function top_display(e: Expr, u: number, html: boolean): string {
+function top_display(e: Expr, u: number, html: boolean, use_sc: boolean): string {
     if (e.length === 0) return '' + u;
-    let d_e = display(e, html);
+    let d_e = display(e, html, use_sc);
     return html ? '' + u + '<sup>' + d_e + '</sup>' : '' + u + '^' + d_e;
 }
 
-function column_display(col: Column, html: boolean): string {
-    let result_list = [...col.lower.map((x) => '' + x), ...col.higher.map((x) => top_display(x, col.mark, html))];
-    while (result_list.length > 0 && result_list[result_list.length - 1] === '0') result_list.pop();
-    return '(' + result_list.join(',') + ')';
+function column_display(col: Column, html: boolean, use_sc: boolean): string {
+    if (col.higher.length > 0) {
+        let higher_display = col.higher.map((x) => top_display(x, col.mark, html, use_sc));
+
+        if (use_sc) {
+            return '(' + col.lower + ';' + higher_display + ')';
+        } else {
+            let j = col.lower.length;
+            if (col.higher[0].length > 0) {
+                j = index_of_last(col.lower, (x) => x !== col.mark) + 1;
+            }
+            return '(' + [...col.lower.slice(0, j), ...higher_display].join(',') + ')';
+        }
+    } else {
+        let j = index_of_last(col.lower, (x) => x > 0) + 1;
+        return '(' + col.lower.slice(0, j) + ')';
+    }
 }
 
-function display(e: Expr, html: boolean): string {
+function display(e: Expr, html: boolean, separate: boolean): string {
     if (is_infinity(e)) return 'Limit';
 
-    return e.map((c: Column) => column_display(c, html)).join('');
+    return e.map((c: Column) => column_display(c, html, separate)).join('');
 }
 
 function is_limit(e: Expr): boolean {
@@ -460,55 +473,62 @@ function from_display(s: string, n: number): Expr {
         return parseInt(s.substring(start, i), 10);
     }
 
-    function parse_higher(): Expr {
-        skip_spaces();
-        if (i < s.length && s[i] === '^') {
-            i++;
-            return parse_expr();
-        }
-        return [];
-    }
-
     function parse_column(): Column {
         skip_spaces();
         if (i >= s.length || s[i] !== '(') error();
         i++;
 
         const numbers: number[] = [];
-
-        skip_spaces();
-        while (i < s.length && s[i] !== ')' && s[i] >= '0' && s[i] <= '9' && numbers.length < n) {
-            numbers.push(parse_number());
-            skip_spaces();
-            if (i < s.length && s[i] === ',') i++;
-            skip_spaces();
-        }
-
-        let mark: number | undefined;
         const higher: Expr[] = [];
+        let mark: number | undefined;
+        let in_higher = false;
+        let expect_value = true;
 
         while (i < s.length && s[i] !== ')') {
-            if (numbers.length !== n) error();
             skip_spaces();
+            if (i >= s.length) break;
+
+            if (s[i] === ',' || s[i] === ';') {
+                if (expect_value) error();
+                if (s[i] === ';') {
+                    if (numbers.length !== n) error();
+                    in_higher = true;
+                }
+                i++;
+                expect_value = true;
+                continue;
+            }
+
+            if (!expect_value) error();
             const m = parse_number();
-            if (mark === undefined) {
-                mark = m;
-            } else if (m !== mark) {
-                error();
-            }
-            if (i < s.length && s[i] === '^') {
-                higher.push(parse_higher());
-            } else {
-                higher.push([]);
-            }
+
             skip_spaces();
-            if (i < s.length && s[i] === ',') i++;
+            if (i < s.length && s[i] === '^') {
+                in_higher = true;
+                if (mark === undefined) {
+                    mark = m;
+                } else if (m !== mark) {
+                    error();
+                }
+                i++;
+                higher.push(parse_expr());
+            } else if (in_higher || numbers.length >= n) {
+                if (mark === undefined) {
+                    mark = m;
+                } else if (m !== mark) {
+                    error();
+                }
+                higher.push([]);
+            } else {
+                numbers.push(m);
+            }
+            expect_value = false;
         }
 
         if (i >= s.length) error();
         i++;
 
-        while (numbers.length < n) numbers.push(0);
+        while (numbers.length < n) numbers.push(mark ?? 0);
 
         const final_mark = higher.length === 0 ? 0 : (mark ?? 0);
         if (higher.length > 0 && final_mark === 0) error();
@@ -543,12 +563,19 @@ function from_display(s: string, n: number): Expr {
 export function BTL_Minus1_Y_nSS(n: number): NotationDefinition<ExprCompact> {
     return {
         id: 'btl--1y-' + (n + 1) + 'ss',
-        name: 'BTL(-1)Y-' + (n + 1) + 'SS',
+        name: 'AT' + (n + 1) + 'SS',
 
         display: {
-            plain: (e) => display(decompactify(e), false),
-            html: (e) => display(decompactify(e), true),
+            plain: (e) => display(decompactify(e), false, true),
+            html: (e) => display(decompactify(e), true, true),
             from_display: (s) => compactify(from_display(s, n)),
+        },
+        display_equiv: {
+            combined: {
+                plain: (e) => display(decompactify(e), false, false),
+                html: (e) => display(decompactify(e), true, false),
+                from_display: (s) => compactify(from_display(s, n)),
+            },
         },
         is_limit: (e) => is_limit(decompactify(e)),
         compare: (a, b) => compare(decompactify(a), decompactify(b)),
