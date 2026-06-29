@@ -83,7 +83,7 @@ const messages: Record<Language, Record<string, string>> = {
             '<kbd>↑</kbd>/<kbd>↓</kbd> 箭头可以把光标在条目之间移动; <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> 可快速移动到最近的已输入分析的条目.',
         'tips.f5': '<kbd>Ctrl</kbd>+<kbd>R</kbd> 全局快捷键可以把光标切回上一次修改的条目.',
         'tips.faq': '常见问题',
-        'tips.q1': '对于支持反解析的记号, 在上方 "跳转到" 中输入表达式即可跳转. 当然, 非标准式跳转失败显然是正常现象.',
+        'tips.q1': '对于支持反解析的记号, 在上方 "跳转到" 中输入表达式即可跳转. 当然, 非标准式跳转失败显然是正常现象. 对于显示时带上下标的记号, 可以调整 "显示: html" 选项来展示该记号的纯文本格式.',
         'tips.q2': '对于能标记层级化的山脉记号, 大部分都实装了标记层级. 展开设置页, 然后切换 "等价表示" 的选项即可.',
         'tips.q3':
             '同一个功能也支持 BMS/0Y, ωY/DBMS 的对照. 可以关闭 "隐藏原表达式" 来同时显示两个记号. 也支持 UP0Y, LP0Y (虽然后者不建议尝试).',
@@ -169,7 +169,7 @@ const messages: Record<Language, Record<string, string>> = {
         'tips.f5': '<kbd>Ctrl</kbd>+<kbd>R</kbd> global shortcut refocuses the last modified entry.',
         'tips.faq': 'FAQ',
         'tips.q1':
-            'For notations with parsing support, type an expression in the "Navigate to" input above to jump directly. Non-standard expressions may fail to parse.',
+            'For notations with parsing support, type an expression in the "Navigate to" input above to jump directly. Non-standard expressions may fail to parse. For notations with superscript/subscript in display, toggle the "Display: html" option to see plain text format.',
         'tips.q2':
             'For mountain notations that support layered display, most have it implemented. Open settings and switch the "Equivalent notation" option.',
         'tips.q3':

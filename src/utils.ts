@@ -1,4 +1,5 @@
-/** 数字比较：相等 → 0，小于 → -1，大于 → 1。 */
+export type Comparator<T> = (a: T, b: T) => number;
+
 export function number_compare(a: number, b: number): number {
     return a === b ? 0 : a < b ? -1 : 1;
 }
@@ -12,7 +13,7 @@ export function compare_ignore<T>(a: T, b: T): number {
 }
 
 /** 字典序比较（通用）。 */
-export function lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): number {
+export function lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>): number {
     let len = Math.min(a.length, b.length);
     for (let i = 0; i < len; i++) {
         const result = cmp(a[i], b[i]);
@@ -21,11 +22,11 @@ export function lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): num
     return number_compare(a.length, b.length);
 }
 
-export function lex_compare_by<T>(cmp: (a: T, b: T) => number): (a: T[], b: T[]) => number {
+export function lex_compare_by<T>(cmp: Comparator<T>): Comparator<T[]> {
     return (a, b) => lex_compare(a, b, cmp);
 }
 
-export function anti_lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number): number {
+export function anti_lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>): number {
     if (a.length !== b.length) return number_compare(a.length, b.length);
     let len = a.length;
     for (let i = len - 1; i >= 0; i--) {
@@ -35,22 +36,42 @@ export function anti_lex_compare<T>(a: T[], b: T[], cmp: (a: T, b: T) => number)
     return 0;
 }
 
-export function anti_lex_compare_by<T>(cmp: (a: T, b: T) => number): (a: T[], b: T[]) => number {
+export function anti_lex_compare_by<T>(cmp: Comparator<T>): Comparator<T[]> {
     return (a, b) => anti_lex_compare(a, b, cmp);
 }
 
-export function tuple_lex_compare<T extends any[]>(
-    a: T,
-    b: T,
-    cmp: { [i in keyof T]: (a: T[i], b: T[i]) => number },
-): number;
+export function tuple_lex_compare<T extends any[]>(a: T, b: T, cmp: { [i in keyof T]: Comparator<T[i]> }): number;
 
-export function tuple_lex_compare(a: any[], b: any[], cmp: ((a: any, b: any) => number)[]): number {
+export function tuple_lex_compare(a: any[], b: any[], cmp: Comparator<any>[]): number {
     for (let i = 0; i < cmp.length; i++) {
         const result = cmp[i](a[i], b[i]);
         if (result !== 0) return result;
     }
     return 0;
+}
+
+export function tuple_lex_compare_by<T extends any[]>(cmp: { [i in keyof T]: Comparator<T[i]> }): Comparator<T> {
+    return (a, b) => tuple_lex_compare(a, b, cmp);
+}
+
+export function object_lex_compare<T extends object, K extends keyof T>(
+    a: T,
+    b: T,
+    cmp: { [i in K]: Comparator<T[i]> },
+    order: K[],
+): number {
+    for (let key of order) {
+        const result = cmp[key](a[key], b[key]);
+        if (result !== 0) return result;
+    }
+    return 0;
+}
+
+export function object_lex_compare_by<T extends object, K extends keyof T>(
+    cmp: { [i in K]: Comparator<T[i]> },
+    order: K[],
+): Comparator<T> {
+    return (a, b) => object_lex_compare(a, b, cmp, order);
 }
 
 import type { Diagram } from './core/diagram_types';
