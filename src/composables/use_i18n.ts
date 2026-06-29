@@ -71,6 +71,7 @@ const messages: Record<Language, Record<string, string>> = {
         'expand.error-parse': '解析错误: 表达式语法不正确',
         'expand.error-no-from-display': '记号 "{{name}}" 不支持从字符串解析',
         'expand.error-fs': '基本列计算失败',
+        'import.error': '遇到错误, 请查看控制台 (F12)。',
         'tips.intro':
             '本网站设计目标为使得 PC 用户在分析时基本实现纯键盘操作, 避免使用鼠标打断心流. 以下这些功能均为为这个目的而设计的. 如有更多建议, 可向作者提出.',
         'tips.features': '功能说明',
@@ -156,6 +157,7 @@ const messages: Record<Language, Record<string, string>> = {
         'expand.error-parse': 'Parse error: invalid expression syntax',
         'expand.error-no-from-display': 'The notation "{{name}}" does not support parsing from string',
         'expand.error-fs': 'FS computation failed',
+        'import.error': 'Errors occurred, please check the console (F12).',
         'tips.intro':
             'This site is designed for keyboard-first analysis on PC to avoid breaking flow with mouse. Features below serve this goal. Suggestions welcome.',
         'tips.features': 'Features',

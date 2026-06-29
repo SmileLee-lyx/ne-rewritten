@@ -192,6 +192,11 @@ async function on_file_selected(e: Event) {
     const buf = await file.arrayBuffer();
     const entries = await import_from_xlsx(buf, disp_spec.from_display);
     const matched = import_analysis(r, entries, n as any, settings.variant, settings.max_find_fs);
+
+    if ((entries as any).skipped?.length || matched.length !== entries.length) {
+        alert(t('import.error'));
+    }
+
     if (matched.length > 0) {
         const last = matched[matched.length - 1];
         const ed = (last.extraData ??= {}) as any;
@@ -218,8 +223,12 @@ function handle_find() {
         const matched = import_analysis(r, [{ expr, analysis: [] }], n as any, settings.variant, settings.max_find_fs);
         if (matched.length > 0) {
             focus_node_input(matched[0] as any);
+        } else {
+            alert(t('import.error'));
         }
-    } catch (_) {}
+    } catch {
+        alert(t('import.error'));
+    }
 }
 
 function on_find_input() {

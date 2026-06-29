@@ -3,6 +3,7 @@ import { find_prev, last_descendant } from '@/core/tree';
 import type { TreeNodeExtra } from '@/core/extra';
 import type { NotationDefinition } from '@/utils';
 import { expand_item } from '@/core/expander';
+import { resolve_display } from '@/utils';
 
 /** 单个导出条目。expr 保留原始类型，不做字符串化。 */
 export interface AnalysisEntry<T> {
@@ -65,11 +66,19 @@ export function import_analysis<T>(
             index++;
         } else if (cmp > 0) {
             if (node.fs_state && node.fs_state.index >= max_find_fs) {
+                console.log(
+                    'import: skipped (max_find_fs reached — possible non-standard expression):',
+                    resolve_display(notation.display).plain(entries[index].expr),
+                );
                 index++;
                 continue;
             }
             const created = expand_item(node, notation, variant);
             if (!created) {
+                console.log(
+                    'import: skipped (expand failed — expression order may be wrong):',
+                    resolve_display(notation.display).plain(entries[index].expr),
+                );
                 index++;
                 continue;
             }
@@ -77,6 +86,10 @@ export function import_analysis<T>(
         } else {
             const prev = find_prev(node, 0);
             if (!prev) {
+                console.log(
+                    'import: skipped (no matching node — contact author if notation implementation is correct):',
+                    resolve_display(notation.display).plain(entries[index].expr),
+                );
                 index++;
                 continue;
             }

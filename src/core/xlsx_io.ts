@@ -32,7 +32,16 @@ export async function import_from_xlsx<T>(
         const exprStr = values[1];
         if (exprStr === undefined || exprStr === null || exprStr === '') return;
 
-        const expr = from_display(exprStr);
+        let expr: T | undefined;
+        try {
+            expr = from_display(exprStr);
+        } catch (e) {
+            console.log('xlsx import: skipped row, from_display failed for "' + exprStr + '"', e);
+            if (!(entries as any).skipped) (entries as any).skipped = [];
+            (entries as any).skipped.push(exprStr);
+        }
+
+        if (expr === undefined) return;
 
         const analysis: string[] = [];
         for (let i = 2; i < values.length; i++) {
