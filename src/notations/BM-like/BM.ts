@@ -1,6 +1,7 @@
 import {
     boolean_compare,
     type DiagramControl,
+    index_of_last,
     lex_compare,
     lex_compare_by,
     type NotationDefinition,
@@ -27,12 +28,17 @@ export function compare(a: Expr, b: Expr): number {
     return lex_compare(a, b, lex_compare_by(number_compare));
 }
 
-export function display(a: Expr): string {
-    if (is_infinity(a)) return 'Limit';
-    return a.map((col) => '(' + (col.length > 0 ? col.map((e) => '' + e).join(',') : '0') + ')').join('');
+function column_display(col: number[]) {
+    let N = index_of_last(col, (x) => x > 0);
+    return N === -1 ? '(0)' : '(' + col.slice(0, N + 1) + ')';
 }
 
-export function from_display(s: string): Expr {
+export function display(a: Expr): string {
+    if (is_infinity(a)) return 'Limit';
+    return a.map(column_display).join('');
+}
+
+export function from_display(s: string, std: boolean = false): Expr {
     if (s === 'Limit') return [[Infinity]];
     s = s.trim();
     if (s === '') return [];
@@ -94,7 +100,7 @@ export function from_display(s: string): Expr {
 
     const [result, end] = parse_expression(0);
     if (end !== s.length) error();
-    return normalize(result);
+    return std ? standardize(result) : normalize(result);
 }
 
 export function matrix_is_limit(a: Expr): boolean {
@@ -107,6 +113,12 @@ function normalize(m: Expr): Expr {
         while (end > 0 && col[end - 1] === 0) end--;
         return col.slice(0, end);
     });
+}
+
+function standardize(m: Expr): Expr {
+    if (m.length === 0) return m;
+    const H = Math.max(...m.map((col) => col.length));
+    return m.map((col) => [...col, ...Array.from({ length: H - col.length }, () => 0)]);
 }
 
 function parents(m: Expr): number[][] {

@@ -1,4 +1,4 @@
-import type { NotationDefinition } from '@/utils.ts';
+import { index_of_last, NotationDefinition } from '@/utils.ts';
 import {
     convert_to_0Y,
     display,
@@ -8,6 +8,7 @@ import {
     from_display_0Y,
     from_display_simple,
 } from '@/notations/BM-like/BM.ts';
+import { sequence_FS_variants } from '@/notations/FS_util.ts';
 
 const isPseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';
 const cloneColumn = (col: number[]) => col.slice();
@@ -380,7 +381,9 @@ const upmsLimit = (expr: Expr): boolean => {
     return ctx.m.length > 0 && !lastColumnIsZero(ctx.m) && findBadRoot(ctx) !== null;
 };
 
-const FS_cache = new Map<string, Expr>();
+const infinityFS = (index: number): Expr => {
+    return [Array.from({ length: index + 1 }, () => 0), Array.from({ length: index + 1 }, () => 1)];
+};
 
 export const UPMS: NotationDefinition<Expr> = {
     id: 'upms',
@@ -399,15 +402,6 @@ export const UPMS: NotationDefinition<Expr> = {
     },
     is_limit: upmsLimit,
     compare: matrixCompare,
-    FS: (expr, index) => {
-        const n = Math.max(0, Math.floor(index));
-        if (isPseudoInfinity(expr)) return [Array(n + 1).fill(0), Array(n + 1).fill(1)];
-        const standardized = standardizeMatrix(expr);
-        const cacheKey = display(standardized) + '[' + n + ']';
-        if (FS_cache.has(cacheKey)) return cloneMatrix(FS_cache.get(cacheKey)!);
-        const result = expandUPMS(standardized, n);
-        FS_cache.set(cacheKey, cloneMatrix(result));
-        return result;
-    },
+    ...sequence_FS_variants(expandUPMS, isPseudoInfinity, infinityFS, upmsLimit, display),
     init: () => [[[Infinity]], []],
 };

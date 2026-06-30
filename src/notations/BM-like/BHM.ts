@@ -1,4 +1,11 @@
-import { compare, display, Expr, from_display, is_infinity, matrix_is_limit } from '@/notations/BM-like/BM.ts';
+import {
+    compare,
+    display,
+    Expr,
+    from_display as from_display_BM,
+    is_infinity,
+    matrix_is_limit,
+} from '@/notations/BM-like/BM.ts';
 import type { NotationDefinition } from '@/utils.ts';
 
 const data: Record<string, Expr[]> = {};
@@ -83,6 +90,10 @@ function expand(m: Expr, index: number): Expr {
     let res = expansion(roots[n - 1], index, LNZ, parent_cache, ascend_cache, roots);
     if (y_max > 0 && res.every((col) => col[y_max] === 0)) res = res.map((col) => col.slice(0, y_max));
     return res;
+}
+
+function from_display(str: string): Expr {
+    return from_display_BM(str, true);
 }
 
 export const BHM: NotationDefinition<Expr> = {
