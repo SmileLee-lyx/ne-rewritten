@@ -211,7 +211,7 @@ function on_focus(e: FocusEvent) {
     el.scrollLeft = pixel_pos - el.clientWidth / 2;
 
     const dc = props.notation.draw_diagram;
-    if (dc) {
+    if (dc && settings.show_diagram) {
         show_diagram(dc, props.node.expr, r.left, 60 + r.height, settings.equiv_active[props.notation.id] ?? undefined);
     } else {
         hide_diagram();

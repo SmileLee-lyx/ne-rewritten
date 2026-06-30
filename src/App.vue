@@ -239,7 +239,7 @@ function on_find_input() {
         return;
     }
     const dc = n.draw_diagram;
-    if (!dc) return;
+    if (!dc || !settings.show_diagram) return;
     const equiv_name = settings.equiv_active[n.id];
     const disp_spec =
         equiv_name && n.display_equiv?.[equiv_name]
@@ -361,7 +361,7 @@ onUnmounted(() => {
                     </span>
                 </div>
                 <div class="toolbar-row">
-                    <label>
+                    <label class="find-label">
                         {{ t('find-notation.label') }}
                         <input
                             ref="find_input"
@@ -407,6 +407,12 @@ onUnmounted(() => {
                         style="display: none"
                         @change="on_file_selected"
                     />
+                </div>
+                <div class="toolbar-row" v-if="notation?.draw_diagram">
+                    <label>
+                        <input type="checkbox" v-model="settings.show_diagram" />
+                        {{ t('diagram.show') }}
+                    </label>
                 </div>
                 <div v-if="!settings_collapsed && equiv_options.length > 0" class="toolbar-row">
                     <label>
@@ -601,6 +607,18 @@ onUnmounted(() => {
     flex-wrap: wrap;
 }
 
+.toolbar-row > span,
+.toolbar-row > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 24px;
+}
+
+.toolbar-row input[type='checkbox'] {
+    margin: 0;
+}
+
 .toolbar-sep {
     width: 1px;
     height: 1.2em;
@@ -619,6 +637,7 @@ onUnmounted(() => {
     background: #f8f8f8;
     cursor: pointer;
     font-size: 14px;
+    vertical-align: middle;
 
     min-width: 4ch;
 }
@@ -797,6 +816,7 @@ ul {
     line-height: 1.4;
     box-sizing: border-box;
     background: #fff;
+    vertical-align: middle;
 }
 
 .toolbar input[type='text']:focus,

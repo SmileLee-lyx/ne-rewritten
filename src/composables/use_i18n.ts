@@ -28,7 +28,7 @@ const messages: Record<Language, Record<string, string>> = {
         'display.label': '显示:',
         'display.html': 'html',
         'display.plain': '纯文本',
-        'tier.label': '层级:',
+        'tier.label': '展开层级:',
         'tier.0': '单次展开',
         'tier.1': '1 层展开',
         'tier.2': '2 层展开',
@@ -72,6 +72,7 @@ const messages: Record<Language, Record<string, string>> = {
         'expand.error-no-from-display': '记号 "{{name}}" 不支持从字符串解析',
         'expand.error-fs': '基本列计算失败',
         'import.error': '遇到错误, 请查看控制台 (F12)。',
+        'diagram.show': '显示图表',
         'tips.intro':
             '本网站设计目标为使得 PC 用户在分析时基本实现纯键盘操作, 避免使用鼠标打断心流. 以下这些功能均为为这个目的而设计的. 如有更多建议, 可向作者提出.',
         'tips.features': '功能说明',
@@ -114,7 +115,7 @@ const messages: Record<Language, Record<string, string>> = {
         'display.label': 'Display:',
         'display.html': 'html',
         'display.plain': 'plain',
-        'tier.label': 'Tier:',
+        'tier.label': 'Expansion Tier:',
         'tier.0': 'small expansion',
         'tier.1': 'single expansion',
         'tier.2': 'double expansion',
@@ -158,6 +159,7 @@ const messages: Record<Language, Record<string, string>> = {
         'expand.error-no-from-display': 'The notation "{{name}}" does not support parsing from string',
         'expand.error-fs': 'FS computation failed',
         'import.error': 'Errors occurred, please check the console (F12).',
+        'diagram.show': 'Show diagram',
         'tips.intro':
             'This site is designed for keyboard-first analysis on PC to avoid breaking flow with mouse. Features below serve this goal. Suggestions welcome.',
         'tips.features': 'Features',
