@@ -2,10 +2,11 @@ import { NotationDefinition } from '@/utils.ts';
 import {
     convert_to_0Y,
     display,
+    display_as_0Y,
     display_simple,
     Expr,
     from_display,
-    from_display_0Y,
+    from_display_as_0Y,
     from_display_simple,
 } from '@/notations/BM-like/BM.ts';
 import { sequence_FS_variants } from '@/notations/FS_util.ts';
@@ -391,8 +392,8 @@ export const UPMS: NotationDefinition<Expr> = {
     display: { plain: display, from_display },
     display_equiv: {
         UP0Y: {
-            plain: (m) => (isPseudoInfinity(m) ? '1,ω' : '' + convert_to_0Y(m)),
-            from_display: from_display_0Y,
+            plain: display_as_0Y,
+            from_display: from_display_as_0Y,
         },
         simple: {
             plain: display_simple,

@@ -1,5 +1,13 @@
 import type { NotationDefinition } from '@/utils';
-import { convert_to_0Y, display, from_display, from_display_0Y } from '@/notations/BM-like/BM.ts';
+import {
+    convert_to_0Y,
+    display,
+    display_as_0Y,
+    display_simple,
+    from_display,
+    from_display_as_0Y,
+    from_display_simple,
+} from '@/notations/BM-like/BM.ts';
 import { sequence_FS_variants0 } from '@/notations/FS_util.ts';
 
 export type Expr = number[][];
@@ -671,8 +679,12 @@ export const LPMS: NotationDefinition<Expr> = {
     display: { plain: display, from_display },
     display_equiv: {
         LP0Y: {
-            plain: (m) => (pseudoInfinity(m) ? '1,ω' : '' + convert_to_0Y(m)),
-            from_display: from_display_0Y,
+            plain: display_as_0Y,
+            from_display: from_display_as_0Y,
+        },
+        simple: {
+            plain: display_simple,
+            from_display: from_display_simple,
         },
     },
     is_limit: lpmsLimit,
@@ -690,8 +702,12 @@ export const LPTSS: NotationDefinition<Expr> = {
     display: { plain: display, from_display },
     display_equiv: {
         LP0Y: {
-            plain: (m) => (pseudoInfinity(m) ? '1,ω' : '' + convert_to_0Y(m)),
-            from_display: from_display_0Y,
+            plain: display_as_0Y,
+            from_display: from_display_as_0Y,
+        },
+        simple: {
+            plain: display_simple,
+            from_display: from_display_simple,
         },
     },
     is_limit: lpmsLimit,

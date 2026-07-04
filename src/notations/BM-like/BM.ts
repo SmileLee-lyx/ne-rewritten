@@ -226,7 +226,7 @@ export function convert_to_0Y(m: Expr): number[] {
     return compute_mountain(m).M.map((col) => col[0]);
 }
 
-export function display_0Y(m: Expr): string {
+export function display_as_0Y(m: Expr): string {
     return is_infinity(m) ? '1,ω' : convert_to_0Y(m).join(',');
 }
 
@@ -261,7 +261,7 @@ export function compute_0Y_mountain(seq: number[]): MountainData {
     return { M, P, m };
 }
 
-export function from_display_0Y(str: string): Expr {
+export function from_display_as_0Y(str: string): Expr {
     if (str === 'Limit' || str === '1,ω' || str === '1,w') return [[Infinity]];
     const result = str.split(',').map((s) => parseInt(s.trim(), 10));
     if (result.find(Number.isNaN) !== undefined) throw new Error('Illegal omega-Y sequence');
@@ -432,8 +432,8 @@ export const BM4: NotationDefinition<Expr> = {
     display: { plain: display, from_display },
     display_equiv: {
         '0Y': {
-            plain: display_0Y,
-            from_display: from_display_0Y,
+            plain: display_as_0Y,
+            from_display: from_display_as_0Y,
         },
         simple: {
             plain: display_simple,
@@ -455,7 +455,7 @@ export const seq_0Y: NotationDefinition<Expr> = {
     id: '0y',
     name: '0-Y sequence',
     simple_name: '0Y',
-    display: { plain: display_0Y, from_display: from_display_0Y },
+    display: { plain: display_as_0Y, from_display: from_display_as_0Y },
     display_equiv: {
         BMS: {
             plain: display,
