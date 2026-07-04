@@ -53,7 +53,6 @@ export function sequence_FS_variants0<T>(
     display: (seq: T[]) => string,
 ): Record<'FS' | 'FS_short', (seq: T[], index: number) => T[]> {
     const data: Record<string, T[][]> = {};
-    const data_alter: Record<string, T[][]> = {};
     const data_short: Record<string, boolean> = {};
 
     const core = {

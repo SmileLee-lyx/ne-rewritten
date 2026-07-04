@@ -68,7 +68,6 @@ const font_options = ['Comic Sans MS', 'Consolas', 'Microsoft YaHei UI'];
 const notations = computed(() => {
     const shown = settings.shown_notations;
     if (shown.length === 0) return list_notations();
-    const hidden = new Set(settings.hidden_notations);
     return shown.map((id) => get_notation(id)).filter(Boolean) as ReturnType<typeof list_notations>;
 });
 
@@ -176,11 +175,11 @@ async function handle_export() {
     if (!n || !r) return;
     const entries = export_analysis(r);
     const equiv_name = settings.equiv_active[n.id];
-    const disp =
+    const display_fn =
         equiv_name && n.display_equiv?.[equiv_name]
             ? resolve_display(n.display_equiv[equiv_name]).plain
             : resolve_display(n.display).plain;
-    const buf = await export_to_xlsx(entries, disp);
+    const buf = await export_to_xlsx(entries, display_fn);
     download_buffer(buf, `${n.id}_analysis.xlsx`);
 }
 
@@ -196,14 +195,14 @@ async function on_file_selected(e: Event) {
     const r = root.value;
     if (!n || !r) return;
     const equiv_name = settings.equiv_active[n.id];
-    const disp_spec =
+    const display_spec =
         equiv_name && n.display_equiv?.[equiv_name]
             ? resolve_display(n.display_equiv[equiv_name])
             : resolve_display(n.display);
-    if (!disp_spec.from_display) return;
+    if (!display_spec.from_display) return;
 
     const buf = await file.arrayBuffer();
-    const entries = await import_from_xlsx(buf, disp_spec.from_display);
+    const entries = await import_from_xlsx(buf, display_spec.from_display);
     const matched = import_analysis(r, entries, n as any, settings.variant, settings.max_find_fs);
 
     if ((entries as any).skipped?.length || matched.length !== entries.length) {
@@ -226,13 +225,13 @@ function handle_find() {
     const val = find_input.value?.value;
     if (!n || !r || !val) return;
     const equiv_name = settings.equiv_active[n.id];
-    const disp_spec =
+    const display_spec =
         equiv_name && n.display_equiv?.[equiv_name]
             ? resolve_display(n.display_equiv[equiv_name])
             : resolve_display(n.display);
-    if (!disp_spec.from_display) return;
+    if (!display_spec.from_display) return;
     try {
-        const expr = disp_spec.from_display(val);
+        const expr = display_spec.from_display(val);
         const matched = import_analysis(r, [{ expr, analysis: [] }], n as any, settings.variant, settings.max_find_fs);
         if (matched.length > 0) {
             focus_node_input(matched[0] as any);
@@ -254,13 +253,13 @@ function on_find_input() {
     const dc = n.draw_diagram;
     if (!dc || !settings.show_diagram) return;
     const equiv_name = settings.equiv_active[n.id];
-    const disp_spec =
+    const display_spec =
         equiv_name && n.display_equiv?.[equiv_name]
             ? resolve_display(n.display_equiv[equiv_name])
             : resolve_display(n.display);
-    if (!disp_spec.from_display) return;
+    if (!display_spec.from_display) return;
     try {
-        const expr = disp_spec.from_display(val);
+        const expr = display_spec.from_display(val);
         const el = find_input.value;
         if (!el) return;
         const r = el.getBoundingClientRect();

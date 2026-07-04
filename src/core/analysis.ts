@@ -2,8 +2,8 @@ import type { TreeNode } from '@/core/tree';
 import { find_prev, last_descendant } from '@/core/tree';
 import type { TreeNodeExtra } from '@/core/extra';
 import type { NotationDefinition } from '@/utils';
-import { expand_item } from '@/core/expander';
 import { resolve_display } from '@/utils';
+import { expand_item } from '@/core/expander';
 
 /** 单个导出条目。expr 保留原始类型，不做字符串化。 */
 export interface AnalysisEntry<T> {

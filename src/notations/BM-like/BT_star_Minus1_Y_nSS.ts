@@ -429,7 +429,7 @@ function from_display(s: string, n: number): Expr {
     return result;
 }
 
-export function BTstar_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
+export function BT_star_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
         id: 'bt*--1y-' + (n + 1) + 'ss',
         name: 'BT*(-1)Y-' + (n + 1) + 'SS',

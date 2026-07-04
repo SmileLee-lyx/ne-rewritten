@@ -93,9 +93,9 @@ onMounted(() => {
 
 function on_enter() {
     if (!props.notation.is_limit(props.node.expr)) return;
-    const nmax = 3;
+    const n_max = 3;
     tooltipFS.value = [];
-    for (let n = 0; n <= nmax; n++) {
+    for (let n = 0; n <= n_max; n++) {
         tooltipFS.value.push(`${n}: ${expr_display.value(props.notation.FS(props.node.expr, n))}`);
     }
     tooltip.value = true;

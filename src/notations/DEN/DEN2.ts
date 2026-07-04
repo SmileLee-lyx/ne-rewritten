@@ -82,18 +82,14 @@ function values(row: Row) {
     return row[1].map((x) => x[0]);
 }
 
-function is_nonzero(expr: Expr) {
-    return expr.length > 0;
-}
-
 function pleasant_until(rows: Row[], t: Row): number {
     let t_check = values(t).slice(t[0]);
     let t_max = t_check[0],
-        tmin = t_check[t_check.length - 1];
+        t_min = t_check[t_check.length - 1];
     for (let n = 0; n < rows.length; n++) {
         let s_check = rows[n][1];
         let i1 = index_of_first(s_check, ([x]) => x < t_max);
-        let i2 = index_of_last(s_check, ([x]) => x > tmin);
+        let i2 = index_of_last(s_check, ([x]) => x > t_min);
         if (~i1 && ~i2 && i1 <= i2 && s_check.slice(i1, i2 + 1).some(([x]) => !t_check.includes(x))) return n;
     }
     return -1;
@@ -146,27 +142,27 @@ function copy(raw: Expr, flag: number) {
     expr = expr.concat(raw.slice(begin - 1, end - 1).map((row) => ap(row, active)));
     for (let i = begin - 1; i < end - 1; ++i) {
         let row = raw[i];
-        let targetrow = expr[i + offset];
+        let target_row = expr[i + offset];
         for (let j = 0; j < row[1].length; ++j) {
             if (!row[1][j][1]) continue;
             let seq = seqFrom(raw, i, j);
-            let nomove = seq.findIndex((x) => x[0] < active[1][active[0]][0]);
-            if (nomove === -1) {
-                targetrow[1][j][1] = true;
+            let no_move = seq.findIndex((x) => x[0] < active[1][active[0]][0]);
+            if (no_move === -1) {
+                target_row[1][j][1] = true;
                 continue;
             }
-            if (seq[nomove][0] < active[1][active[1].length - 1][0]) {
-                targetrow[1][j][1] = true;
+            if (seq[no_move][0] < active[1][active[1].length - 1][0]) {
+                target_row[1][j][1] = true;
                 continue;
             }
-            let c = seq[nomove - 1][0] + offset,
-                rowc = expr[c - 1],
-                b = rowc[1][seq[nomove - 1][1]][0];
+            let c = seq[no_move - 1][0] + offset,
+                row_c = expr[c - 1],
+                b = row_c[1][seq[no_move - 1][1]][0];
             if (
-                targetrow[1][j + targetrow[0] - 1]?.[0] <= active[1][active[1].length - 1][0] &&
+                target_row[1][j + target_row[0] - 1]?.[0] <= active[1][active[1].length - 1][0] &&
                 active[1].find((x) => x[0] === b)?.[1]
             )
-                targetrow[1][j][1] = true;
+                target_row[1][j][1] = true;
         }
     }
     return expr;
@@ -233,7 +229,7 @@ function compFrom(raw: Expr, r: number, T: number[]): Expr {
     return expr;
 }
 
-function expand(raw: Expr, FSterm: number, shorter: boolean = true): Expr {
+function expand(raw: Expr, index: number, shorter: boolean = true): Expr {
     let active = raw[raw.length - 1];
     if (!active[1][active[0]]?.[0]) return cut(raw);
     let flag = pleasant_until(raw.slice(active[1][active[0]][0] - 1, -1), active);
@@ -241,7 +237,7 @@ function expand(raw: Expr, FSterm: number, shorter: boolean = true): Expr {
     if (~flag) {
         expr = copy(expr, flag);
     } else {
-        for (let n = 1; n <= FSterm; ++n) expr = copy(expr, flag);
+        for (let n = 1; n <= index; ++n) expr = copy(expr, flag);
         expr = shorter ? cut(expr) : copy(expr, 1);
     }
     let already: number[][] = [];

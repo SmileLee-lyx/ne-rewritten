@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import katex from 'katex';
-import { ast_to_latex, parse_latex, type LatexExpr } from '@/core/latex_ast';
+import { ast_to_latex, parse_latex } from '@/core/latex_ast';
 import 'katex/dist/katex.min.css';
 
 const html = ref('');
@@ -8,15 +8,12 @@ const visible = ref(false);
 const pos_x = ref(0);
 const pos_y = ref(0);
 
-let current_input = '';
-
 export function use_latex() {
     function show(input: string, x: number, y: number) {
         if (input === '') {
             visible.value = false;
             return;
         }
-        current_input = input;
         try {
             const expr = parse_latex(input);
             const latex = ast_to_latex(expr);

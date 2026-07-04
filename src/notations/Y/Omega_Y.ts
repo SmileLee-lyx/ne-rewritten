@@ -18,6 +18,10 @@ interface Entry {
 
 type Mountain = Entry[][];
 
+function INFINITY(): number[] {
+    return [Infinity];
+}
+
 function is_infinity(expr: number[]) {
     return '' + expr === 'Infinity';
 }
@@ -31,7 +35,7 @@ export function is_limit(seq: Expr): boolean {
 }
 
 export const sequence_from_display = (str: string): Expr => {
-    if (str === 'Limit') return [Infinity];
+    if (str === 'Limit') return INFINITY();
     const result = str.split(',').map((s) => parseInt(s.trim(), 10));
     if (result.find(Number.isNaN) !== undefined) throw new Error('Illegal omega-Y sequence');
     return result;
@@ -40,9 +44,6 @@ export const sequence_from_display = (str: string): Expr => {
 function seq_compare(a: Expr, b: Expr): number {
     return lex_compare(a, b, number_compare);
 }
-
-const data: Record<string, Expr[]> = {};
-const data_short: Record<string, [boolean]> = {};
 
 const from_sequence = (seq: Expr): Mountain => {
     const mountain: Mountain = [];
@@ -667,7 +668,7 @@ function create_magma_notation(type: string, magma: (seq: Expr, index: number) =
         },
         display_equiv: {
             DBMS: (s) => to_dbms_display(s, 'DBMS'),
-            "DBMS'": (s) => to_dbms_display(s, "DBMS'"),
+            DBMS_MN: (s) => to_dbms_display(s, "DBMS'"),
             ADBMS: (s) => to_dbms_display(s, 'ADBMS'),
         },
         is_limit,

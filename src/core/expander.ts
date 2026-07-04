@@ -63,15 +63,6 @@ function expand_tier_impl<T>(
         if (bound !== undefined && notation.compare(result_expr, bound) <= 0) return;
     }
 
-    let new_bound: T | undefined;
-    if (node.children.length > 0) {
-        new_bound = node.children[0].expr;
-    } else if (to_parent) {
-        new_bound = bound;
-    } else {
-        new_bound = get_bound(node);
-    }
-
     let new_node: TreeNode<T>;
     if (to_parent) {
         new_node = append_sibling(node, result_expr);

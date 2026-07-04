@@ -1,4 +1,4 @@
-import { index_of_last, NotationDefinition } from '@/utils.ts';
+import { NotationDefinition } from '@/utils.ts';
 import {
     convert_to_0Y,
     display,
@@ -12,7 +12,6 @@ import { sequence_FS_variants } from '@/notations/FS_util.ts';
 
 const isPseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';
 const cloneColumn = (col: number[]) => col.slice();
-const cloneMatrix = (matrix: Expr) => matrix.map(cloneColumn);
 
 const isNatural = (value: number): boolean => Number.isInteger(value) && value >= 0 && Number.isFinite(value);
 

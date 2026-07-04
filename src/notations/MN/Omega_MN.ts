@@ -10,9 +10,6 @@ import {
 import { MN_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 
-const data = new Map<string, Expr>();
-const data_shorter = new Map<string, Expr>();
-
 type Sep = number;
 type Vertical = Sep[];
 type Entry = [number, Sep];
@@ -238,14 +235,14 @@ function mountain_verticals(m: Expr): Vertical[][] {
     return m.map(column_verticals);
 }
 
-function get_references(m: Expr, rtops: Vertical[]): number[] {
+function get_references(m: Expr, r_tops: Vertical[]): number[] {
     const verticals = column_verticals(m[m.length - 1]);
     verticals.unshift([]);
     const ref: number[] = [];
     let i = 0,
         j = 0;
-    while (i < verticals.length && j < rtops.length) {
-        if (vertical_compare(verticals[i], rtops[j]) < 0) {
+    while (i < verticals.length && j < r_tops.length) {
+        if (vertical_compare(verticals[i], r_tops[j]) < 0) {
             ref[j] = i;
             i++;
         } else {

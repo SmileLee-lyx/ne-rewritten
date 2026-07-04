@@ -8,7 +8,7 @@ export function boolean_compare(a: boolean, b: boolean): number {
     return (a ? 1 : 0) - (b ? 1 : 0);
 }
 
-export function compare_ignore<T>(a: T, b: T): number {
+export function compare_ignore<T>(_a: T, _b: T): number {
     return 0;
 }
 
@@ -134,7 +134,8 @@ export interface NotationDefinition<T> {
     draw_diagram?: DiagramControl<T, any>;
     init: () => T[];
 
-    debug?: any;
+    /** Debug helpers — not consumed by the app but accessible at runtime. */
+    debug?: Record<string, any>;
 }
 
 export type DiagramAction = {

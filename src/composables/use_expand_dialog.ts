@@ -28,12 +28,12 @@ function run_core() {
     }
 
     const equiv_name = notation_equiv.value;
-    const disp_spec =
+    const display_spec =
         equiv_name && n.display_equiv?.[equiv_name]
             ? resolve_display(n.display_equiv[equiv_name])
             : resolve_display(n.display);
 
-    if (!disp_spec.from_display) {
+    if (!display_spec.from_display) {
         preview_status.value = 'error-no-from-display';
         preview.value = n.name;
         return;
@@ -41,7 +41,7 @@ function run_core() {
 
     let expr: any;
     try {
-        expr = disp_spec.from_display(input_text.value);
+        expr = display_spec.from_display(input_text.value);
     } catch {
         preview_status.value = 'error-parse';
         preview.value = null;
@@ -68,12 +68,12 @@ function run_core() {
         return;
     }
 
-    const result_disp =
+    const result_display_data =
         equiv_name && n.display_equiv?.[equiv_name]
             ? resolve_display(n.display_equiv[equiv_name])
             : resolve_display(n.display);
     try {
-        preview.value = result_disp.plain(result);
+        preview.value = result_display_data.plain(result);
         preview_status.value = 'ok';
     } catch {
         preview_status.value = 'error-fs';

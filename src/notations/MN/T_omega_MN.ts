@@ -7,7 +7,7 @@ type Column = Entry[];
 type Entry = [number, Sep];
 
 const data = new Map<string, Expr>();
-const datashort = new Map<string, Expr>();
+const data_short = new Map<string, Expr>();
 
 function is_infinity(m: Column[]) {
     return '' + m === 'Infinity';
@@ -273,9 +273,9 @@ function find_index_below_row(verticals: Vertical[], y: Vertical): number {
     return i1;
 }
 
-function parent(A: Expr, verticalss: Vertical[][], [i, j]: [number, number]): [number, number] {
+function parent(A: Expr, V: Vertical[][], [i, j]: [number, number]): [number, number] {
     const target_column = A[i][j][0] - 1;
-    const target_i = find_index_below_row(verticalss[target_column], verticalss[i][j]);
+    const target_i = find_index_below_row(V[target_column], V[i][j]);
     return [target_column, target_i];
 }
 
@@ -285,14 +285,14 @@ function column_verticals(column: Column): Vertical[] {
     return v.slice(1);
 }
 
-function get_references(A: Expr, rtops: Vertical[]): number[] {
+function get_references(A: Expr, r_tops: Vertical[]): number[] {
     const verticals = column_verticals(A[A.length - 1]);
     verticals.unshift([]);
     const ref: number[] = [];
     let i = 0,
         j = 0;
-    while (i < verticals.length && j < rtops.length) {
-        if (vertical_compare(verticals[i], rtops[j]) < 0) {
+    while (i < verticals.length && j < r_tops.length) {
+        if (vertical_compare(verticals[i], r_tops[j]) < 0) {
             ref[j] = i;
             ++i;
         } else {
@@ -314,7 +314,7 @@ function threshold(A: Expr, shorter: boolean, low: Vertical, high: Vertical): nu
 function expand(A0: Expr, index: number, shorter: boolean = false): Expr {
     const data_key = mountain_display(A0, true);
     if (shorter) {
-        const v = datashort.get(data_key + '"' + index);
+        const v = data_short.get(data_key + '"' + index);
         if (v) return v;
     } else {
         const v = data.get(data_key + '"' + index);
@@ -403,7 +403,7 @@ function expand(A0: Expr, index: number, shorter: boolean = false): Expr {
         }
     }
     if (shorter) A.pop();
-    if (shorter) datashort.set(data_key + '"' + index, A);
+    if (shorter) data_short.set(data_key + '"' + index, A);
     else data.set(data_key + '"' + index, A);
     return A;
 }

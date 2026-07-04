@@ -52,5 +52,5 @@ export const Minus1_Y: NotationDefinition<Expr> = {
     compare,
     is_limit,
     FS,
-    init: () => [[Infinity], [1], []],
+    init: () => [INFINITY(), [1], []],
 };

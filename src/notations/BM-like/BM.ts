@@ -164,8 +164,7 @@ function expand(m: Expr, index: number): Expr {
 
     const rightmost = m.length - 1;
     const col_last = m[rightmost];
-    const height = col_last.length - 1;
-    let topmost = height;
+    let topmost = col_last.length - 1;
     for (; topmost >= 0; --topmost) {
         if (col_last[topmost] > 0) break;
     }

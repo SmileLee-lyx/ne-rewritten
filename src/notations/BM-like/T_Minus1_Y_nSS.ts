@@ -87,7 +87,7 @@ function ascension_vector(e: Expr, r: number, b: number): number[] {
     return Array.from({ length: b }, (_, i) => e[e.length - 1][0][i] - e[r][0][i]);
 }
 
-function ascension_thresholds(P: Parents, r: number, b: number, n: number): number[] {
+function ascension_thresholds(P: Parents, r: number, b: number): number[] {
     let result: number[] = [];
     result[r] = b;
     for (let i = r + 1; i < P.length; i++) {
@@ -103,7 +103,7 @@ function ascension_thresholds(P: Parents, r: number, b: number, n: number): numb
     return result;
 }
 
-function ascend(ei: Column, delta: number[], b: number, w: number, n: number): Column {
+function ascend(ei: Column, delta: number[], b: number, w: number): Column {
     let result: Column = [deepcopy(ei[0]), ei[1]]; // shallow copy ei[1]. aligned with T(-1)Y-nSS.
 
     for (let i = 0; i < b; i++) result[0][i] += delta[i] * w;
@@ -126,12 +126,12 @@ function FS(e: Expr, index: number, n: number): Expr {
     let width = right - r;
 
     let V = ascension_vector(e, r, b);
-    let A = ascension_thresholds(P, r, b, n);
+    let A = ascension_thresholds(P, r, b);
     let result: Expr = e.slice(0, -1).map((c) => [deepcopy(c[0]), c[1]]);
 
     for (let w = 1; w <= index; w++) {
         for (let i = r; i < right; i++) {
-            result.push(ascend(e[i], V, A[i], w, n));
+            result.push(ascend(e[i], V, A[i], w));
         }
         if (b === n) result[r + w * width][1] = e[right][1].slice(0, -1);
     }

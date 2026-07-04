@@ -152,8 +152,8 @@ const FS_Y = (() => {
             pw.push(p);
         }
         const r: string[] = [];
-        for (var i = 0; i < diagonal.length; i++) {
-            var p = i;
+        for (let i = 0; i < diagonal.length; i++) {
+            let p = i;
             while (true) {
                 p = diagonalTree[p];
                 if (p < 0 || diagonal[p] < diagonal[i]) break;
@@ -197,7 +197,7 @@ const FS_Y = (() => {
             let badRootHeight;
             const diagonal = calcMountain(calcDiagonal(mountain));
             let newDiagonal: Mountain;
-            const yamakazi = diagonal[0][diagonal[0].length - 1].value == 1; //Yamakazi-Funka dualilty
+            const yamakazi = diagonal[0][diagonal[0].length - 1].value == 1; //Yamakazi-Funka duality
             if (yamakazi) {
                 newDiagonal = deepcopy(diagonal);
                 newDiagonal[0].pop();
@@ -492,9 +492,9 @@ const FS_Y = (() => {
     }
 
     //Naruyoko's code ends here
-    return (seq: Expr, FSterm: number) => {
-        if ('' + seq === 'Infinity') return [1, 1 + FSterm];
-        return (expand('' + seq, FSterm, true) as string).split(',').map((e) => +e);
+    return (seq: Expr, index: number) => {
+        if ('' + seq === 'Infinity') return [1, 1 + index];
+        return (expand('' + seq, index, true) as string).split(',').map((e) => +e);
     };
 })();
 

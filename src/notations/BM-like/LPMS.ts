@@ -1,12 +1,11 @@
 import type { NotationDefinition } from '@/utils';
 import { convert_to_0Y, display, from_display, from_display_0Y } from '@/notations/BM-like/BM.ts';
-import { sequence_FS_variants, sequence_FS_variants0 } from '@/notations/FS_util.ts';
+import { sequence_FS_variants0 } from '@/notations/FS_util.ts';
 
 export type Expr = number[][];
 
 const pseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';
 const cloneCol = (col: number[]): number[] => col.slice();
-const cloneMatrix = (m: Expr): Expr => m.map(cloneCol);
 const isNat = (x: number): boolean => Number.isInteger(x) && x >= 0 && Number.isFinite(x);
 
 const maxRows = (matrix: Expr): number => {
@@ -32,18 +31,6 @@ const constCol = (a: number, rows: number): number[] => {
     const col = Array(rows).fill(0);
     if (rows > 0) col[0] = a;
     return col;
-};
-
-const colValue = (
-    matrix: Expr,
-    colIndex: number,
-    rowIndex: number,
-    rows: number = maxRows(matrix),
-    missing: number = 0,
-): number => {
-    if (colIndex < 0 || colIndex >= matrix.length) return missing;
-    const col = matrix[colIndex];
-    return rowIndex < col.length ? col[rowIndex] : 0;
 };
 
 const colCompare = (
@@ -147,10 +134,10 @@ const makeCtx = (matrix: Expr, rows: number = maxRows(matrix)): Ctx => {
         const ancestors = getAAncestors(col, b - 1).list;
         let best = -1;
         for (let i = 0; i < ancestors.length; i++) {
-            const cand = ancestors[i];
-            if (cand >= col) continue;
-            if (m[cand][row] < value) {
-                best = cand;
+            const candidate = ancestors[i];
+            if (candidate >= col) continue;
+            if (m[candidate][row] < value) {
+                best = candidate;
                 break;
             }
         }
@@ -381,31 +368,6 @@ const upmsPrepare = (matrix: Expr, rows: number = maxRows(matrix)): Prep | null 
     return { ctx, root, t, alpha, G, B, B1, B2, delta, getVR, buildXY };
 };
 
-const upmsFS = (matrix: Expr, n: number, rows: number = maxRows(matrix)): Expr => {
-    const m = standardize(matrix, rows);
-    if (m.length === 0) return [];
-    if (lastAllZero(m)) return m.slice(0, -1).map(cloneCol);
-    const prep = upmsPrepare(m, rows);
-    if (!prep) return [];
-    const result: Expr = [...prep.G.map(cloneCol), ...prep.B.map(cloneCol)];
-    for (let h = 1; h <= n; h++) {
-        const Bh =
-            h === 1
-                ? prep.B1
-                : h === 2
-                  ? prep.B2
-                  : prep.B.map((col: number[], local: number) => {
-                        const original = prep.root + local;
-                        return col.map(
-                            (v: number, r: number) =>
-                                v + h * prep.delta[r] * (r < prep.t - 1 && prep.getVR(original, r) === 1 ? 1 : 0),
-                        );
-                    });
-        for (const col of Bh) result.push(col.slice());
-    }
-    return standardize(result, rows);
-};
-
 const upmsSingle = (matrix: Expr, l: number = Infinity, rows: number = maxRows(matrix)): Expr => {
     const m = standardize(matrix, rows);
     if (m.length === 0 || lastAllZero(m)) return m.slice(0, -1).map(cloneCol);
@@ -604,8 +566,7 @@ const lpmsSingle = (matrix: Expr): Expr => {
         let kp = k === 1 ? 2 : k;
         const xy = prep.buildXY(t, kp);
         const eqXY = matricesEqual(xy.X, xy.Y, rows);
-        const rawD = eqXY ? xy.X.length + 1 : firstDifferentColumn(xy.X, xy.Y, rows);
-        let d = rawD;
+        let d = eqXY ? xy.X.length + 1 : firstDifferentColumn(xy.X, xy.Y, rows);
         if (!eqXY) {
             if (xy.uMissing && t + d - 1 >= alpha) {
                 d = xy.X.length + 1;
@@ -671,8 +632,8 @@ const lpmsSingle = (matrix: Expr): Expr => {
         const a = prep.B2.length ? prep.B2[0][0] : Mp.length ? Mp[Mp.length - 1][0] : 0;
         Mp.push(constCol(a + 1, rows));
     } else {
-        const blen = ctx.cols - r - 1;
-        if (l === blen) {
+        const bLen = ctx.cols - r - 1;
+        if (l === bLen) {
             const source = Mp[ctx.cols - 1] || Mp[Mp.length - 1] || [0];
             Mp.push(constCol(source[0] + 1, rows));
         }
