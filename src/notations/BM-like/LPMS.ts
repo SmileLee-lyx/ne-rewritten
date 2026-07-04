@@ -604,13 +604,13 @@ const lpmsSingle = (matrix: Expr): Expr => {
         let kp = k === 1 ? 2 : k;
         const xy = prep.buildXY(t, kp);
         const eqXY = matricesEqual(xy.X, xy.Y, rows);
-        let d = eqXY ? xy.X.length + 1 : firstDifferentColumn(xy.X, xy.Y, rows);
+        const rawD = eqXY ? xy.X.length + 1 : firstDifferentColumn(xy.X, xy.Y, rows);
+        let d = rawD;
         if (!eqXY) {
             if (xy.uMissing && t + d - 1 >= alpha) {
                 d = xy.X.length + 1;
             } else {
-                const adjusted = findAdjustedD(ctx, t, d);
-                d = xy.uMissing && adjusted === d ? xy.X.length + 1 : adjusted;
+                d = findAdjustedD(ctx, t, d);
             }
         }
 
