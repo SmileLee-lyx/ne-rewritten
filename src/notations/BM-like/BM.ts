@@ -268,22 +268,23 @@ export function from_display_as_0Y(str: string): Expr {
     return compute_0Y_mountain(result).m;
 }
 
-export function display_simple(m: Expr): string {
-    if (is_infinity(m)) return 'Limit';
-    return m
-        .map((col) => {
-            if (col.length === 0) return '0';
-            return col
-                .map((e) => {
-                    let s = '' + e;
-                    return s.length >= 2 ? '(' + s + ')' : s;
-                })
-                .join('');
-        })
-        .join(' ');
+function entry_display_simple(e: number): string {
+    let str = '' + e;
+    return str.length > 1 ? '(' + str + ')' : str;
 }
 
-export function from_display_simple(s: string): Expr {
+function column_display_simple(col: number[]): string {
+    if (col.length === 0) return '0';
+    let N = index_of_last(col, (x) => x > 0) + 1;
+    return col.slice(0, N).map(entry_display_simple).join('');
+}
+
+export function display_simple(m: Expr): string {
+    if (is_infinity(m)) return 'Limit';
+    return m.map(column_display_simple).join(' ');
+}
+
+export function from_display_simple(s: string, std: boolean = false): Expr {
     if (s === 'Limit') return [[Infinity]];
 
     let i = 0;
@@ -353,7 +354,7 @@ export function from_display_simple(s: string): Expr {
     const result = parse_expr();
     skip_spaces();
     if (i !== s.length) error();
-    return result;
+    return std ? standardize(result) : normalize(result);
 }
 
 export interface DiagramData {
