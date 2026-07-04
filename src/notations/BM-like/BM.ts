@@ -29,8 +29,9 @@ export function compare(a: Expr, b: Expr): number {
 }
 
 function column_display(col: number[]) {
-    let N = index_of_last(col, (x) => x > 0);
-    return N === -1 ? '(0)' : '(' + col.slice(0, N + 1) + ')';
+    let N = index_of_last(col, (x) => x > 0) + 1;
+    if (N === 0) return '(0)';
+    return '(' + col.slice(0, N) + ')';
 }
 
 export function display(a: Expr): string {
@@ -274,8 +275,8 @@ function entry_display_simple(e: number): string {
 }
 
 function column_display_simple(col: number[]): string {
-    if (col.length === 0) return '0';
     let N = index_of_last(col, (x) => x > 0) + 1;
+    if (N === 0) return '0';
     return col.slice(0, N).map(entry_display_simple).join('');
 }
 
