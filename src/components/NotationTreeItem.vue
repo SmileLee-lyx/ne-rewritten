@@ -3,7 +3,6 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { TreeNode } from '@/core/tree';
 import { find_next, find_prev } from '@/core/tree';
 import type { TreeNodeExtra } from '@/core/extra';
-import { type NotationDefinition, resolve_display } from '@/utils';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { expand_item } from '@/core/expander';
@@ -11,6 +10,7 @@ import { focus_node, focus_node_input, set_last_focus } from '@/composables/use_
 import { use_diagram } from '@/composables/use_diagram.ts';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
+import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
 
 const props = defineProps<{
     node: TreeNode<T>;

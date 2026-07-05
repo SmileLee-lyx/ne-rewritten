@@ -8,7 +8,7 @@ import NotationTree from '@/components/NotationTree.vue';
 import { focus_node, focus_node_input, get_last_focus } from '@/composables/use_focus_tracker.ts';
 import { export_analysis, import_analysis } from '@/core/analysis';
 import { download_buffer, export_to_xlsx, import_from_xlsx } from '@/core/xlsx_io';
-import { resolve_display } from '@/utils';
+
 import { use_diagram } from '@/composables/use_diagram.ts';
 import DiagramViewer from '@/components/DiagramViewer.vue';
 import HotkeyDialog from '@/components/HotkeyDialog.vue';
@@ -19,6 +19,7 @@ import ExpandDialog from '@/components/ExpandDialog.vue';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
 import LaTeXViewer from '@/components/LaTeXViewer.vue';
+import { resolve_display } from '@/notation-definition.ts';
 
 const settings = inject(SETTINGS_KEY)!;
 const t = (key: string, params?: Record<string, string>) => create_t(settings.language)(key, params);
