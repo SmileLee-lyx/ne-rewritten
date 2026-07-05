@@ -161,6 +161,27 @@ export function index_of_last<T>(array: T[], predicate: (_: T) => boolean): numb
     return -1;
 }
 
+export function bind1<T1, T_rest extends any[], R>(
+    fn: (t1: T1, ...t_rest: T_rest) => R,
+    t1: T1,
+): (...t_rest: T_rest) => R {
+    return (...t_rest) => fn(t1, ...t_rest);
+}
+
+export function bind2<T1, T2, T_rest extends any[], R>(
+    fn: (t1: T1, t2: T2, ...t_rest: T_rest) => R,
+    t2: T2,
+): (t1: T1, ...t_rest: T_rest) => R {
+    return (t1, ...t_rest) => fn(t1, t2, ...t_rest);
+}
+
+export function bind3<T1, T2, T3, T_rest extends any[], R>(
+    fn: (t1: T1, t2: T2, t3: T3, ...t_rest: T_rest) => R,
+    t3: T3,
+): (t1: T1, t2: T2, ...t_rest: T_rest) => R {
+    return (t1, t2, ...t_rest) => fn(t1, t2, t3, ...t_rest);
+}
+
 /** 以 display 为键的集合，实现值语义去重。 */
 export class DisplaySet<T> {
     private _map: Map<string, T>;

@@ -1,4 +1,6 @@
 import {
+    bind2,
+    bind3,
     deepcopy,
     index_of_last,
     lex_compare,
@@ -25,7 +27,7 @@ function ONE_COLUMN(n: number): Column {
     return n === 0 ? [[], [EMPTY_COLUMN(n)]] : [[1, ...Array.from({ length: n - 1 }, () => 0)], []];
 }
 
-function is_infinity(e: Expr): boolean {
+function is_infinity(e: Expr | Expr_BOCF): boolean {
     return '' + e === 'Infinity';
 }
 
@@ -260,15 +262,77 @@ export function from_display(s: string, n: number): Expr {
     return result;
 }
 
+type Expr_BOCF = [0, Expr_BOCF[]] | [1, Expr_BOCF, Expr_BOCF];
+
+function INFINITY_BOCF(): Expr_BOCF {
+    return [Infinity] as any;
+}
+
+function bocf_from_2ss(e: Expr): Expr_BOCF {
+    if (is_infinity(e)) return INFINITY_BOCF();
+
+    let i = 0;
+
+    function impl(base: number): Expr_BOCF {
+        let result: Expr_BOCF[] = [];
+
+        while (i < e.length) {
+            let [[x], y] = e[i];
+            if (x <= base) break;
+            i++;
+            let inner = impl(x);
+            result.push([1, bocf_from_2ss(y), inner]);
+        }
+
+        if (result.length === 1) return result[0];
+        return [0, result];
+    }
+
+    return impl(-1);
+}
+
+function display_bocf(e: Expr_BOCF, html: boolean): string {
+    if (is_infinity(e)) return 'Limit';
+
+    function impl(a: Expr_BOCF): string {
+        if (a[0] === 0) {
+            if (a[1].length === 0) return '0';
+            return a[1].map(impl).join('+');
+        }
+        let str_index = impl(a[1]);
+        let str_inner = impl(a[2]);
+        if (str_inner === '0') {
+            if (str_index === '0') return '1';
+            if (str_index === '1') return 'Ω';
+            return html ? 'Ω<sub>' + str_index + '</sub>' : 'Ω(' + str_index + ')';
+        }
+        return html ? 'ψ<sub>' + str_index + '</sub>(' + str_inner + ')' : 'ψ(' + str_index + ',' + str_inner + ')';
+    }
+
+    return impl(e);
+}
+
 export function T_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
+    let display_equiv: NotationDefinition<Expr>['display_equiv'] = {};
+    if (n === 1) {
+        display_equiv = {
+            BOCF: {
+                plain: (e) => display_bocf(bocf_from_2ss(e), false),
+                html: (e) => display_bocf(bocf_from_2ss(e), true),
+            },
+        };
+    }
+
     return {
         id: 't--1y-' + (n + 1) + 'ss',
         name: 'T(-1)Y-' + (n + 1) + 'SS',
 
         display: { plain: display, from_display: (s) => from_display(s, n) },
-        is_limit: (e) => is_limit(e, n),
+        display_equiv,
+
+        is_limit: bind2(is_limit, n),
         compare,
-        FS: (e, index) => FS(e, index, n),
+        FS: bind3(FS, n),
 
         init: () => [INFINITY(), [EMPTY_COLUMN(n)], []],
     };
