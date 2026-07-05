@@ -1,4 +1,5 @@
 export type Variant = 'FS' | 'FS_alter' | 'FS_short';
+export type DisplayMode = 'plain' | 'html' | 'latex';
 
 export interface ExpandSettings {
     FS_index: number;
@@ -14,7 +15,7 @@ export interface Settings {
     input_width: number;
     show_input: boolean;
     font_family: string;
-    display_html_mode: boolean;
+    display_mode: DisplayMode;
     notation_name_mode: 'full' | 'simple';
     use_delete_to_clear: boolean;
     show_diagram: boolean;
@@ -35,7 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
     input_width: 180,
     show_input: true,
     font_family: 'Comic Sans MS',
-    display_html_mode: true,
+    display_mode: 'html',
     notation_name_mode: 'simple',
     use_delete_to_clear: true,
     show_diagram: true,

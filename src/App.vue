@@ -115,6 +115,13 @@ function toggle_latex() {
     if (settings.show_latex) settings.show_diagram = false;
 }
 
+const DISPLAY_MODES = ['plain', 'html', 'latex'] as const;
+
+function toggle_display_mode() {
+    const idx = DISPLAY_MODES.indexOf(settings.display_mode);
+    settings.display_mode = DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length];
+}
+
 const ANALYSIS_STORAGE_PREFIX = 'ne-analysis-';
 let auto_save_timer: ReturnType<typeof setInterval> | null = null;
 let save_indicator_timer: ReturnType<typeof setInterval> | null = null;
@@ -472,11 +479,8 @@ onUnmounted(() => {
                 <div v-if="!settings_collapsed" class="toolbar-row">
                     <span style="margin-right: 8px">
                         {{ t('display.label') }}
-                        <button
-                            class="toggle-btn"
-                            @mousedown="settings.display_html_mode = !settings.display_html_mode"
-                        >
-                            {{ settings.display_html_mode ? t('display.html') : t('display.plain') }}
+                        <button class="toggle-btn" @mousedown="toggle_display_mode">
+                            {{ t('display.' + settings.display_mode) }}
                         </button>
                     </span>
                     <span>
@@ -550,13 +554,13 @@ onUnmounted(() => {
             <DiagramViewer :diagram="diagram" />
         </div>
         <div
-            v-if="latex_state.visible.value && latex_state.html.value"
+            v-if="latex_state.visible.value && latex_state.latex.value"
             class="diagram-floating"
             :style="{ left: latex_state.pos_x.value + 'px', top: latex_state.pos_y.value + 'px' }"
             @mousedown.stop
         >
             <button class="diagram-close" @mousedown.stop="latex_state.hide()">✕</button>
-            <LaTeXViewer :html="latex_state.html.value" />
+            <LaTeXViewer :latex="latex_state.latex.value" />
         </div>
         <div v-if="save_indicator" class="save-indicator">
             {{ t('autosave.last-save', { time: save_indicator }) }}

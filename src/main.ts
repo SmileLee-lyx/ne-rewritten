@@ -128,6 +128,13 @@ function load_settings(): Partial<Settings> {
         if (!raw) return {};
         const parsed = JSON.parse(raw);
         if (typeof parsed !== 'object' || parsed === null) return {};
+
+        // 迁移: v1 display_html_mode(boolean) → v2 display_mode(string)
+        if ('display_html_mode' in parsed && !('display_mode' in parsed)) {
+            parsed.display_mode = parsed.display_html_mode ? 'html' : 'plain';
+            delete parsed.display_html_mode;
+        }
+
         return parsed;
     } catch {
         return {};

@@ -10,6 +10,7 @@ import { focus_node, focus_node_input, set_last_focus } from '@/composables/use_
 import { use_diagram } from '@/composables/use_diagram.ts';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
+import RenderLatex from '@/components/RenderLatex.vue';
 import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
 
 const props = defineProps<{
@@ -41,18 +42,22 @@ const settings = inject(SETTINGS_KEY)!;
 const t = inject(I18N_KEY)!;
 const node_path = props.node.path ?? '' + props.node.index;
 const equiv_name = computed(() => settings.equiv_active[props.notation.id] ?? '');
-const equiv_display = computed(() => {
+const resolved_equiv = computed(() => {
     if (!equiv_name.value) return null;
     const spec = props.notation.display_equiv?.[equiv_name.value];
     if (!spec) return null;
-    const d = resolve_display(spec);
-    return settings.display_html_mode ? d.html : d.plain;
+    return resolve_display(spec);
+});
+const resolved_original = computed(() => resolve_display(props.notation.display));
+
+const expr_display = computed(() => {
+    const d = resolved_equiv.value ?? resolved_original.value;
+    return settings.display_mode === 'html' ? d.html : settings.display_mode === 'latex' ? d.latex : d.plain;
 });
 const expr_display_original = computed(() => {
-    const d = resolve_display(props.notation.display);
-    return settings.display_html_mode ? d.html : d.plain;
+    const d = resolved_original.value;
+    return settings.display_mode === 'html' ? d.html : settings.display_mode === 'latex' ? d.latex : d.plain;
 });
-const expr_display = computed(() => equiv_display.value ?? expr_display_original.value);
 
 watch(analysis0, () => {
     if (focused.value && settings.show_latex) {
@@ -293,15 +298,21 @@ function on_blur() {
                     @blur="on_blur"
                 />
             </span>
-            <span v-if="equiv_name" class="expr-display equiv" v-html="expr_display(node.expr)"></span>
+            <span v-if="equiv_name" class="expr-display equiv">
+                <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display(node.expr)" />
+                <span v-else v-html="expr_display(node.expr)" />
+            </span>
             <span
                 v-if="!equiv_name || !(settings.equiv_hide_original[props.notation.id] ?? true)"
                 class="expr-display"
                 :class="{ shifted: !!equiv_name }"
-                v-html="expr_display_original(node.expr)"
-            ></span>
+            >
+                <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display_original(node.expr)" />
+                <span v-else v-html="expr_display_original(node.expr)" />
+            </span>
             <div v-if="tooltip" class="tooltip" @mousedown.stop>
-                <span v-html="expr_display(node.expr)" />{{ t('notation-tree.fundamental-sequence') }}
+                <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display(node.expr)" />
+                <span v-else v-html="expr_display(node.expr)" />{{ t('notation-tree.fundamental-sequence') }}
                 <div v-for="term in tooltipFS" :key="term" v-html="term" />
             </div>
         </div>
