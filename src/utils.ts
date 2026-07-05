@@ -8,10 +8,6 @@ export function boolean_compare(a: boolean, b: boolean): number {
     return (a ? 1 : 0) - (b ? 1 : 0);
 }
 
-export function compare_ignore<T>(_a: T, _b: T): number {
-    return 0;
-}
-
 /** 字典序比较（通用）。 */
 export function lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>): number {
     let len = Math.min(a.length, b.length);
@@ -40,17 +36,23 @@ export function anti_lex_compare_by<T>(cmp: Comparator<T>): Comparator<T[]> {
     return (a, b) => anti_lex_compare(a, b, cmp);
 }
 
-export function tuple_lex_compare<T extends any[]>(a: T, b: T, cmp: { [i in keyof T]: Comparator<T[i]> }): number;
+export function tuple_lex_compare<T extends any[]>(
+    a: T,
+    b: T,
+    cmp: { [i in keyof T]: Comparator<T[i]> | undefined },
+): number;
 
-export function tuple_lex_compare(a: any[], b: any[], cmp: Comparator<any>[]): number {
+export function tuple_lex_compare(a: any[], b: any[], cmp: (Comparator<any> | undefined)[]): number {
     for (let i = 0; i < cmp.length; i++) {
-        const result = cmp[i](a[i], b[i]);
+        const result = cmp[i]?.(a[i], b[i]) ?? 0;
         if (result !== 0) return result;
     }
     return 0;
 }
 
-export function tuple_lex_compare_by<T extends any[]>(cmp: { [i in keyof T]: Comparator<T[i]> }): Comparator<T> {
+export function tuple_lex_compare_by<T extends any[]>(cmp: {
+    [i in keyof T]: Comparator<T[i]> | undefined;
+}): Comparator<T> {
     return (a, b) => tuple_lex_compare(a, b, cmp);
 }
 
@@ -73,8 +75,6 @@ export function object_lex_compare_by<T extends object, K extends keyof T>(
 ): Comparator<T> {
     return (a, b) => object_lex_compare(a, b, cmp, order);
 }
-
-import type { Diagram } from './core/diagram_types';
 
 /** 深度克隆（支持数组和普通对象）。 */
 export function deepcopy<T>(obj: T): T {

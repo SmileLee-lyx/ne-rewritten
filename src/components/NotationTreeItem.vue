@@ -313,7 +313,10 @@ function on_blur() {
             <div v-if="tooltip" class="tooltip" @mousedown.stop>
                 <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display(node.expr)" />
                 <span v-else v-html="expr_display(node.expr)" />{{ t('notation-tree.fundamental-sequence') }}
-                <div v-for="term in tooltipFS" :key="term" v-html="term" />
+                <div v-for="term in tooltipFS" :key="term">
+                    <RenderLatex v-if="settings.display_mode === 'latex'" :latex="term" />
+                    <span v-else v-html="term" />
+                </div>
             </div>
         </div>
         <ul v-if="node.children.length > 0 && !ed.hide_child" class="nowrap tree-children">

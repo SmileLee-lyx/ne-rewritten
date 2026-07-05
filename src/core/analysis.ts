@@ -2,7 +2,7 @@ import type { TreeNode } from '@/core/tree';
 import { find_prev, last_descendant } from '@/core/tree';
 import type { TreeNodeExtra } from '@/core/extra';
 import { expand_item } from '@/core/expander';
-import { resolve_display, NotationDefinition } from '@/notation-definition.ts';
+import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
 
 /** 单个导出条目。expr 保留原始类型，不做字符串化。 */
 export interface AnalysisEntry<T> {

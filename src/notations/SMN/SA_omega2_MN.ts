@@ -1,7 +1,6 @@
 import {
     anti_lex_compare,
     boolean_compare,
-    compare_ignore,
     deepcopy,
     lex_compare,
     number_compare,
@@ -102,7 +101,7 @@ function vertical_compare(v1: Vertical, v2: Vertical): number {
 }
 
 function entry_compare(e1: Entry, e2: Entry): number {
-    return tuple_lex_compare(e1, e2, [number_compare, sep_compare, compare_ignore]);
+    return tuple_lex_compare(e1, e2, [number_compare, sep_compare, undefined]);
 }
 
 function column_compare(c1: Column, c2: Column): number {

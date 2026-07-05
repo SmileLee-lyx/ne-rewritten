@@ -75,7 +75,7 @@ export function build_categories(): NotationCategory[] {
         {
             id: 'ocn',
             name: 'OCN',
-            notation_ids: ['lmn', 'lon', 'bocf-ebo', 'nocf-ebo'],
+            notation_ids: ['lmn', 'lon', 'bocf-ebo', 'nocf-ebo', 'mocf-ebo', 'inacc-ocf'],
         },
         {
             id: 'mn',

@@ -47,6 +47,8 @@ import { T_Minus1_Y_nSS } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
 import { BT_Minus1_Y_nSS } from '@/notations/BM-like/BT_Minus1_Y_nSS.ts';
 import { BT_star_Minus1_Y_nSS } from '@/notations/BM-like/BT_star_Minus1_Y_nSS.ts';
 import { BTL_Minus1_Y_nSS } from '@/notations/BM-like/BTL_Minus1_Y_nSS.ts';
+import { MOCF_EBO } from '@/notations/OCN/MOCF_EBO.ts';
+import { Inacc_OCF } from '@/notations/OCN/Inacc_OCF.ts';
 
 register_notation(omega);
 register_notation(BM4);
@@ -113,7 +115,9 @@ register_notation(aSAN2);
 register_notation(aSAN3);
 register_notation(aSAN_tilde3plus);
 register_notation(BOCF_EBO);
+register_notation(MOCF_EBO);
 register_notation(NOCF_EBO);
+register_notation(Inacc_OCF);
 
 window.notations ??= {};
 for (let notation of list_notations()) {

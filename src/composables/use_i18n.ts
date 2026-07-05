@@ -74,7 +74,7 @@ const messages: Record<Language, Record<string, string>> = {
         'expand.error-fs': '基本列计算失败',
         'import.error': '遇到错误, 请查看控制台 (F12)。',
         'diagram.show': '显示图表',
-        'latex.show': '显示 LaTeX',
+        'latex.show': '显示分析 LaTeX',
         'tips.intro':
             '本网站设计目标为使得 PC 用户在分析时基本实现纯键盘操作, 避免使用鼠标打断心流. 以下这些功能均为为这个目的而设计的. 如有更多建议, 可向作者提出.',
         'tips.features': '功能说明',

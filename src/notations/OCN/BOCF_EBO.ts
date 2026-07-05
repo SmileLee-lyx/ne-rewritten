@@ -34,10 +34,11 @@ function infinity_FS(index: number): Expr {
     return [1, [[0], result], [0]];
 }
 
-type DisplayType = 'plain' | 'html_psi';
+type DisplayType = 'plain' | 'html_psi' | 'latex';
 
 function display(e: Expr, type: DisplayType): string {
-    if (is_infinity(e)) return 'Limit';
+    let latex = type === 'latex';
+    if (is_infinity(e)) return latex ? '\\text{Limit}' : 'Limit';
     if (is_zero(e)) return '0';
     return prim_list(e)
         .map((p) => display_prim(p, type))
@@ -48,6 +49,7 @@ function display_prim(p: PrimExpr, type: DisplayType): string {
     let [v, a] = p;
     let v_display = is_zero(v) ? undefined : display(v, type);
     let a_display = display(a, type);
+    let psi = type === 'latex' ? '\\psi ' : 'ψ';
     switch (type) {
         case 'plain':
             return v_display === undefined ? 'ψ(' + a_display + ')' : 'ψ_{' + v_display + '}(' + a_display + ')';
@@ -55,6 +57,10 @@ function display_prim(p: PrimExpr, type: DisplayType): string {
             return v_display === undefined
                 ? 'ψ(' + a_display + ')'
                 : 'ψ<sub>' + v_display + '</sub>(' + a_display + ')';
+        case 'latex':
+            return v_display === undefined
+                ? psi + '(' + a_display + ')'
+                : psi + '_{' + v_display + '}(' + a_display + ')';
     }
 }
 
@@ -154,6 +160,7 @@ export const BOCF_EBO: NotationDefinition<Expr> = {
     display: {
         plain: (e) => display(e, 'plain'),
         html: (e) => display(e, 'html_psi'),
+        latex: (e) => display(e, 'latex'),
     },
     init: () => [INFINITY(), ZERO()],
 };
