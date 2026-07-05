@@ -378,6 +378,8 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
     is_limit: mountain_is_limit,
     compare: mountain_compare,
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
+    credit_text_id: 'credit.hypcos_mn',
+
     init: () => [[[[Infinity] as unknown as Entry]], []],
 };
 
@@ -392,5 +394,6 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     is_limit: mountain_is_limit,
     compare: mountain_compare,
     ...sequence_FS_variants(expand_weak, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
+    credit_text_id: 'credit.hypcos_mn',
     init: () => [[[[Infinity] as unknown as Entry]], []],
 };

@@ -118,5 +118,6 @@ export const TON_DRPC: NotationDefinition<any> = {
             return (dataterm[n] = dataterm.gen.next(n).value);
         };
     })(),
+    credit_text_id: 'credit.ton',
     init: () => [Infinity, -1],
 };

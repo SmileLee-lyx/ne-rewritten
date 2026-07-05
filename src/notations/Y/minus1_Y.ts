@@ -53,5 +53,7 @@ export const Minus1_Y: NotationDefinition<Expr> = {
     compare,
     is_limit,
     FS,
+    credit_text_id: 'credit.community_y',
+
     init: () => [INFINITY(), [1], []],
 };

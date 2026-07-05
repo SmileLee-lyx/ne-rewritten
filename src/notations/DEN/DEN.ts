@@ -272,5 +272,7 @@ export const DEN: NotationDefinition<Expr> = {
         if (m.length <= 1) return [[]];
         return expand(m, FSterm, true);
     },
+    credit_text_id: 'credit.den',
+
     init: () => [[[Infinity]], [[]]],
 };

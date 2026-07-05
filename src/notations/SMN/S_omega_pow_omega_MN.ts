@@ -487,6 +487,8 @@ export const S_omega_pow_omega_MN: NotationDefinition<Mountain> = {
     ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     is_limit,
     compare,
+    credit_text_id: 'credit.n_mn',
+
     init: () => [Limit_expr(), []],
 
     debug: { extend, expand, subtract_1, copy_column, stretch_data_list, column_verticals, magma_indices },

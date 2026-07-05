@@ -542,6 +542,7 @@ onUnmounted(() => {
 
         <div v-if="root && notation" class="preview-container">
             <NotationTree :root="root" :notation="notation as any" :tier="settings.tier" />
+            <div v-if="notation.credit_text_id" class="credit-line">{{ t(notation.credit_text_id) }}</div>
         </div>
         <div v-else>{{ t('notation-tree.empty') }}</div>
         <div
@@ -721,6 +722,13 @@ onUnmounted(() => {
 
 .preview-container {
     margin: 20px 0;
+}
+
+.credit-line {
+    text-align: center;
+    margin-top: 1.5em;
+    color: #888;
+    font-size: 13px;
 }
 
 .shown-item {

@@ -326,6 +326,8 @@ export function T_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
         compare,
         FS: bind3(FS, n),
 
+        credit_text_id: 'credit.community_y',
+
         init: () => [INFINITY(), [EMPTY_COLUMN(n)], []],
     };
 }

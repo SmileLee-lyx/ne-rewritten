@@ -126,5 +126,7 @@ export const NOCF_EBO: NotationDefinition<Expr> = {
         html: (e) => display(e, 'html_psi'),
         latex: (e) => display(e, 'latex'),
     },
+    credit_text_id: 'credit.nocf',
+
     init: () => [INFINITY(), ZERO()],
 };

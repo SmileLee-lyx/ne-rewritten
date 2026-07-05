@@ -342,6 +342,8 @@ export const Inacc_OCF: NotationDefinition<Expr> = {
         html: bind2(display, 'html_psi'),
         latex: bind2(display, 'latex'),
     },
+    credit_text_id: 'credit.bocf',
+
     init: () => [INFINITY(), zero()],
 
     debug: { cofinality },

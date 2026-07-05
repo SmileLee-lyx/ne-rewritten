@@ -675,6 +675,8 @@ function create_magma_notation(type: string, magma: (seq: Expr, index: number) =
         compare: seq_compare,
         draw_diagram: y_diagram_control,
         ...Y_FS_variants(magma, is_infinity, (index) => [1, index + 1], is_limit, sequence_display),
+        credit_text_id: 'credit.yukito',
+
         init: () => [[Infinity], [1], []],
     };
 }

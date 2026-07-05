@@ -514,5 +514,7 @@ export const Y_seq: NotationDefinition<Expr> = {
         else if (data[key][index] !== undefined) return data[key][index];
         return (data[key][index] = FS_Y(m, index));
     },
+    credit_text_id: 'credit.yukito',
+
     init: () => [[Infinity], [1], []],
 };

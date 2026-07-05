@@ -267,5 +267,7 @@ export const MOCF_EBO: NotationDefinition<Expr> = {
         html: bind2(display, 'html_psi'),
         latex: bind2(display, 'latex'),
     },
+    credit_text_id: 'credit.mocf',
+
     init: () => [INFINITY(), ZERO()],
 };

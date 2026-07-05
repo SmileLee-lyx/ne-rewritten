@@ -289,6 +289,8 @@ export function BT_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
         compare,
         FS: (e, index) => FS(e, index, n),
 
+        credit_text_id: 'credit.community_y',
+
         init: () => [INFINITY(), []],
     };
 }

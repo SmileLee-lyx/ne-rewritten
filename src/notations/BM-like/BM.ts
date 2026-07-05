@@ -441,6 +441,7 @@ export const BM4: NotationDefinition<Expr> = {
 
     ...Y_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
 
+    credit_text_id: 'credit.bashicu',
     init: () => [[[Infinity]], []],
 
     debug: { compute_0Y_mountain },
@@ -463,5 +464,6 @@ export const seq_0Y: NotationDefinition<Expr> = {
 
     ...Y_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
 
+    credit_text_id: 'credit.yukito',
     init: () => [[[Infinity]], []],
 };

@@ -505,5 +505,7 @@ export const omega_MN: NotationDefinition<Expr> = {
     compare: mountain_compare,
     draw_diagram: draw_diagram_control,
     ...MN_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, to_data_key),
+    credit_text_id: 'credit.hypcos_mn',
+
     init: () => [[[[Infinity] as any]], [[]], []],
 };

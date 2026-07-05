@@ -119,5 +119,6 @@ export const aSAN_tilde3plus: NotationDefinition<any> = {
         else if (data[key][FSterm] !== undefined) return data[key][FSterm];
         return (data[key][FSterm] = aSAN_FS(A, FSterm));
     },
+    credit_text_id: 'credit.asan',
     init: () => [[1, Infinity], 1],
 };

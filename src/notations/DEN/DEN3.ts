@@ -268,5 +268,7 @@ export const DEN3: NotationDefinition<any> = {
         if (!m.length) return [];
         return expand(m, FSterm, true);
     },
+    credit_text_id: 'credit.den23',
+
     init: () => [[Infinity], []],
 };

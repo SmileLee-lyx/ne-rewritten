@@ -162,5 +162,7 @@ export const BOCF_EBO: NotationDefinition<Expr> = {
         html: (e) => display(e, 'html_psi'),
         latex: (e) => display(e, 'latex'),
     },
+    credit_text_id: 'credit.bocf',
+
     init: () => [INFINITY(), ZERO()],
 };

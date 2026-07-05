@@ -112,5 +112,7 @@ export const BHM: NotationDefinition<Expr> = {
         else if (data[key][index] !== undefined) return data[key][index];
         return (data[key][index] = expand(m, index));
     },
+    credit_text_id: 'credit.bashicu',
+
     init: () => [[[Infinity]], []],
 };

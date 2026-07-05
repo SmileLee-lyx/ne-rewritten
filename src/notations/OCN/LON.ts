@@ -166,5 +166,7 @@ export const LON: NotationDefinition<Expr> = {
         else if (data[key][index] !== undefined) return data[key][index];
         return (data[key][index] = LON_FS(x, index));
     },
+    credit_text_id: 'credit.alpha0',
+
     init: () => [[true, Infinity] as unknown as Expr, [true, 0, 0], 0],
 };

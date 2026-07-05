@@ -408,6 +408,8 @@ export const TBM: NotationDefinition<Expr> = {
         return expand(m, index);
     },
 
+    credit_text_id: 'credit.tbm',
+
     init: (): Expr[] => {
         return [INFINITY(), []];
     },

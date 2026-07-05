@@ -576,6 +576,8 @@ export function BTL_Minus1_Y_nSS(n: number): NotationDefinition<ExprCompact> {
         compare: (a, b) => compare(decompactify(a), decompactify(b)),
         FS: (e, index) => compactify(FS(decompactify(e), index, n)),
 
+        credit_text_id: 'credit.asheep',
+
         init: () => [INFINITY_compact(), []],
     };
 }

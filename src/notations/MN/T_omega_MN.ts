@@ -552,5 +552,7 @@ export const T_omega_MN: NotationDefinition<Expr> = {
             return expand(m, index, true);
         return expand(m, index - 1, true);
     },
+    credit_text_id: 'credit.hypcos_mn',
+
     init: () => [INFINITY(), []],
 };

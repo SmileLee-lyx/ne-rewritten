@@ -402,5 +402,7 @@ export const UPMS: NotationDefinition<Expr> = {
     is_limit: upmsLimit,
     compare: matrixCompare,
     ...sequence_FS_variants(expandUPMS, isPseudoInfinity, infinityFS, upmsLimit, display),
+    credit_text_id: 'credit.alpha0',
+
     init: () => [[[Infinity]], []],
 };

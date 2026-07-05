@@ -574,6 +574,8 @@ export function n_MN(n: number): NotationDefinition<Mountain> {
         ...MN_FS_variants(expand, is_infinity, NT_infinity_FS(n), is_limit, to_data_key),
         is_limit,
         compare,
+        credit_text_id: 'credit.n_mn',
+
         init: () => [INFINITY(), []],
     };
 }

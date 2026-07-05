@@ -365,5 +365,7 @@ export const DEN2: NotationDefinition<Expr> = {
     compare,
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     draw_diagram: draw_diagram_control,
+    credit_text_id: 'credit.den23',
+
     init: () => [[Infinity] as any, []],
 };
