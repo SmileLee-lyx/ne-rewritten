@@ -1,7 +1,7 @@
 import { createApp, reactive, watch } from 'vue';
 import App from '@/App.vue';
 import { BM4, seq_0Y } from '@/notations/BM-like/BM.ts';
-import { omega } from '@/notations/Omega';
+import { omega } from '@/notations/Misc/Omega.ts';
 import { TBM } from '@/notations/BM-like/TBM.ts';
 import { Y_seq } from '@/notations/Y/Y.ts';
 import { omega_Y_actual, omega_Y_medium, omega_Y_strong, omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
@@ -50,8 +50,10 @@ import { BTL_Minus1_Y_nSS } from '@/notations/BM-like/BTL_Minus1_Y_nSS.ts';
 import { MOCF_EBO } from '@/notations/OCN/MOCF_EBO.ts';
 import { Inacc_OCF } from '@/notations/OCN/Inacc_OCF.ts';
 import { UPSr5 } from '@/notations/Worm/UPSr5.ts';
+import { VeblenPhi } from '@/notations/Misc/Veblen.ts';
 
 register_notation(omega);
+register_notation(VeblenPhi);
 register_notation(BM4);
 register_notation(TBM);
 register_notation(Minus1_Y);

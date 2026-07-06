@@ -143,7 +143,7 @@ function normalize(seq: Expr): Expr {
     return sequenceOffset(seq, -base);
 }
 
-function getSubseq(seq: Expr, chain: number[], k: number): Expr {
+function getSubsequence(seq: Expr, chain: number[], k: number): Expr {
     const start = chain[k];
     const sub = deepcopy(seq.slice(start));
     if (sub.length) sub[0].starred = false;
@@ -165,8 +165,8 @@ function compareProjectionRaw(a: Expr, b: Expr): number {
     if (sA !== sB) return sA - sB;
     if (sA === 0) return 0;
 
-    const subA = getSubseq(a2, chainA, sA - 1),
-        subB = getSubseq(b2, chainB, sB - 1);
+    const subA = getSubsequence(a2, chainA, sA - 1),
+        subB = getSubsequence(b2, chainB, sB - 1);
 
     const normA = normalize(subA),
         normB = normalize(subB);
@@ -370,23 +370,10 @@ const depthColors = [
     '#ff8080', // 亮红
 ];
 
-function getColorCmd(depth: number): string {
-    if (depth === 0) return '';
-    const idx = ((depth - 1) % (depthColors.length - 1)) + 1;
-    return '\\textcolor{' + depthColors[idx] + '}';
-}
-
 function getCompleteSeq(node: number, seq: Expr, completeMap: Map<number, Range>): Expr {
     const comp = completeMap.get(node)!;
     const compSeq = seq.slice(comp.start, comp.end + 1);
     return normalize(compSeq);
-}
-
-function kToSymbol(k: number, omitOmega: boolean): string {
-    if (k === 0) return omitOmega ? '' : '\\mathrm{\\Omega}';
-    if (k === 1) return '\\mathrm{\\alpha}';
-    if (k === 2) return '\\mathrm{S}';
-    return '\\mathrm{P}_{' + k + '}';
 }
 
 function matchP(seq: Expr): number | null {
@@ -398,8 +385,7 @@ function matchP(seq: Expr): number | null {
     for (let i = 1; i < seq.length; i++) {
         if (!(seq[i].value === i && seq[i].starred)) return null;
     }
-    const k = seq.length - 2;
-    return k;
+    return seq.length - 2;
 }
 
 function ordinal(m: number): string {
@@ -443,7 +429,7 @@ function ocn_data_key(e: Expr_OCN): string {
     }
 }
 
-function compactStrings(arr: Expr_OCN[]): Expr_OCN {
+function compactSum(arr: Expr_OCN[]): Expr_OCN {
     if (arr.length === 0) return { type: 'sum', values: [] };
     const result: Expr_OCN[] = [];
     let i = 0;
@@ -576,7 +562,7 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
     };
 
     // ----- renderNode（不含颜色包裹，其余逻辑与原版一致） -----
-    function renderNodeUncolored(node: number, reverse: boolean, aftMode: boolean): Expr_OCN {
+    function performNodeImpl(node: number, reverse: boolean, aftMode: boolean): Expr_OCN {
         const children = data.forestChildrenMap.get(node) || [];
         const isLeaf = children.length === 0;
         const compSeq = getCompleteSeq(node, seq, data.completeMap);
@@ -595,7 +581,7 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
             }
             const matched = matchP(starCopy);
             if (matched !== null) {
-                const childrenOCN = compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+                const childrenOCN = compactSum(children.map((c: number) => performNode(c, reverse, aftMode)));
                 return { type: 'psi', index: { type: 'P', k: matched }, arg: childrenOCN };
             }
         }
@@ -643,7 +629,7 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
                 if (isLeaf) {
                     return S1_str;
                 } else {
-                    const childrenLatex = compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+                    const childrenLatex = compactSum(children.map((c: number) => performNode(c, reverse, aftMode)));
                     return { type: 'psi', index: S1_str, arg: childrenLatex };
                 }
             }
@@ -673,9 +659,7 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
 
         const currentDepth = data.finalDepthMap.get(node);
         const S2_str = sequenceToOCN(S2_seq, currentDepth, reverse, aftMode);
-
-        // 无颜色版本用于比较
-        const S3_str_noColor = S3_seq ? sequenceToOCN(S3_seq, currentDepth, reverse, aftMode) : null;
+        const S3_str = S3_seq ? sequenceToOCN(S3_seq, currentDepth, reverse, aftMode) : null;
 
         // 构造 S2star
         const S2star_seq = S2_seq.map((item) => ({ ...item }));
@@ -683,14 +667,13 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
             S2star_seq[S2star_seq.length - 1].starred = true;
         }
         const S2star_str = sequenceToOCN(S2star_seq, currentDepth, reverse, aftMode);
-        const S2star_str_noColor = sequenceToOCN(S2star_seq, currentDepth, reverse, aftMode);
 
         const childrenLatex = isLeaf
             ? undefined
-            : compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+            : compactSum(children.map((c: number) => performNode(c, reverse, aftMode)));
         const childrenLatex_noColor = isLeaf
             ? undefined
-            : compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+            : compactSum(children.map((c: number) => performNode(c, reverse, aftMode)));
 
         // ---- 计算 m（叶节点）或 l（非叶节点） ----
         let m;
@@ -715,13 +698,9 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
             }
         } else {
             // 非叶节点：先计算 l
-            const psiPart_noColor: Expr_OCN = { type: 'psi', index: S2star_str_noColor, arg: childrenLatex_noColor! };
+            const psiPart: Expr_OCN = { type: 'psi', index: S2star_str, arg: childrenLatex_noColor! };
             let l = 0;
-            if (
-                S3_str_noColor !== null &&
-                numChildren >= 2 &&
-                ocn_data_key(psiPart_noColor) === ocn_data_key(S3_str_noColor)
-            ) {
+            if (S3_str !== null && numChildren >= 2 && ocn_data_key(psiPart) === ocn_data_key(S3_str)) {
                 l = 1;
                 let tempIdx = numChildren - 3;
                 while (tempIdx >= 0) {
@@ -759,12 +738,6 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
         // ---- 根据 aftMode 和 reverse 构建最终字符串 ----
         if (aftMode) {
             // aftMode 分支
-
-            let subSymbol = kToSymbol(k, true);
-            let aftPart = subSymbol ? '\\mathrm{aft}_{' + subSymbol + '}' : '\\mathrm{aft}';
-
-            let ord = ordinal(m);
-
             if (Y) {
                 // 有 Y
                 let X1 = X;
@@ -797,17 +770,15 @@ function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = fals
         }
     }
 
-    function renderNode(node: number, reverse: boolean, aftMode: boolean): Expr_OCN {
-        const result = renderNodeUncolored(node, reverse, aftMode);
+    function performNode(node: number, reverse: boolean, aftMode: boolean): Expr_OCN {
+        const result = performNodeImpl(node, reverse, aftMode);
         result.depth = data.finalDepthMap.get(node)!;
         return result;
     }
 
     // 获取根节点渲染结果并压缩
-    const rootLatexArray = data.roots.map((r: number) => renderNode(r, reverse, aftMode));
-    const forestLatex = compactStrings(rootLatexArray);
-
-    return forestLatex;
+    const rootEntryArray = data.roots.map((r: number) => performNode(r, reverse, aftMode));
+    return compactSum(rootEntryArray);
 }
 
 type DisplayType = 'plain' | 'html' | 'html-colored' | 'latex' | 'latex-colored';
@@ -837,7 +808,7 @@ function OCN_display(e: Expr_OCN, type: DisplayType): string {
     function ordText(m: number): string {
         if (m <= 1) return '';
         const raw = ordinal(m);
-        return mode === 'latex' ? raw : raw.replace(/\\mathrm\{([^}]*)\}/g, '$1');
+        return mode === 'latex' ? raw : raw.replace(/\\mathrm{([^}]*)}/g, '$1');
     }
 
     function impl(e: Expr_OCN): string {
@@ -903,7 +874,7 @@ function OCN_display(e: Expr_OCN, type: DisplayType): string {
 }
 
 function display_as_OCN(e: Expr, type: DisplayType): string {
-    if (is_infinity(e)) return type === 'latex' || type === 'latex-colored' ? '\\textrm{Limit}' : 'Limit';
+    if (is_infinity(e)) return type === 'latex' || type === 'latex-colored' ? '\\mathrm{Limit}' : 'Limit';
     return OCN_display(sequenceToOCN(e, 0, false, true), type);
 }
 
