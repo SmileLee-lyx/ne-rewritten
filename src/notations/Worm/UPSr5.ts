@@ -1,8 +1,18 @@
 import { NotationDefinition } from '@/notation-definition.ts';
-import { boolean_compare, deepcopy, lex_compare, number_compare, object_lex_compare_by } from '@/utils.ts';
+import {
+    bind2,
+    boolean_compare,
+    compare_by,
+    deepcopy,
+    lex_compare,
+    number_compare,
+    object_lex_compare_by,
+} from '@/utils.ts';
 
 type Entry = { value: number; starred: boolean };
 export type Expr = Entry[];
+type Range = { start: number; end: number };
+type IndexedRange = Range & { index: number };
 
 export const INFINITY: Expr = Symbol('infinity') as any;
 
@@ -108,10 +118,10 @@ function getDirectSegmentIndices(seq: Expr, leftLess: number[], startIdx: number
 }
 
 function getDirectSegmentAsSeq(seq: Expr, leftLess: number[], startIdx: number): Expr {
-    return getDirectSegmentIndices(seq, leftLess, startIdx).map((i) => ({ ...seq[i] }));
+    return getDirectSegmentIndices(seq, leftLess, startIdx).map((i) => deepcopy(seq[i]));
 }
 
-function getDirectSegmentRange(seq: Expr, leftLess: number[], startIdx: number): { start: number; end: number } {
+function getDirectSegmentRange(seq: Expr, leftLess: number[], startIdx: number): Range {
     const indices = getDirectSegmentIndices(seq, leftLess, startIdx);
     if (indices.length === 0) return { start: startIdx, end: startIdx };
     return { start: indices[0], end: indices[indices.length - 1] };
@@ -123,10 +133,14 @@ function ensureLastStarred(seq: Expr): Expr {
     return newSeq;
 }
 
+function sequenceOffset(seq: Expr, offset: number): Expr {
+    return seq.map((item) => ({ value: item.value + offset, starred: item.starred }));
+}
+
 function normalize(seq: Expr): Expr {
     if (!seq.length) return [];
     const base = seq[0].value;
-    return seq.map((item) => ({ value: item.value - base, starred: item.starred }));
+    return sequenceOffset(seq, -base);
 }
 
 function getSubseq(seq: Expr, chain: number[], k: number): Expr {
@@ -162,12 +176,7 @@ function compareProjectionRaw(a: Expr, b: Expr): number {
 function isDirectSegmentLess(a: Expr, b: Expr): boolean {
     const a2 = normalize(ensureLastStarred(a));
     const b2 = normalize(ensureLastStarred(b));
-    const minLen = Math.min(a2.length, b2.length);
-    for (let i = 0; i < minLen; i++) {
-        if (a2[i].value !== b2[i].value) return a2[i].value < b2[i].value;
-        if (a2[i].starred !== b2[i].starred) return a2[i].starred < b2[i].starred;
-    }
-    return a2.length < b2.length;
+    return compare(a2, b2) < 0;
 }
 
 // ========== 父段映射 ==========
@@ -242,7 +251,7 @@ function findBadRoot(seq: Expr, leftLess: number[]): number {
     const dropRangeLast = getDirectSegmentRange(seq, leftLess, dropOfLast);
     const subSeqLast = deepcopy(seq.slice(dropRangeLast.start, seq.length));
 
-    const skipped = new Set();
+    const skipped = new Set<number>();
     let mark = directParent;
     while (true) {
         skipped.add(mark);
@@ -342,73 +351,140 @@ function expandOnOriginal(
     const block = seq.slice(realBadRoot, seq.length - 1);
     for (let i = 0; i < m; i++) {
         const offset = d * (i + 1);
-        newSeq.push(...block.map((item) => ({ value: item.value + offset, starred: item.starred })));
+        newSeq.push(...sequenceOffset(block, offset));
     }
     return { expanded: newSeq, applied: true, reason: `末项有星，坏根=${realBadRoot}` };
 }
 
 // ========== 辅助函数 ==========
-function compactStrings(arr: string[]): string {
-    if (arr.length === 0) return '';
-    const result: string[] = [];
+
+// ========== 渲染辅助函数 ==========
+const depthColors = [
+    '', // depth 0 无色
+    '#80d0ff', // 亮蓝
+    '#80ff80', // 亮绿
+    '#ff80c0', // 亮粉
+    '#ffe066', // 亮黄
+    '#c080ff', // 亮紫
+    '#80ffff', // 亮青
+    '#ff8080', // 亮红
+];
+
+function getColorCmd(depth: number): string {
+    if (depth === 0) return '';
+    const idx = ((depth - 1) % (depthColors.length - 1)) + 1;
+    return '\\textcolor{' + depthColors[idx] + '}';
+}
+
+function getCompleteSeq(node: number, seq: Expr, completeMap: Map<number, Range>): Expr {
+    const comp = completeMap.get(node)!;
+    const compSeq = seq.slice(comp.start, comp.end + 1);
+    return normalize(compSeq);
+}
+
+function kToSymbol(k: number, omitOmega: boolean): string {
+    if (k === 0) return omitOmega ? '' : '\\mathrm{\\Omega}';
+    if (k === 1) return '\\mathrm{\\alpha}';
+    if (k === 2) return '\\mathrm{S}';
+    return '\\mathrm{P}_{' + k + '}';
+}
+
+function matchP(seq: Expr): number | null {
+    if (seq.length === 1 && seq[0].value === 0 && !seq[0].starred) {
+        return -1;
+    }
+    if (seq.length < 2) return null;
+    if (seq[0].value !== 0 || seq[0].starred) return null;
+    for (let i = 1; i < seq.length; i++) {
+        if (!(seq[i].value === i && seq[i].starred)) return null;
+    }
+    const k = seq.length - 2;
+    return k;
+}
+
+function ordinal(m: number): string {
+    if (m === 1) return '';
+    if (m % 10 === 1 && m % 100 !== 11) return m + '\\mathrm{st}';
+    if (m % 10 === 2 && m % 100 !== 12) return m + '\\mathrm{nd}';
+    if (m % 10 === 3 && m % 100 !== 13) return m + '\\mathrm{rd}';
+    return m + '\\mathrm{th}';
+}
+
+type Expr_OCN = { depth?: number } & (
+    | { type: 'raw'; value: Expr }
+    | { type: 'P'; k: number }
+    | { type: 'psi'; index: Expr_OCN; arg: Expr_OCN }
+    | { type: 'sum'; values: Expr_OCN[] }
+    | { type: 'mul'; value: Expr_OCN; coe: number }
+    | { type: 'index'; index: number; k: number; value: Expr_OCN }
+    | { type: 'aft'; left: Expr_OCN; k: number; right: Expr_OCN }
+    | { type: 'number'; value: number }
+    | never
+);
+
+function ocn_data_key(e: Expr_OCN): string {
+    switch (e.type) {
+        case 'raw':
+            return 'r[' + formatSequence(e.value) + ']';
+        case 'P':
+            return 'P[' + e.k + ']';
+        case 'psi':
+            return 'p[' + ocn_data_key(e.index) + ',' + ocn_data_key(e.arg) + ']';
+        case 'sum':
+            return 's[' + e.values.map(ocn_data_key) + ']';
+        case 'mul':
+            return 'm[' + ocn_data_key(e.value) + ',' + e.coe + ']';
+        case 'index':
+            return 'i[' + e.index + ',' + e.k + ',' + ocn_data_key(e.value) + ']';
+        case 'aft':
+            return 'a[' + ocn_data_key(e.left) + ',' + e.k + ',' + ocn_data_key(e.right) + ']';
+        case 'number':
+            return '' + e.value;
+    }
+}
+
+function compactStrings(arr: Expr_OCN[]): Expr_OCN {
+    if (arr.length === 0) return { type: 'sum', values: [] };
+    const result: Expr_OCN[] = [];
     let i = 0;
     while (i < arr.length) {
         let j = i + 1;
-        while (j < arr.length && arr[j] === arr[i]) j++;
+        const str = ocn_data_key(arr[i]);
+        while (j < arr.length && ocn_data_key(arr[j]) === str) j++;
         const count = j - i;
-        const str = arr[i];
         if (count === 1) {
-            result.push(str);
+            result.push(arr[i]);
         } else {
             if (str === '1') {
-                result.push(count.toString());
+                result.push({ type: 'number', value: count });
             } else {
-                result.push(str + '\\times ' + count);
+                result.push({ type: 'mul', value: arr[i], coe: count });
             }
         }
         i = j;
     }
-    return result.join(' + ');
+    return { type: 'sum', values: result };
 }
 
-function renderSequenceToLatex(seq: Expr, baseDepth = 0, enableColor = true, reverse = false, aftMode = false) {
-    if (is_infinity(seq)) return '\\text{Limit}';
-
-    const depthColors = [
-        '', // depth 0 无色
-        '#80d0ff', // 亮蓝
-        '#80ff80', // 亮绿
-        '#ff80c0', // 亮粉
-        '#ffe066', // 亮黄
-        '#c080ff', // 亮紫
-        '#80ffff', // 亮青
-        '#ff8080', // 亮红
-    ];
-
-    function getColorCmd(depth: number) {
-        if (depth === 0) return '';
-        const idx = ((depth - 1) % (depthColors.length - 1)) + 1;
-        return '\\textcolor{' + depthColors[idx] + '}';
-    }
-
-    if (!seq || seq.length === 0) return '';
+function sequenceToOCN(seq: Expr, baseDepth = 0, reverse = false, aftMode = false): Expr_OCN {
+    if (!seq || seq.length === 0) return { type: 'number', value: 0 };
 
     const values = extractValues(seq);
     const leftLess = computeLeftLess(values);
     const parentSegmentMap = buildParentSegmentMap(seq, leftLess);
 
     // 获取所有直接段（无星项）及其范围
-    const directSegments: { start: number; end: number; index: number }[] = [];
+    const directSegments: IndexedRange[] = [];
     for (let i = 0; i < seq.length; i++) {
         if (!seq[i].starred) {
             const range = getDirectSegmentRange(seq, leftLess, i);
-            directSegments.push({ start: range.start, end: range.end, index: i });
+            directSegments.push({ ...range, index: i });
         }
     }
-    directSegments.sort((a, b) => a.start - b.start);
+    directSegments.sort(compare_by((a) => a.start, number_compare));
 
     // 过滤：移除完全被其他段包含的段
-    const filteredSegments: { start: number; end: number; index: number }[] = [];
+    const filteredSegments: IndexedRange[] = [];
     for (let i = 0; i < directSegments.length; i++) {
         const seg = directSegments[i];
         let contained = false;
@@ -426,12 +502,12 @@ function renderSequenceToLatex(seq: Expr, baseDepth = 0, enableColor = true, rev
     }
 
     const nodeSegments = filteredSegments.map((s) => s.index);
-    nodeSegments.sort((a, b) => a - b);
+    nodeSegments.sort(number_compare);
 
-    const completeMap = new Map<number, { start: number; end: number }>();
+    const completeMap = new Map<number, Range>();
     for (const node of nodeSegments) {
         const range = getDirectSegmentRange(seq, leftLess, node);
-        completeMap.set(node, { start: range.start, end: range.end });
+        completeMap.set(node, range);
     }
 
     const forestParentMap = new Map<number, number>();
@@ -457,12 +533,12 @@ function renderSequenceToLatex(seq: Expr, baseDepth = 0, enableColor = true, rev
         }
     }
     for (const [_, children] of forestChildrenMap) {
-        children.sort((a, b) => a - b);
+        children.sort(number_compare);
     }
     const roots = nodeSegments.filter((n) => forestParentMap.get(n) === -1);
 
     if (nodeSegments.length === 0 || roots.length === 0) {
-        return '[' + seq.map((item) => item.value + (item.starred ? '*' : '')).join(',') + ']';
+        return { type: 'raw', value: seq, depth: baseDepth };
     }
 
     // ----- 计算 dropping 祖先及其深度（相对于本序列） -----
@@ -492,57 +568,25 @@ function renderSequenceToLatex(seq: Expr, baseDepth = 0, enableColor = true, rev
         finalDepthMap.set(node, relDepthMap.get(node)! + baseDepth);
     }
 
-    // ----- 辅助函数（与原逻辑完全相同） -----
-    function getCompleteSeq(node: number): Expr {
-        const comp = completeMap.get(node)!;
-        const compSeq = deepcopy(seq.slice(comp.start, comp.end + 1));
-        if (compSeq.length === 0) return [];
-        const base = compSeq[0].value;
-        return compSeq.map((item) => ({ value: item.value - base, starred: item.starred }));
-    }
+    const data = {
+        completeMap,
+        forestChildrenMap,
+        roots,
+        finalDepthMap,
+    };
 
-    function matchP(seq: Expr) {
-        if (seq.length === 1 && seq[0].value === 0 && !seq[0].starred) {
-            return '1';
-        }
-        if (seq.length < 2) return null;
-        if (seq[0].value !== 0 || seq[0].starred) return null;
-        for (let i = 1; i < seq.length; i++) {
-            if (!(seq[i].value === i && seq[i].starred)) return null;
-        }
-        const k = seq.length - 2;
-        return kToSymbol(k, false);
-    }
-
-    function kToSymbol(k: number, omitOmega: boolean): string {
-        if (k === 0) return omitOmega ? '' : '\\mathrm{\\Omega}';
-        if (k === 1) return '\\mathrm{\\alpha}';
-        if (k === 2) return '\\mathrm{S}';
-        return '\\mathrm{P}_{' + k + '}';
-    }
-
-    // ----- 辅助：生成序数词 -----
-    function ordinal(m: number): string {
-        if (m === 1) return '';
-        if (m % 10 === 1 && m % 100 !== 11) return m + '\\mathrm{st}';
-        if (m % 10 === 2 && m % 100 !== 12) return m + '\\mathrm{nd}';
-        if (m % 10 === 3 && m % 100 !== 13) return m + '\\mathrm{rd}';
-        return m + '\\mathrm{th}';
-    }
-
-    // ----- 修改后的 renderNode（使用所有参数） -----
-    function renderNode(node: number, enableColor: boolean, reverse: boolean, aftMode: boolean): string {
-        const children = forestChildrenMap.get(node) || [];
+    // ----- renderNode（不含颜色包裹，其余逻辑与原版一致） -----
+    function renderNodeUncolored(node: number, reverse: boolean, aftMode: boolean): Expr_OCN {
+        const children = data.forestChildrenMap.get(node) || [];
         const isLeaf = children.length === 0;
-        const compSeq = getCompleteSeq(node);
-
-        let result: string | undefined;
+        const compSeq = getCompleteSeq(node, seq, data.completeMap);
 
         // 第一步：P 模式匹配
         if (isLeaf) {
             const matched = matchP(compSeq);
-            if (matched) {
-                result = matched;
+            if (matched !== null) {
+                if (matched === -1) return { type: 'number', value: 1 };
+                return { type: 'P', k: matched };
             }
         } else {
             const starCopy = deepcopy(compSeq);
@@ -550,248 +594,316 @@ function renderSequenceToLatex(seq: Expr, baseDepth = 0, enableColor = true, rev
                 starCopy[starCopy.length - 1].starred = true;
             }
             const matched = matchP(starCopy);
-            if (matched) {
-                const childrenLatex = compactStrings(children.map((c) => renderNode(c, enableColor, reverse, aftMode)));
-                result = `\\psi_{${matched}}( ${childrenLatex} )`;
+            if (matched !== null) {
+                const childrenOCN = compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+                return { type: 'psi', index: { type: 'P', k: matched }, arg: childrenOCN };
             }
         }
 
-        if (result === undefined) {
-            // 第二步：'其次' 处理
-            const values = compSeq.map((item) => item.value);
-            const leftLess = computeLeftLess(values);
-            const childMap = new Map<number, number[]>();
-            for (let i = 0; i < compSeq.length; i++) {
-                const p = leftLess[i];
-                if (p !== -1) {
-                    if (!childMap.has(p)) childMap.set(p, []);
-                    childMap.get(p)!.push(i);
+        // 第二步：'其次' 处理
+        const values = compSeq.map((item) => item.value);
+        const leftLess = computeLeftLess(values);
+        const childMap = new Map<number, number[]>();
+        for (let i = 0; i < compSeq.length; i++) {
+            const p = leftLess[i];
+            if (p !== -1) {
+                if (!childMap.has(p)) childMap.set(p, []);
+                childMap.get(p)!.push(i);
+            }
+        }
+        let pIdx = -1;
+        for (let i = 0; i < compSeq.length; i++) {
+            if (childMap.has(i) && childMap.get(i)!.length > 1) {
+                pIdx = i;
+                break;
+            }
+        }
+        if (pIdx === -1) {
+            return { type: 'raw', value: seq };
+        }
+
+        const P = compSeq[pIdx].value;
+        const childrenList = childMap.get(pIdx)!;
+        const c_last = childrenList[childrenList.length - 1];
+
+        // 特殊分支
+        const lastIdx = compSeq.length - 1;
+        if (!compSeq[lastIdx].starred && childrenList.length >= 2) {
+            const lastBlock = compSeq.slice(c_last);
+            const lastBlockStar = lastBlock.map((item) => ({ ...item }));
+            lastBlockStar[lastBlockStar.length - 1].starred = true;
+            const prevIdx = childrenList[childrenList.length - 2];
+            const prevBlock = compSeq.slice(prevIdx, c_last);
+
+            if (compare(lastBlockStar, prevBlock) <= 0) {
+                const starSeq = deepcopy(compSeq);
+                starSeq[starSeq.length - 1].starred = true;
+                const currentDepth = data.finalDepthMap.get(node);
+                const S1_str = sequenceToOCN(starSeq, currentDepth, reverse, aftMode);
+                if (isLeaf) {
+                    return S1_str;
+                } else {
+                    const childrenLatex = compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+                    return { type: 'psi', index: S1_str, arg: childrenLatex };
                 }
             }
-            let pIdx = -1;
-            for (let i = 0; i < compSeq.length; i++) {
-                if (childMap.has(i) && childMap.get(i)!.length > 1) {
-                    pIdx = i;
+        }
+
+        // ---- 正常情况 ----
+        const childIndices = childrenList;
+        const numChildren = childIndices.length;
+
+        function getBlock(i: number): Expr {
+            const idx = childIndices[i];
+            const nextIdx = i + 1 < numChildren ? childIndices[i + 1] : compSeq.length;
+            return compSeq.slice(idx, nextIdx);
+        }
+
+        const k = P;
+        const headSeq = compSeq.slice(0, pIdx);
+        const lastBlock = getBlock(numChildren - 1);
+        const S2_seq = headSeq.concat(compSeq[pIdx], lastBlock);
+
+        // 构建 S3 序列
+        let S3_seq = null;
+        if (numChildren >= 2) {
+            const prevBlock = getBlock(numChildren - 2);
+            S3_seq = headSeq.concat(compSeq[pIdx], prevBlock);
+        }
+
+        const currentDepth = data.finalDepthMap.get(node);
+        const S2_str = sequenceToOCN(S2_seq, currentDepth, reverse, aftMode);
+
+        // 无颜色版本用于比较
+        const S3_str_noColor = S3_seq ? sequenceToOCN(S3_seq, currentDepth, reverse, aftMode) : null;
+
+        // 构造 S2star
+        const S2star_seq = S2_seq.map((item) => ({ ...item }));
+        if (S2star_seq.length > 0) {
+            S2star_seq[S2star_seq.length - 1].starred = true;
+        }
+        const S2star_str = sequenceToOCN(S2star_seq, currentDepth, reverse, aftMode);
+        const S2star_str_noColor = sequenceToOCN(S2star_seq, currentDepth, reverse, aftMode);
+
+        const childrenLatex = isLeaf
+            ? undefined
+            : compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+        const childrenLatex_noColor = isLeaf
+            ? undefined
+            : compactStrings(children.map((c: number) => renderNode(c, reverse, aftMode)));
+
+        // ---- 计算 m（叶节点）或 l（非叶节点） ----
+        let m;
+        let startIdx;
+        if (isLeaf) {
+            m = 1;
+            startIdx = numChildren - 1;
+            for (let i = numChildren - 2; i >= 0; i--) {
+                const block1 = getBlock(i);
+                const block2 = getBlock(i + 1);
+                if (
+                    block1.length === block2.length &&
+                    block1.every(
+                        (item, idx) => item.value === block2[idx].value && item.starred === block2[idx].starred,
+                    )
+                ) {
+                    m++;
+                    startIdx = i;
+                } else {
                     break;
                 }
             }
-            if (pIdx === -1) {
-                result = '[' + compSeq.map((item) => item.value + (item.starred ? '*' : '')).join(',') + ']';
+        } else {
+            // 非叶节点：先计算 l
+            const psiPart_noColor: Expr_OCN = { type: 'psi', index: S2star_str_noColor, arg: childrenLatex_noColor! };
+            let l = 0;
+            if (
+                S3_str_noColor !== null &&
+                numChildren >= 2 &&
+                ocn_data_key(psiPart_noColor) === ocn_data_key(S3_str_noColor)
+            ) {
+                l = 1;
+                let tempIdx = numChildren - 3;
+                while (tempIdx >= 0) {
+                    const blockA = getBlock(tempIdx);
+                    const blockB = getBlock(tempIdx + 1);
+                    if (
+                        blockA.length === blockB.length &&
+                        blockA.every(
+                            (item, idx) => item.value === blockB[idx].value && item.starred === blockB[idx].starred,
+                        )
+                    ) {
+                        l++;
+                        tempIdx--;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            m = l + 1;
+            // 重新定义 S1 的起始索引
+            startIdx = numChildren - 1 - l; // 第一个相同块的索引
+        }
+
+        // ---- 构建 S1_str（如果有 Y） ----
+        let finalS1_str = null;
+        if (startIdx > 0) {
+            const endIdx = childIndices[startIdx];
+            const S1_seq = compSeq.slice(0, endIdx);
+            finalS1_str = sequenceToOCN(S1_seq, currentDepth, reverse, aftMode);
+        }
+
+        const X: Expr_OCN = isLeaf ? S2_str : { type: 'psi', index: S2star_str, arg: childrenLatex! };
+        const Y = finalS1_str;
+
+        // ---- 根据 aftMode 和 reverse 构建最终字符串 ----
+        if (aftMode) {
+            // aftMode 分支
+
+            let subSymbol = kToSymbol(k, true);
+            let aftPart = subSymbol ? '\\mathrm{aft}_{' + subSymbol + '}' : '\\mathrm{aft}';
+
+            let ord = ordinal(m);
+
+            if (Y) {
+                // 有 Y
+                let X1 = X;
+                if (m > 1) {
+                    X1 = { type: 'index', index: m, k, value: X };
+                }
+                if (reverse) {
+                    // Y aft_k mth_k X
+                    return { type: 'aft', left: Y, k, right: X1 };
+                } else {
+                    // mth_k X aft_k Y
+                    return { type: 'aft', left: X1, k, right: Y };
+                }
             } else {
-                const P = compSeq[pIdx].value;
-                const childrenList = childMap.get(pIdx)!;
-                const c_last = childrenList[childrenList.length - 1];
-
-                // 特殊分支
-                const lastIdx = compSeq.length - 1;
-                if (!compSeq[lastIdx].starred && childrenList.length >= 2) {
-                    const lastBlock = compSeq.slice(c_last);
-                    const lastBlockStar = lastBlock.map((item) => ({ ...item }));
-                    lastBlockStar[lastBlockStar.length - 1].starred = true;
-                    const prevIdx = childrenList[childrenList.length - 2];
-                    const prevBlock = compSeq.slice(prevIdx, c_last);
-
-                    if (compare(lastBlockStar, prevBlock) <= 0) {
-                        const starSeq = deepcopy(compSeq);
-                        starSeq[starSeq.length - 1].starred = true;
-                        const currentDepth = finalDepthMap.get(node);
-                        const S1_str = renderSequenceToLatex(starSeq, currentDepth, enableColor, reverse, aftMode);
-                        if (isLeaf) {
-                            result = S1_str;
-                        } else {
-                            const childrenLatex = compactStrings(
-                                children.map((c) => renderNode(c, enableColor, reverse, aftMode)),
-                            );
-                            result = `\\psi_{${S1_str}}( ${childrenLatex} )`;
-                        }
-                    }
-                }
-
-                if (result === undefined) {
-                    // ---- 正常情况 ----
-                    const childIndices = childrenList;
-                    const numChildren = childIndices.length;
-
-                    function getBlock(i: number): Expr {
-                        const idx = childIndices[i];
-                        const nextIdx = i + 1 < numChildren ? childIndices[i + 1] : compSeq.length;
-                        return compSeq.slice(idx, nextIdx);
-                    }
-
-                    const k = P;
-                    const headSeq = compSeq.slice(0, pIdx);
-                    const lastBlock = getBlock(numChildren - 1);
-                    const S2_seq = headSeq.concat(compSeq[pIdx], lastBlock);
-
-                    // 构建 S3 序列
-                    let S3_seq = null;
-                    if (numChildren >= 2) {
-                        const prevBlock = getBlock(numChildren - 2);
-                        S3_seq = headSeq.concat(compSeq[pIdx], prevBlock);
-                    }
-
-                    const currentDepth = finalDepthMap.get(node);
-                    const S2_str = renderSequenceToLatex(S2_seq, currentDepth, enableColor, reverse, aftMode);
-                    // const S3_str = S3_seq ? renderSequenceToLatex(S3_seq, currentDepth, enableColor, reverse, aftMode) : null;
-
-                    // 无颜色版本用于比较
-                    // const S2_str_noColor = renderSequenceToLatex(S2_seq, currentDepth, false, reverse, aftMode);
-                    const S3_str_noColor = S3_seq
-                        ? renderSequenceToLatex(S3_seq, currentDepth, false, reverse, aftMode)
-                        : null;
-
-                    // 构造 S2star
-                    const S2star_seq = S2_seq.map((item) => ({ ...item }));
-                    if (S2star_seq.length > 0) {
-                        S2star_seq[S2star_seq.length - 1].starred = true;
-                    }
-                    const S2star_str = renderSequenceToLatex(S2star_seq, currentDepth, enableColor, reverse, aftMode);
-                    const S2star_str_noColor = renderSequenceToLatex(S2star_seq, currentDepth, false, reverse, aftMode);
-
-                    const childrenLatex = isLeaf
-                        ? ''
-                        : compactStrings(children.map((c) => renderNode(c, enableColor, reverse, aftMode)));
-                    const childrenLatex_noColor = isLeaf
-                        ? ''
-                        : compactStrings(children.map((c) => renderNode(c, false, reverse, aftMode)));
-
-                    // ---- 计算 m（叶节点）或 l（非叶节点） ----
-                    let m;
-                    let startIdx;
-                    if (isLeaf) {
-                        m = 1;
-                        startIdx = numChildren - 1;
-                        for (let i = numChildren - 2; i >= 0; i--) {
-                            const block1 = getBlock(i);
-                            const block2 = getBlock(i + 1);
-                            if (
-                                block1.length === block2.length &&
-                                block1.every(
-                                    (item, idx) =>
-                                        item.value === block2[idx].value && item.starred === block2[idx].starred,
-                                )
-                            ) {
-                                m++;
-                                startIdx = i;
-                            } else {
-                                break;
-                            }
-                        }
-                    } else {
-                        // 非叶节点：先计算 l
-                        const psiPart_noColor = `\\psi_{${S2star_str_noColor}}( ${childrenLatex_noColor} )`;
-                        let l = 0;
-                        if (S3_str_noColor !== null && numChildren >= 2 && psiPart_noColor === S3_str_noColor) {
-                            l = 1;
-                            let tempIdx = numChildren - 3;
-                            while (tempIdx >= 0) {
-                                const blockA = getBlock(tempIdx);
-                                const blockB = getBlock(tempIdx + 1);
-                                if (
-                                    blockA.length === blockB.length &&
-                                    blockA.every(
-                                        (item, idx) =>
-                                            item.value === blockB[idx].value && item.starred === blockB[idx].starred,
-                                    )
-                                ) {
-                                    l++;
-                                    tempIdx--;
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        m = l + 1;
-                        // 重新定义 S1 的起始索引
-                        startIdx = numChildren - 1 - l; // 第一个相同块的索引
-                    }
-
-                    // ---- 构建 S1_str（如果有 Y） ----
-                    let finalS1_str = null;
-                    if (isLeaf) {
-                        if (startIdx > 0) {
-                            const endIdx = childIndices[startIdx];
-                            const S1_seq = compSeq.slice(0, endIdx);
-                            finalS1_str = renderSequenceToLatex(S1_seq, currentDepth, enableColor, reverse, aftMode);
-                        }
-                    } else {
-                        if (startIdx > 0) {
-                            const newEndIdx = childIndices[startIdx];
-                            const newS1_seq = compSeq.slice(0, newEndIdx);
-                            finalS1_str = renderSequenceToLatex(newS1_seq, currentDepth, enableColor, reverse, aftMode);
-                        }
-                    }
-
-                    const X = isLeaf ? S2_str : `\\psi_{${S2star_str}}( ${childrenLatex} )`;
-                    const Y = finalS1_str;
-
-                    // ---- 根据 aftMode 和 reverse 构建最终字符串 ----
-                    let resultStr;
-                    if (aftMode) {
-                        // aftMode 分支
-
-                        let subSymbol = kToSymbol(k, true);
-                        let aftPart = subSymbol ? '\\mathrm{aft}_{' + subSymbol + '}' : '\\mathrm{aft}';
-
-                        let ord = ordinal(m);
-
-                        if (Y) {
-                            // 有 Y
-                            if (reverse) {
-                                // Y aft_k mth_k X
-                                let middle = aftPart;
-                                if (ord !== '') {
-                                    let ordWithSub = subSymbol ? ord + '_{' + subSymbol + '}' : ord;
-                                    middle += '\\ ' + ordWithSub;
-                                }
-                                resultStr = Y + '\\ ' + middle + '\\ ' + X;
-                            } else {
-                                // mth_k X aft_k Y
-                                let prefix = '';
-                                if (ord !== '') {
-                                    prefix = (subSymbol ? ord + '_{' + subSymbol + '}' : ord) + '\\ ';
-                                }
-                                resultStr = prefix + X + '\\ ' + aftPart + '\\ ' + Y;
-                            }
-                        } else {
-                            // 无 Y：mth_k X（m不可能为1）
-                            let subscript = subSymbol ? '_{' + subSymbol + '}' : '';
-                            let pPart = ord + subscript;
-                            resultStr = pPart + '\\ ' + X;
-                        }
-                    } else {
-                        // 非 aftMode：使用横线，反转时变成 Y p_k - X（有Y）或 p_k - X（无Y）
-                        let pPart;
-                        if (m === 1) pPart = 'p_{' + k + '}';
-                        else pPart = 'p^{' + m + '}_{' + k + '}';
-                        if (Y) {
-                            resultStr = reverse ? Y + '\\ ' + pPart + '-' + X : X + '-' + pPart + '\\ ' + Y;
-                        } else {
-                            resultStr = reverse ? pPart + '-' + X : X + '-' + pPart;
-                        }
-                    }
-
-                    result = resultStr;
-                }
+                // 无 Y：mth_k X（m不可能为1）
+                return { type: 'index', index: m, k, value: X };
+            }
+        } else {
+            // 非 aftMode：使用横线，反转时变成 Y p_k - X（有Y）或 p_k - X（无Y）
+            let pPart;
+            if (m === 1) pPart = 'p_{' + k + '}';
+            else pPart = 'p^{' + m + '}_{' + k + '}';
+            if (Y) {
+                throw new Error('Not implemented');
+                // return reverse ? Y + '\\ ' + pPart + '-' + X : X + '-' + pPart + '\\ ' + Y;
+            } else {
+                throw new Error('Not implemented');
+                // return reverse ? pPart + '-' + X : X + '-' + pPart;
             }
         }
+    }
 
-        // 颜色包裹
-        if (enableColor) {
-            const depth = finalDepthMap.get(node)!;
-            const colorCmd = getColorCmd(depth);
-            if (colorCmd) {
-                return colorCmd + '{' + result + '}';
-            }
-        }
+    function renderNode(node: number, reverse: boolean, aftMode: boolean): Expr_OCN {
+        const result = renderNodeUncolored(node, reverse, aftMode);
+        result.depth = data.finalDepthMap.get(node)!;
         return result;
     }
 
     // 获取根节点渲染结果并压缩
-    const rootLatexArray = roots.map((r) => renderNode(r, enableColor, reverse, aftMode));
+    const rootLatexArray = data.roots.map((r: number) => renderNode(r, reverse, aftMode));
     const forestLatex = compactStrings(rootLatexArray);
 
     return forestLatex;
+}
+
+type DisplayType = 'plain' | 'html' | 'html-colored' | 'latex' | 'latex-colored';
+
+function OCN_display(e: Expr_OCN, type: DisplayType): string {
+    type DisplayTypeNoColor = 'plain' | 'html' | 'latex';
+    let type_no_color: DisplayTypeNoColor;
+    if (type === 'html-colored') type_no_color = 'html';
+    else if (type === 'latex-colored') type_no_color = 'latex';
+    else type_no_color = type;
+
+    const isColor = type === 'html-colored' || type === 'latex-colored';
+    const mode = type_no_color;
+
+    const sub = (s: string) => (mode === 'html' ? `<sub>${s}</sub>` : `_{${s}}`);
+    const text = (s: string) => (mode === 'latex' ? `\\mathrm{${s}}` : s);
+    const greek = (sym: string, latex: string) => (mode === 'latex' ? latex : sym);
+
+    function kSym(k: number, omitOmega: boolean): string {
+        if (k === 0) return omitOmega ? '' : greek('Ω', '\\mathrm{\\Omega} ');
+        if (k === 1) return greek('α', '\\mathrm{\\alpha} ');
+        if (k === 2) return text('S');
+        return text('P') + sub('' + k);
+    }
+
+    function ordText(m: number): string {
+        if (m <= 1) return '';
+        const raw = ordinal(m);
+        return mode === 'latex' ? raw : raw.replace(/\\mathrm\{([^}]*)\}/g, '$1');
+    }
+
+    function impl(e: Expr_OCN): string {
+        let content: string;
+        switch (e.type) {
+            case 'raw':
+                content = '[' + e.value.map((i) => i.value + (i.starred ? '*' : '')).join(',') + ']';
+                break;
+            case 'P':
+                content = kSym(e.k, false);
+                break;
+            case 'psi':
+                content = greek('ψ', '\\psi ') + sub(impl(e.index)) + '(' + impl(e.arg) + ')';
+                break;
+            case 'sum':
+                content = e.values.map(impl).join('+');
+                break;
+            case 'mul': {
+                const v = impl(e.value);
+                const times = mode === 'latex' ? '\\times ' : '×';
+                content = v === '1' ? '' + e.coe : v + times + e.coe;
+                break;
+            }
+            case 'index': {
+                const v = impl(e.value);
+                const k_sym = kSym(e.k, true);
+                const o = ordText(e.index);
+                content = o + (k_sym ? sub(k_sym) : '') + ' ' + v;
+                break;
+            }
+            case 'aft': {
+                const left = impl(e.left);
+                const right = impl(e.right);
+                const aft_word = mode === 'latex' ? '\\mathrm{aft}' : 'aft';
+                const k_sym = kSym(e.k, true);
+                if (k_sym) {
+                    content = left + ' ' + aft_word + sub(k_sym) + ' ' + right;
+                } else {
+                    content = left + ' ' + aft_word + ' ' + right;
+                }
+                break;
+            }
+            case 'number':
+                content = '' + e.value;
+                break;
+        }
+
+        // 颜色包裹
+        if (isColor && e.depth !== undefined && e.depth > 0) {
+            const idx = ((e.depth - 1) % (depthColors.length - 1)) + 1;
+            const color = depthColors[idx];
+            if (type === 'html-colored') {
+                return `<span style='color:${color}'>${content}</span>`;
+            } else {
+                // latex-colored
+                return `{\\color{${color}}${content}}`;
+            }
+        }
+        return content;
+    }
+
+    return impl(e);
+}
+
+function display_as_OCN(e: Expr, type: DisplayType): string {
+    if (is_infinity(e)) return type === 'latex' || type === 'latex-colored' ? '\\textrm{Limit}' : 'Limit';
+    return OCN_display(sequenceToOCN(e, 0, false, true), type);
 }
 
 // ========== Expr 层面的函数 ==========
@@ -830,12 +942,14 @@ export const UPSr5: NotationDefinition<Expr> = {
     },
     display_equiv: {
         POCN: {
-            plain: formatSequence,
-            latex: (e) => renderSequenceToLatex(e, 0, false, false, true),
+            plain: bind2(display_as_OCN, 'plain'),
+            html: bind2(display_as_OCN, 'html'),
+            latex: bind2(display_as_OCN, 'latex'),
         },
         colored: {
-            plain: formatSequence,
-            latex: (e) => renderSequenceToLatex(e, 0, true, false, true),
+            plain: bind2(display_as_OCN, 'plain'),
+            html: bind2(display_as_OCN, 'html-colored'),
+            latex: bind2(display_as_OCN, 'latex-colored'),
         },
     },
     is_limit,

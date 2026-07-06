@@ -8,6 +8,10 @@ export function boolean_compare(a: boolean, b: boolean): number {
     return (a ? 1 : 0) - (b ? 1 : 0);
 }
 
+export function compare_by<T, S>(transform: (a: T) => S, cmp: Comparator<S>): Comparator<T> {
+    return (a: T, b: T) => cmp(transform(a), transform(b));
+}
+
 /** 字典序比较（通用）。 */
 export function lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>): number {
     let len = Math.min(a.length, b.length);
