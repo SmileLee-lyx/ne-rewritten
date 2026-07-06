@@ -89,6 +89,7 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.bocf': '由 Buchholz 给出最初定义; 由社区完善.',
         'credit.mocf': '由 Madore 给出最初定义.',
         'credit.nocf': '由社区定义.',
+        'credit.upsr5': '由 Alice 定义, 给出展开器与可视化方案.',
         'diagram.show': '显示图表',
         'latex.show': '显示分析 LaTeX',
         'tips.intro':
@@ -199,6 +200,7 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.bocf': 'Initially defined by Buchholz; refined by the community.',
         'credit.mocf': 'Initially defined by Madore.',
         'credit.nocf': 'Defined by the community.',
+        'credit.upsr5': 'Defined by Alice, with expander and visualization by the same author.',
         'tips.intro':
             'This site is designed for keyboard-first analysis on PC to avoid breaking flow with mouse. Features below serve this goal. Suggestions welcome.',
         'tips.features': 'Features',

@@ -116,9 +116,9 @@ export function build_categories(): NotationCategory[] {
             notation_ids: ['asan-1', 'asan-2', 'asan-3', 'asan-tilde3plus'],
         },
         {
-            id: 'other',
-            name: 'Other',
-            notation_ids: ['omega'],
+            id: 'worm',
+            name: 'Worm',
+            notation_ids: ['upsr5'],
         },
         {
             id: 'legacy',

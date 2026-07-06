@@ -7,7 +7,7 @@ TBM:
 
 Y, 0Y, ωY: 
 由 Yukito 定义
-展开器来自原 NE 项目
+展开器来自原 NE 项目, 最初由 Yukito 给出
 山脉图绘制由 Yukito 给出
 
 DEN:
@@ -52,3 +52,6 @@ MOCF:
 
 NOCF:
 由社区定义
+
+UPSr5:
+由 Alice 定义, 给出展开器与可视化方案

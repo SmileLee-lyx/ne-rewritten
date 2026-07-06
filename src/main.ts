@@ -49,6 +49,7 @@ import { BT_star_Minus1_Y_nSS } from '@/notations/BM-like/BT_star_Minus1_Y_nSS.t
 import { BTL_Minus1_Y_nSS } from '@/notations/BM-like/BTL_Minus1_Y_nSS.ts';
 import { MOCF_EBO } from '@/notations/OCN/MOCF_EBO.ts';
 import { Inacc_OCF } from '@/notations/OCN/Inacc_OCF.ts';
+import { UPSr5 } from '@/notations/Worm/UPSr5.ts';
 
 register_notation(omega);
 register_notation(BM4);
@@ -118,6 +119,7 @@ register_notation(BOCF_EBO);
 register_notation(MOCF_EBO);
 register_notation(NOCF_EBO);
 register_notation(Inacc_OCF);
+register_notation(UPSr5);
 
 window.notations ??= {};
 for (let notation of list_notations()) {
