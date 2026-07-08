@@ -146,7 +146,6 @@ register_notation(omega_Y_medium);
 register_notation(omega_Y_strong);
 register_category(category_bm_like);
 register_notation(BM4);
-register_notation(seq_0Y);
 register_notation(TBM);
 register_notation(BHM);
 register_notation(BSM);
