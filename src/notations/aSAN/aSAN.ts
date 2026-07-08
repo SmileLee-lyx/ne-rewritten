@@ -76,7 +76,8 @@ var aSAN_FS = (A: any, FSterm: any): any => {
 
 export const aSAN: NotationDefinition<any> = {
     id: 'asan-1',
-    name: 'aSAN-1',
+    name: "Aarex's superstrong array notation (aSAN-1)",
+    simple_name: 'aSAN-1',
     category_id: 'category-asan',
     display: aSAN_display,
     is_limit: aSAN_able,
