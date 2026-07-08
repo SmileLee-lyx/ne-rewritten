@@ -905,10 +905,10 @@ function FS(e: Expr, index: number): Expr {
 }
 
 // ========== 记号定义 ==========
-export const UPSr5: NotationDefinition<Expr> = {
-    id: 'ups-r5',
-    name: 'UPSr5',
-    category_id: 'category-worm',
+export const UPS1_1r5: NotationDefinition<Expr> = {
+    id: 'ups1.1r5',
+    name: 'UPS1.1r5',
+    category_id: 'category-ocn',
     display: {
         plain: formatSequence,
         from_display: parseSequence,
@@ -928,6 +928,6 @@ export const UPSr5: NotationDefinition<Expr> = {
     is_limit,
     compare,
     FS,
-    credit_text_id: 'credit.upsr5',
+    credit_text_id: 'credit.ups1_1r5',
     init: () => [INFINITY, []],
 };

@@ -63,7 +63,7 @@ import { BT_star_Minus1_Y_nSS } from '@/notations/BM-like/BT_star_Minus1_Y_nSS.t
 import { BTL_Minus1_Y_nSS } from '@/notations/BM-like/BTL_Minus1_Y_nSS.ts';
 import { MOCF_EBO } from '@/notations/OCN/MOCF_EBO.ts';
 import { Inacc_OCF } from '@/notations/OCN/Inacc_OCF.ts';
-import { UPSr5 } from '@/notations/Worm/UPSr5.ts';
+import { UPS1_1r5 } from '@/notations/OCN/UPS1_1r5.ts';
 import { VeblenPhi } from '@/notations/Misc/Veblen.ts';
 import { category_hypcos_w2mn, category_mn } from '@/notations/MN/categories.ts';
 import { category_n_mn } from '@/notations/SMN/n_MN.ts';
@@ -74,7 +74,6 @@ import { category_den } from '@/notations/DEN/categories.ts';
 import { category_bm_like } from '@/notations/BM-like/categories.ts';
 import { category_y } from '@/notations/Y/categories.ts';
 import { category_ocf, category_ocn } from '@/notations/OCN/categories.ts';
-import { category_worm } from '@/notations/Worm/categories.ts';
 import { category_bm_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS.ts';
 import { category_bm_t_minus1_y_nss } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
 import { category_bm_bt_minus1_y_nss } from '@/notations/BM-like/BT_Minus1_Y_nSS.ts';
@@ -185,6 +184,7 @@ register_notation(DEN3);
 register_category(category_ocn);
 register_notation(LMN);
 register_notation(LON);
+register_notation(UPS1_1r5);
 register_category(category_ton);
 register_notation(TON_DRC);
 register_notation(TON_DRP);
@@ -200,8 +200,6 @@ register_notation(aSAN);
 register_notation(aSAN2);
 register_notation(aSAN3);
 register_notation(aSAN_tilde3plus);
-register_category(category_worm);
-register_notation(UPSr5);
 
 window.notations ??= {};
 for (let notation of list_notations()) {

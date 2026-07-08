@@ -153,6 +153,7 @@ function row_can_decrement(level: string[]): boolean {
                     'nav-btn--notation': item.kind === 'notation',
                     'nav-btn--category': item.kind === 'category',
                     'nav-btn--current': item.kind === 'notation' && item.id === currentNotationId,
+                    'nav-btn--open': item.kind === 'category' && nav_path[level.length] === item.id,
                     'nav-btn--hidden': hiddenNotations.includes(item.id) && showCheckbox(item),
                 }"
                 @mousedown.prevent="navigate(item.id)"
@@ -206,6 +207,7 @@ function row_can_decrement(level: string[]): boolean {
 }
 
 .nav-btn {
+    position: relative;
     padding: 0 6px 2px;
     border: 2px solid #90f;
     border-radius: 10px;
@@ -213,6 +215,17 @@ function row_can_decrement(level: string[]): boolean {
     font-family: inherit;
     cursor: pointer;
     background: #daf;
+}
+
+.nav-btn--open::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #f90;
 }
 
 .nav-btn:hover {
