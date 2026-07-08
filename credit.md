@@ -54,4 +54,4 @@ NOCF:
 由社区定义
 
 UPSr5:
-由 Alice 定义, 给出展开器与可视化方案
+由 Optimism 最初创作, Alice 完善. 由 Alice 给出展开器与可视化方案

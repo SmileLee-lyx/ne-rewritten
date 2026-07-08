@@ -908,6 +908,7 @@ function FS(e: Expr, index: number): Expr {
 export const UPSr5: NotationDefinition<Expr> = {
     id: 'ups-r5',
     name: 'UPSr5',
+    category_id: 'category-worm',
     display: {
         plain: formatSequence,
         from_display: parseSequence,

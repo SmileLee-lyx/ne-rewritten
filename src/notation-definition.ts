@@ -93,6 +93,7 @@ export interface NotationDefinition<T> {
     id: string;
     name: string;
     simple_name?: string;
+    category_id?: string;
     display: NotationDisplaySpec<T>;
     display_equiv?: Record<string, NotationDisplaySpec<T>>;
     is_limit: (a: T) => boolean;

@@ -2,6 +2,7 @@ import { DisplayMap, DisplaySet, lex_compare, number_compare } from '@/utils.ts'
 import { Y_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
+import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 
 type Expr = number[];
 type Vertical = number[];
@@ -657,11 +658,18 @@ const y_diagram_control: DiagramControl<Expr, YDiagramData> = {
     },
 };
 
+export const category_y_omega: NotationCategoryDefinition = {
+    id: 'category-y-omega',
+    name: 'ωY',
+    parent_id: 'category-y',
+};
+
 function create_magma_notation(type: string, magma: (seq: Expr, index: number) => Expr): NotationDefinition<Expr> {
     return {
         id: 'omega-y-' + type,
         name: 'ω-Y (' + type + ' magma)',
         simple_name: 'ωY ' + type,
+        category_id: 'category-y-omega',
         display: {
             plain: sequence_display,
             from_display: sequence_from_display,

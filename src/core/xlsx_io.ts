@@ -1,5 +1,5 @@
 import Excel from 'exceljs';
-import type { AnalysisEntry } from '@/core/analysis';
+import type { AnalysisEntry } from '@/core/analysis.ts';
 
 export async function export_to_xlsx<T>(
     entries: AnalysisEntry<T>[],

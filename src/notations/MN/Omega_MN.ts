@@ -483,6 +483,7 @@ export const omega_MN: NotationDefinition<Expr> = {
     id: 'omega-mn',
     name: 'ω mountain notation (ωMN)',
     simple_name: 'ωMN',
+    category_id: 'category-mn',
     display: {
         plain: (m) => mountain_display(m, false),
         from_display: mountain_from_display,

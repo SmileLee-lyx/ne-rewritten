@@ -10,6 +10,7 @@ import {
 import { MN_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
+import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 
 export type Sep = number;
 export type Vertical = Sep[];
@@ -547,11 +548,19 @@ const draw_diagram_control: DiagramControl<Mountain, DiagramData> = {
     },
 };
 
+export const category_n_mn: NotationCategoryDefinition = {
+    id: 'category-n-mn',
+    name: 'n-MN',
+    parent_id: 'category-mn',
+    generator: { start: 1, initial: 3, create: (n) => n_MN(n) },
+};
+
 export function n_MN(n: number): NotationDefinition<Mountain> {
     return {
         id: n + '-MN',
         name: 'non triangular' + n + 'MN',
         simple_name: n + 'MN',
+        category_id: 'category-n-mn',
         display: {
             plain: (m) => mountain_display(m, false),
             from_display: from_display,

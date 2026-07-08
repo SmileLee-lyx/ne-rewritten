@@ -476,6 +476,7 @@ export const SA_omega2_MN: NotationDefinition<Mountain> = {
     id: 'SA-omega2-MN',
     name: "Smile's Astral ω2 MN",
     simple_name: 'SAω2MN',
+    category_id: 'category-smile-mn',
     display: { plain: display, from_display: from_display },
     display_equiv: {
         layer: {

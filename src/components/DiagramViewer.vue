@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
-import type { Diagram } from '@/core/diagram_types';
-import { css } from '@/core/diagram_utils';
+import type { Diagram } from '@/core/diagram_types.ts';
+import { css } from '@/core/diagram_utils.ts';
 
 const props = defineProps<{ diagram: Diagram }>();
 const canvas = ref<HTMLCanvasElement>();

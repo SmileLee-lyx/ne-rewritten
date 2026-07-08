@@ -100,6 +100,7 @@ export const TON_main: NotationDefinition<any> = {
     id: 'ton-m',
     name: "Taranosvky's ordinal notation",
     simple_name: 'TON',
+    category_id: 'category-ton',
     display: TON_main_display,
     is_limit: TON_limit,
     compare: TON_compare,

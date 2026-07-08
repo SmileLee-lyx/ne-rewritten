@@ -1,7 +1,7 @@
-import type { TreeNode } from '@/core/tree';
-import { find_prev, last_descendant } from '@/core/tree';
-import type { TreeNodeExtra } from '@/core/extra';
-import { expand_item } from '@/core/expander';
+import type { TreeNode } from '@/core/tree.ts';
+import { find_prev, last_descendant } from '@/core/tree.ts';
+import type { TreeNodeExtra } from '@/core/extra.ts';
+import { expand_item } from '@/core/expander.ts';
 import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
 
 /** 单个导出条目。expr 保留原始类型，不做字符串化。 */

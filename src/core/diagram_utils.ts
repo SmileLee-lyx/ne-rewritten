@@ -1,4 +1,4 @@
-import type { Rgba } from './diagram_types';
+import type { Rgba } from './diagram_types.ts';
 
 /** Rgba → CSS rgba() 字符串 */
 export function css(c: Rgba): string {

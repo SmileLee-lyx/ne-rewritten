@@ -99,6 +99,7 @@ export const TON_DRPC: NotationDefinition<any> = {
     id: 'ton-drpc',
     name: 'Degrees of Reflection with Passthrough (reflection configuration)',
     simple_name: 'TON_DRPC',
+    category_id: 'category-ton',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

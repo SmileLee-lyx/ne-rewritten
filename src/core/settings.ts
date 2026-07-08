@@ -17,6 +17,7 @@ export interface Settings {
     font_family: string;
     display_mode: DisplayMode;
     notation_name_mode: 'full' | 'simple';
+    nav_mode: 'grouped' | 'flat';
     use_delete_to_clear: boolean;
     show_diagram: boolean;
     show_latex: boolean;
@@ -24,8 +25,8 @@ export interface Settings {
     equiv_active: Record<string, string | undefined>;
     equiv_hide_original: Record<string, boolean>;
     language: 'zh' | 'en';
-    shown_notations: string[];
     hidden_notations: string[];
+    generator_state: Record<string, number>;
     expand: ExpandSettings;
 }
 
@@ -38,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
     font_family: 'Comic Sans MS',
     display_mode: 'html',
     notation_name_mode: 'simple',
+    nav_mode: 'grouped',
     use_delete_to_clear: true,
     show_diagram: true,
     show_latex: false,
@@ -45,7 +47,7 @@ export const DEFAULT_SETTINGS: Settings = {
     equiv_active: {},
     equiv_hide_original: {},
     language: 'zh',
-    shown_notations: [],
     hidden_notations: [],
+    generator_state: {},
     expand: { FS_index: 1, notation_id: 'omega', notation_equiv: undefined, variant: 'FS_short' },
 };

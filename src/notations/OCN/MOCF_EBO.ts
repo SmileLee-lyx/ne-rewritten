@@ -259,6 +259,7 @@ function FS(e: Expr, index: Expr): Expr {
 export const MOCF_EBO: NotationDefinition<Expr> = {
     id: 'mocf-ebo',
     name: 'MOCF (EBO)',
+    category_id: 'category-ocf',
     is_limit: (e) => is_infinity(e) || cofinality(e) !== undefined,
     compare,
     FS: (e, index) => FS(e, from_nat(index)),

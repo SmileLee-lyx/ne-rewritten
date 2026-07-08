@@ -1,5 +1,6 @@
 import { index_of_last, lex_compare, lex_compare_by, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { from_display } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
+import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 export type ExprData<Data> = [Data, ExprData<Data>][];
@@ -279,9 +280,16 @@ function FS(e: Expr, index: number, n: number): Expr {
     return result;
 }
 
+export const category_bm_bt_minus1_y_nss: NotationCategoryDefinition = {
+    id: 'category-bm-bt-minus1-ynss',
+    name: 'BT(-1)Y-nSS',
+    parent_id: 'category-bm-like',
+    generator: { start: 0, initial: 3, create: (n) => BT_Minus1_Y_nSS(n) },
+};
 export function BT_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
         id: 'bt--1y-' + (n + 1) + 'ss',
+        category_id: 'category-bm-bt-minus1-ynss',
         name: 'BT(-1)Y-' + (n + 1) + 'SS',
 
         display: { plain: display, from_display: (s) => from_display(s, n) },

@@ -4,7 +4,7 @@ import ModalDialog from './ModalDialog.vue';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
-import type { Settings } from '@/core/settings';
+import type { Settings } from '@/core/settings.ts';
 
 defineProps<{ show: boolean }>();
 const emit = defineEmits<{ close: [] }>();

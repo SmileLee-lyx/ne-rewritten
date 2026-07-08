@@ -334,6 +334,7 @@ export const Inacc_OCF: NotationDefinition<Expr> = {
     id: 'inacc-ocf',
     name: 'Inaccessible ordinal OCF',
     simple_name: 'OCF (I)',
+    category_id: 'category-ocf',
     is_limit,
     compare,
     FS: (e, index) => FS(e, from_nat(index)),

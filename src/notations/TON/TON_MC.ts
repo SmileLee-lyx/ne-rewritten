@@ -138,6 +138,7 @@ export const TON_MC: NotationDefinition<any> = {
     id: 'ton-mc',
     name: 'TON (reflection configuration) without passthrough',
     simple_name: 'TON_MC',
+    category_id: 'category-ton',
     display: TON_main_display,
     is_limit: TON_limit,
     compare: TON_compare,

@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { Diagram } from '@/core/diagram_types';
+import type { Diagram } from '@/core/diagram_types.ts';
 import { DiagramAction, DiagramControl } from '@/notation-definition.ts';
 
 const diagram = ref<Diagram | null>(null);

@@ -109,6 +109,7 @@ export const BSM: NotationDefinition<Expr> = {
     id: 'bsm',
     name: 'Bashicu sudden matrix (BSM)',
     simple_name: 'BSM',
+    category_id: 'category-bm-like',
     display: { plain: display, from_display },
     is_limit: matrix_is_limit,
     compare: compare,

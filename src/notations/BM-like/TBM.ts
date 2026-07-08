@@ -388,6 +388,7 @@ export const TBM: NotationDefinition<Expr> = {
     id: 'tbm',
     name: 'Transfinite Bashicu matrix (TBMS)',
     simple_name: 'TBMS',
+    category_id: 'category-bm-like',
     display: {
         plain: (m) => display(m, false),
         html: (m) => display(m, true),

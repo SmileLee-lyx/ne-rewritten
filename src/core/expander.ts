@@ -1,5 +1,5 @@
-import type { TreeNode } from '@/core/tree';
-import { append_sibling, get_bound, prepend_child } from '@/core/tree';
+import type { TreeNode } from '@/core/tree.ts';
+import { append_sibling, get_bound, prepend_child } from '@/core/tree.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 function resolve_fs<T>(notation: NotationDefinition<T>, variant: string): (expr: T, index: number) => T {

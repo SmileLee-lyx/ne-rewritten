@@ -146,6 +146,7 @@ export const LON: NotationDefinition<Expr> = {
     id: 'lon',
     name: 'lifting Omega notation (LON)',
     simple_name: 'LON',
+    category_id: 'category-ocn',
     display: {
         plain: (e) => LMN_display(e, 'plain'),
         html: (e) => LMN_display(e, 'html-psi'),

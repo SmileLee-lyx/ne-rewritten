@@ -94,6 +94,7 @@ export const TON_DoR: NotationDefinition<any> = {
     id: 'ton-dr',
     name: 'Degrees of Reflection',
     simple_name: 'TON_DoR',
+    category_id: 'category-ton',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

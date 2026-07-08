@@ -49,6 +49,7 @@ export const Minus1_Y: NotationDefinition<Expr> = {
     id: '-1y',
     name: '(-1)-Y sequence',
     simple_name: '(-1)Y',
+    category_id: 'category-y',
     display: { plain: sequence_display, from_display: sequence_from_display },
     compare,
     is_limit,

@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { ast_to_latex, parse_latex } from '@/core/latex_ast';
+import { ast_to_latex, parse_latex } from '@/core/latex_ast.ts';
 
 const latex = ref('');
 const visible = ref(false);

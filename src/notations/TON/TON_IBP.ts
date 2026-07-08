@@ -183,6 +183,7 @@ export const TON_IBP: NotationDefinition<any> = {
     id: 'ton-ibp',
     name: 'Iteration of n-built from below',
     simple_name: 'TON_IBP',
+    category_id: 'category-ton',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

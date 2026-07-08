@@ -1,4 +1,4 @@
-import type { Diagram, Rgba } from '@/core/diagram_types';
+import type { Diagram, Rgba } from '@/core/diagram_types.ts';
 
 /**
  * 山脉图中间数据——计算层产出，绘制层消费。

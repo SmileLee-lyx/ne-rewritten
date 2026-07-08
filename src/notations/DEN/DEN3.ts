@@ -254,6 +254,7 @@ const diagram_control: DiagramControl<any, { offset: number }> = {
 export const DEN3: NotationDefinition<any> = {
     id: 'den3',
     name: 'DEN3',
+    category_id: 'category-den',
     display,
     is_limit: isLimit,
     compare,

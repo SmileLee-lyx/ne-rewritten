@@ -98,6 +98,7 @@ export const TON_DRP: NotationDefinition<any> = {
     id: 'ton-drp',
     name: 'Degrees of Reflection with Passthrough',
     simple_name: 'TON_DRP',
+    category_id: 'category-ton',
     display: TON_noraise_display,
     is_limit: TON_limit,
     compare: TON_noraise_compare,

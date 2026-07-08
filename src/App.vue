@@ -1,25 +1,26 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
-import { get_notation, list_notations } from '@/core/registry';
-import type { TreeNode } from '@/core/tree';
-import { init_dataset } from '@/core/tree';
+import { get_notation } from '@/core/registry.ts';
+import type { TreeNode } from '@/core/tree.ts';
+import { init_dataset } from '@/core/tree.ts';
 import NotationTree from '@/components/NotationTree.vue';
 import { focus_node, focus_node_input, get_last_focus } from '@/composables/use_focus_tracker.ts';
-import { export_analysis, import_analysis } from '@/core/analysis';
-import { download_buffer, export_to_xlsx, import_from_xlsx } from '@/core/xlsx_io';
+import { export_analysis, import_analysis } from '@/core/analysis.ts';
+import { download_buffer, export_to_xlsx, import_from_xlsx } from '@/core/xlsx_io.ts';
 
 import { use_diagram } from '@/composables/use_diagram.ts';
 import DiagramViewer from '@/components/DiagramViewer.vue';
 import HotkeyDialog from '@/components/HotkeyDialog.vue';
 import TipsDialog from '@/components/TipsDialog.vue';
-import NotationSelector from '@/components/NotationSelector.vue';
 import { create_t, I18N_KEY } from '@/composables/use_i18n';
 import ExpandDialog from '@/components/ExpandDialog.vue';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
 import LaTeXViewer from '@/components/LaTeXViewer.vue';
 import MultiSelectBar from '@/components/MultiSelectBar.vue';
+import NotationNav from '@/components/NotationNav.vue';
+import NotationNavPlain from '@/components/NotationNavPlain.vue';
 import { resolve_display } from '@/notation-definition.ts';
 import { use_multi_select } from '@/composables/use_multi_select.ts';
 
@@ -38,8 +39,8 @@ const {
 const latex_state = use_latex();
 const expand_dialog_state = use_expand_dialog();
 const multi_select = use_multi_select();
+const config_mode = ref(false);
 const settings_collapsed = ref(true);
-const show_notation_selector = ref(false);
 const is_flashing = ref(false);
 const flash_show_simple = ref(false);
 let flash_timer: ReturnType<typeof setInterval> | null = null;
@@ -60,6 +61,19 @@ function stop_flash() {
     }
 }
 
+function toggle_hidden(id: string) {
+    const idx = settings.hidden_notations.indexOf(id);
+    if (idx >= 0) {
+        settings.hidden_notations = settings.hidden_notations.filter((x) => x !== id);
+    } else {
+        settings.hidden_notations = [...settings.hidden_notations, id];
+    }
+}
+
+function unhide_all() {
+    settings.hidden_notations = [];
+}
+
 watch(
     () => settings.font_family,
     (v) => {
@@ -68,12 +82,6 @@ watch(
     { immediate: true },
 );
 const font_options = ['Comic Sans MS', 'Consolas', 'Microsoft YaHei UI'];
-
-const notations = computed(() => {
-    const shown = settings.shown_notations;
-    if (shown.length === 0) return list_notations();
-    return shown.map((id) => get_notation(id)).filter(Boolean) as ReturnType<typeof list_notations>;
-});
 
 const trees: Map<string, TreeNode<unknown>> = reactive(new Map());
 
@@ -346,20 +354,28 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <div class="tab">
-            <button
-                v-for="n in notations"
-                :key="n.id"
-                :disabled="n.id === settings.current_notation_id"
-                @mousedown="settings.current_notation_id = n.id"
-            >
-                <span v-if="n.simple_name && settings.notation_name_mode === 'full'" class="tab-stack">
-                    <span :class="{ active: !is_flashing || !flash_show_simple }">{{ n.name }}</span>
-                    <span :class="{ active: is_flashing && flash_show_simple }">{{ n.simple_name }}</span>
-                </span>
-                <span v-else>{{ settings.notation_name_mode === 'simple' ? (n.simple_name ?? n.name) : n.name }}</span>
-            </button>
-        </div>
+        <NotationNav
+            v-if="settings.nav_mode === 'grouped'"
+            :current-notation-id="settings.current_notation_id"
+            :notation-name-mode="settings.notation_name_mode"
+            :is-flashing="is_flashing"
+            :flash-show-simple="flash_show_simple"
+            :config-mode="config_mode"
+            :hidden-notations="settings.hidden_notations"
+            @select-notation="(id: string) => (settings.current_notation_id = id)"
+            @toggle-hidden="toggle_hidden"
+        />
+        <NotationNavPlain
+            v-else
+            :current-notation-id="settings.current_notation_id"
+            :notation-name-mode="settings.notation_name_mode"
+            :is-flashing="is_flashing"
+            :flash-show-simple="flash_show_simple"
+            :config-mode="config_mode"
+            :hidden-notations="settings.hidden_notations"
+            @select-notation="(id: string) => (settings.current_notation_id = id)"
+            @toggle-hidden="toggle_hidden"
+        />
 
         <div class="settings-box">
             <div class="toolbar">
@@ -380,8 +396,19 @@ onUnmounted(() => {
                         </button>
                     </span>
                     <span style="margin-left: 12px">
-                        {{ t('selector.config-label') }}
-                        <button @mousedown="show_notation_selector = true">{{ t('selector.config-btn') }}</button>
+                        {{ t('config-display.label') }}
+                        <button class="toggle-btn" @mousedown="config_mode = !config_mode">
+                            {{ t('config-display.configure') }}
+                        </button>
+                    </span>
+                    <span style="margin-left: 12px">
+                        {{ t('nav-mode.label') }}
+                        <button
+                            class="toggle-btn"
+                            @mousedown="settings.nav_mode = settings.nav_mode === 'grouped' ? 'flat' : 'grouped'"
+                        >
+                            {{ t('nav-mode.' + settings.nav_mode) }}
+                        </button>
                     </span>
                 </div>
                 <div class="toolbar-row">
@@ -570,43 +597,24 @@ onUnmounted(() => {
         <div v-if="save_indicator" class="save-indicator">
             {{ t('autosave.last-save', { time: save_indicator }) }}
         </div>
-        <NotationSelector :show="show_notation_selector" @close="show_notation_selector = false" />
         <HotkeyDialog :show="show_hotkeys" @close="show_hotkeys = false" />
         <ExpandDialog :show="expand_dialog_state.visible.value" @close="expand_dialog_state.close()" />
         <TipsDialog :show="show_tips" @close="show_tips = false" />
         <MultiSelectBar />
+        <Teleport to="body">
+            <div v-if="config_mode" class="config-bar">
+                <button class="ms-btn" @mousedown.stop="unhide_all">
+                    {{ t('config-display.unhide-all') }}
+                </button>
+                <button class="ms-btn ms-btn-confirm" @mousedown.stop="config_mode = false">
+                    {{ t('config-display.confirm') }}
+                </button>
+            </div>
+        </Teleport>
     </div>
 </template>
 
 <style>
-.tab > button {
-    padding: 0 6px 2px;
-    border: 2px solid #90f;
-    border-radius: 10px;
-    background-color: #daf;
-    font-size: 20px;
-
-    font-family: inherit;
-}
-
-.tab > button[disabled] {
-    background-color: #60a;
-    color: #fff;
-}
-
-.tab-stack {
-    display: inline-grid;
-}
-.tab-stack > * {
-    grid-area: 1 / 1;
-    opacity: 0;
-    transition: opacity 0.6s;
-    pointer-events: none;
-}
-.tab-stack > .active {
-    opacity: 1;
-}
-
 .settings-box {
     border: 2px solid #ddd;
     border-radius: 8px;
@@ -960,5 +968,45 @@ body::after {
 
 .diagram-close:hover {
     color: #333;
+}
+
+.config-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.config-bar button {
+    padding: 5px 14px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    background: #f8f8f8;
+    color: #333;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.config-bar button:hover {
+    background: #e8e8e8;
+}
+
+.config-bar .ms-btn-confirm {
+    color: #06c;
+    font-weight: 600;
 }
 </style>

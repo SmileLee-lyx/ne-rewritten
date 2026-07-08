@@ -266,6 +266,7 @@ export const LMN: NotationDefinition<Expr> = {
     id: 'lmn',
     name: 'lifting M-notation (LMN)',
     simple_name: 'LMN',
+    category_id: 'category-ocn',
     display: {
         plain: (e) => LMN_display(e, 'plain'),
         html: (e) => LMN_display(e, 'html-psi'),

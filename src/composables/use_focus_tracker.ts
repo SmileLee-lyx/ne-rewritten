@@ -1,5 +1,5 @@
-import type { TreeNode } from '@/core/tree';
-import type { TreeNodeExtra } from '@/core/extra';
+import type { TreeNode } from '@/core/tree.ts';
+import type { TreeNodeExtra } from '@/core/extra.ts';
 
 /** 最后一次聚焦的节点 path */
 let last_path: string | undefined;

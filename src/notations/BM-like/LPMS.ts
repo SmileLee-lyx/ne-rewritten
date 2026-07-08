@@ -675,6 +675,7 @@ export const LPMS: NotationDefinition<Expr> = {
     id: 'lpms',
     name: 'Lifting projection matrix system',
     simple_name: 'LPMS',
+    category_id: 'category-bm-like',
     display: { plain: display, from_display },
     display_equiv: {
         LP0Y: {
@@ -699,6 +700,7 @@ export const LPTSS: NotationDefinition<Expr> = {
     id: 'lptss',
     name: 'Lifting projection TSS',
     simple_name: 'LPTSS',
+    category_id: 'category-bm-like',
     display: { plain: display, from_display },
     display_equiv: {
         LP0Y: {

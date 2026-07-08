@@ -4,7 +4,13 @@ import { BM4, seq_0Y } from '@/notations/BM-like/BM.ts';
 import { omega } from '@/notations/Misc/Omega.ts';
 import { TBM } from '@/notations/BM-like/TBM.ts';
 import { Y_seq } from '@/notations/Y/Y.ts';
-import { omega_Y_actual, omega_Y_medium, omega_Y_strong, omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
+import {
+    category_y_omega,
+    omega_Y_actual,
+    omega_Y_medium,
+    omega_Y_strong,
+    omega_Y_weak,
+} from '@/notations/Y/Omega_Y.ts';
 import { omega_MN } from '@/notations/MN/Omega_MN.ts';
 import { T_omega_MN } from '@/notations/MN/T_omega_MN.ts';
 import { BHM } from '@/notations/BM-like/BHM.ts';
@@ -17,8 +23,16 @@ import { LMN } from '@/notations/OCN/LMN.ts';
 import { LON } from '@/notations/OCN/LON.ts';
 import { UPMS } from '@/notations/BM-like/UPMS.ts';
 import { LPMS, LPTSS } from '@/notations/BM-like/LPMS.ts';
-import { list_notations, register_notation } from '@/core/registry';
-import { DEFAULT_SETTINGS, Settings } from '@/core/settings';
+import {
+    get_generator_state,
+    init_generator,
+    list_notations,
+    register_category,
+    register_notation,
+    registry_version,
+    set_generator_state,
+} from '@/core/registry.ts';
+import { DEFAULT_SETTINGS, Settings } from '@/core/settings.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { A_omega2_MN2, wA_omega2_MN2 } from '@/notations/MN/Aw2MN2.ts';
 import { A_omega2_MN3, wA_omega2_MN3 } from '@/notations/MN/Aw2MN3.ts';
@@ -51,82 +65,21 @@ import { MOCF_EBO } from '@/notations/OCN/MOCF_EBO.ts';
 import { Inacc_OCF } from '@/notations/OCN/Inacc_OCF.ts';
 import { UPSr5 } from '@/notations/Worm/UPSr5.ts';
 import { VeblenPhi } from '@/notations/Misc/Veblen.ts';
-
-register_notation(omega);
-register_notation(VeblenPhi);
-register_notation(BM4);
-register_notation(TBM);
-register_notation(Minus1_Y);
-register_notation(T_Minus1_Y);
-register_notation(seq_0Y);
-register_notation(Y_seq);
-register_notation(omega_Y_weak);
-register_notation(omega_Y_actual);
-register_notation(omega_Y_medium);
-register_notation(omega_Y_strong);
-register_notation(Minus1_Y_nSS(0));
-register_notation(Minus1_Y_nSS(1));
-register_notation(Minus1_Y_nSS(2));
-register_notation(Minus1_Y_nSS(3));
-register_notation(T_Minus1_Y_nSS(0));
-register_notation(T_Minus1_Y_nSS(1));
-register_notation(T_Minus1_Y_nSS(2));
-register_notation(T_Minus1_Y_nSS(3));
-register_notation(BT_Minus1_Y_nSS(0));
-register_notation(BT_Minus1_Y_nSS(1));
-register_notation(BT_Minus1_Y_nSS(2));
-register_notation(BT_Minus1_Y_nSS(3));
-register_notation(BT_star_Minus1_Y_nSS(1));
-register_notation(BT_star_Minus1_Y_nSS(2));
-register_notation(BT_star_Minus1_Y_nSS(3));
-register_notation(BTL_Minus1_Y_nSS(1));
-register_notation(BTL_Minus1_Y_nSS(2));
-register_notation(BTL_Minus1_Y_nSS(3));
-register_notation(omega_MN);
-register_notation(n_MN(1));
-register_notation(n_MN(2));
-register_notation(n_MN(3));
-register_notation(T_omega_MN);
-register_notation(A_omega2_MN2);
-register_notation(wA_omega2_MN2);
-register_notation(A_omega2_MN3);
-register_notation(wA_omega2_MN3);
-register_notation(SA_omega2_MN);
-register_notation(S_omega2_MN);
-register_notation(S_omega_pow_omega_MN);
-register_notation(BHM);
-register_notation(BSM);
-register_notation(UPMS);
-register_notation(LPMS);
-register_notation(LPTSS);
-register_notation(DEN);
-register_notation(DEN2);
-register_notation(DEN3);
-register_notation(LMN);
-register_notation(LON);
-register_notation(TON_DRC);
-register_notation(TON_DRP);
-register_notation(TON_DoR);
-register_notation(TON_DRPC);
-register_notation(TON_I);
-register_notation(TON_IBP);
-register_notation(TON_main);
-register_notation(TON_MC);
-register_notation(TON_MPC);
-register_notation(aSAN);
-register_notation(aSAN2);
-register_notation(aSAN3);
-register_notation(aSAN_tilde3plus);
-register_notation(BOCF_EBO);
-register_notation(MOCF_EBO);
-register_notation(NOCF_EBO);
-register_notation(Inacc_OCF);
-register_notation(UPSr5);
-
-window.notations ??= {};
-for (let notation of list_notations()) {
-    window.notations[notation.id] = notation;
-}
+import { category_hypcos_w2mn, category_mn } from '@/notations/MN/categories.ts';
+import { category_n_mn } from '@/notations/SMN/n_MN.ts';
+import { category_smile_mn } from '@/notations/SMN/categories.ts';
+import { category_ton } from '@/notations/TON/categories.ts';
+import { category_asan } from '@/notations/aSAN/categories.ts';
+import { category_den } from '@/notations/DEN/categories.ts';
+import { category_bm_like } from '@/notations/BM-like/categories.ts';
+import { category_y } from '@/notations/Y/categories.ts';
+import { category_ocf, category_ocn } from '@/notations/OCN/categories.ts';
+import { category_worm } from '@/notations/Worm/categories.ts';
+import { category_bm_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS.ts';
+import { category_bm_t_minus1_y_nss } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
+import { category_bm_bt_minus1_y_nss } from '@/notations/BM-like/BT_Minus1_Y_nSS.ts';
+import { category_bm_bt_star_minus1_y_nss } from '@/notations/BM-like/BT_star_Minus1_Y_nSS.ts';
+import { category_bm_btl_minus1_y_nss } from '@/notations/BM-like/BTL_Minus1_Y_nSS.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -143,23 +96,12 @@ function load_settings(): Partial<Settings> {
             delete parsed.display_html_mode;
         }
 
+        // 迁移: 移除已废弃的 shown_notations
+        delete (parsed as any).shown_notations;
+
         return parsed;
     } catch {
         return {};
-    }
-}
-
-function init_notation_lists(settings: Settings) {
-    if (settings.shown_notations.length === 0 && settings.hidden_notations.length === 0) {
-        // 首次加载：用所有记号
-        settings.shown_notations = list_notations().map((n) => n.id);
-    } else {
-        // 已有配置：新记号追加到 shown 尾部
-        const all_ids = new Set(list_notations().map((n) => n.id));
-        const known = new Set([...settings.shown_notations, ...settings.hidden_notations]);
-        for (const id of all_ids) {
-            if (!known.has(id)) settings.shown_notations.push(id);
-        }
     }
 }
 
@@ -167,7 +109,8 @@ const settings: Settings = reactive({
     ...DEFAULT_SETTINGS,
     ...load_settings(),
 });
-init_notation_lists(settings);
+
+set_generator_state(settings.generator_state ?? {});
 
 watch(
     () => settings,
@@ -176,6 +119,94 @@ watch(
     },
     { deep: true },
 );
+
+// generator 状态变更时同步回 settings（由 settings 的 deep watch 自动保存）
+watch(
+    () => registry_version.value,
+    () => {
+        settings.generator_state = { ...get_generator_state() };
+    },
+);
+
+register_notation(omega);
+register_notation(VeblenPhi);
+register_category(category_ocf);
+register_notation(BOCF_EBO);
+register_notation(MOCF_EBO);
+register_notation(NOCF_EBO);
+register_notation(Inacc_OCF);
+register_category(category_y);
+register_notation(Minus1_Y);
+register_notation(T_Minus1_Y);
+register_notation(seq_0Y);
+register_notation(Y_seq);
+register_category(category_y_omega);
+register_notation(omega_Y_weak);
+register_notation(omega_Y_actual);
+register_notation(omega_Y_medium);
+register_notation(omega_Y_strong);
+register_category(category_bm_like);
+register_notation(BM4);
+register_notation(seq_0Y);
+register_notation(TBM);
+register_notation(BHM);
+register_notation(BSM);
+register_notation(UPMS);
+register_notation(LPMS);
+register_notation(LPTSS);
+register_category(category_bm_minus1_y_nss);
+init_generator(category_bm_minus1_y_nss);
+register_category(category_bm_t_minus1_y_nss);
+init_generator(category_bm_t_minus1_y_nss);
+register_category(category_bm_bt_minus1_y_nss);
+init_generator(category_bm_bt_minus1_y_nss);
+register_category(category_bm_bt_star_minus1_y_nss);
+init_generator(category_bm_bt_star_minus1_y_nss);
+register_category(category_bm_btl_minus1_y_nss);
+init_generator(category_bm_btl_minus1_y_nss);
+register_category(category_mn);
+register_category(category_n_mn);
+init_generator(category_n_mn);
+register_notation(omega_MN);
+register_notation(T_omega_MN);
+register_category(category_hypcos_w2mn);
+register_notation(A_omega2_MN2);
+register_notation(wA_omega2_MN2);
+register_notation(A_omega2_MN3);
+register_notation(wA_omega2_MN3);
+register_category(category_smile_mn);
+register_notation(SA_omega2_MN);
+register_notation(S_omega2_MN);
+register_notation(S_omega_pow_omega_MN);
+register_category(category_den);
+register_notation(DEN);
+register_notation(DEN2);
+register_notation(DEN3);
+register_category(category_ocn);
+register_notation(LMN);
+register_notation(LON);
+register_category(category_ton);
+register_notation(TON_DRC);
+register_notation(TON_DRP);
+register_notation(TON_DoR);
+register_notation(TON_DRPC);
+register_notation(TON_I);
+register_notation(TON_IBP);
+register_notation(TON_main);
+register_notation(TON_MC);
+register_notation(TON_MPC);
+register_category(category_asan);
+register_notation(aSAN);
+register_notation(aSAN2);
+register_notation(aSAN3);
+register_notation(aSAN_tilde3plus);
+register_category(category_worm);
+register_notation(UPSr5);
+
+window.notations ??= {};
+for (let notation of list_notations()) {
+    window.notations[notation.id] = notation;
+}
 
 const app = createApp(App);
 

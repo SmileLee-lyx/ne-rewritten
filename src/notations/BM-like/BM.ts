@@ -1,5 +1,5 @@
 import { boolean_compare, index_of_last, lex_compare, lex_compare_by, number_compare } from '@/utils.ts';
-import type { Diagram } from '@/core/diagram_types';
+import type { Diagram } from '@/core/diagram_types.ts';
 import { Y_FS_variants } from '@/notations/FS_util.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
@@ -424,6 +424,7 @@ export const BM4: NotationDefinition<Expr> = {
     id: 'bm4',
     name: 'Bashicu matrix (BMS)',
     simple_name: 'BMS',
+    category_id: 'category-bm-like',
     display: { plain: display, from_display },
     display_equiv: {
         '0Y': {
@@ -451,6 +452,7 @@ export const seq_0Y: NotationDefinition<Expr> = {
     id: '0y',
     name: '0-Y sequence',
     simple_name: '0Y',
+    category_id: 'category-y',
     display: { plain: display_as_0Y, from_display: from_display_as_0Y },
     display_equiv: {
         BMS: {

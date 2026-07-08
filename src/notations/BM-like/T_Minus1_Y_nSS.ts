@@ -1,4 +1,5 @@
 import { bind2, bind3, deepcopy, index_of_last, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
+import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 type Column = [number[], Expr];
@@ -162,6 +163,12 @@ function display(e: Expr, top_level: boolean = true): string {
     return e.map(column_display).join('');
 }
 
+export const category_bm_t_minus1_y_nss: NotationCategoryDefinition = {
+    id: 'category-bm-t-minus1-ynss',
+    name: 'T(-1)Y-nSS',
+    parent_id: 'category-bm-like',
+    generator: { start: 0, initial: 3, create: (n) => T_Minus1_Y_nSS(n) },
+};
 export function from_display(s: string, n: number): Expr {
     let i = 0;
 
@@ -317,6 +324,7 @@ export function T_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
 
     return {
         id: 't--1y-' + (n + 1) + 'ss',
+        category_id: 'category-bm-t-minus1-ynss',
         name: 'T(-1)Y-' + (n + 1) + 'SS',
 
         display: { plain: display, from_display: (s) => from_display(s, n) },

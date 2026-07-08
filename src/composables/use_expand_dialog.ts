@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue';
-import { get_notation, list_notations } from '@/core/registry';
-import type { ExpandSettings, Variant } from '@/core/settings';
+import { get_notation, list_notations } from '@/core/registry.ts';
+import type { ExpandSettings, Variant } from '@/core/settings.ts';
 import { focus_node, get_last_focus } from '@/composables/use_focus_tracker.ts';
 import { resolve_display } from '@/notation-definition.ts';
 

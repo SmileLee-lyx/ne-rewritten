@@ -139,6 +139,7 @@ export const TON_MPC: NotationDefinition<any> = {
     id: 'ton-mpc',
     name: 'TON with passthrough (reflection configuration)',
     simple_name: 'TON_MPC',
+    category_id: 'category-ton',
     display: TON_main_display,
     is_limit: TON_limit,
     compare: TON_compare,

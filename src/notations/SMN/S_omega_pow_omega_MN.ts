@@ -477,6 +477,7 @@ export const S_omega_pow_omega_MN: NotationDefinition<Mountain> = {
     id: 'S-omega^omega-MN',
     name: "Smile's ω^ω MN",
     simple_name: 'Sω^ωMN',
+    category_id: 'category-smile-mn',
     display: { plain: display, from_display: from_display },
     display_equiv: {
         layer: {

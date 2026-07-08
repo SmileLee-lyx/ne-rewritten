@@ -1,4 +1,4 @@
-import { deepcopy } from '@/utils';
+import { deepcopy } from '@/utils.ts';
 import {
     column_verticals,
     convert_to_layer,
@@ -178,6 +178,7 @@ export const A_omega2_MN3: NotationDefinition<Expr> = {
     name: 'Aω2MN3',
     display: mountain_display,
     simple_name: 'Aω2MN3',
+    category_id: 'category-hypcos-w2mn',
     is_limit: mountain_is_limit,
     compare: mountain_compare,
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
@@ -189,6 +190,7 @@ export const A_omega2_MN3: NotationDefinition<Expr> = {
 export const wA_omega2_MN3: NotationDefinition<Expr> = {
     id: 'weak-a-omega2-mn-3',
     name: 'weak Aω2MN3',
+    category_id: 'category-hypcos-w2mn',
     display: mountain_display,
     display_equiv: {
         layer: (m) => mountain_display(convert_to_layer(m)),

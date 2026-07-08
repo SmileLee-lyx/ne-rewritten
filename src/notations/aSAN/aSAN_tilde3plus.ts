@@ -108,6 +108,7 @@ export const aSAN_tilde3plus: NotationDefinition<any> = {
     id: 'asan-tilde3plus',
     name: 'aSAN~3+',
     simple_name: 'aSAN~3+',
+    category_id: 'category-asan',
     display: aSAN_display,
     is_limit: aSAN_able,
     compare: aSAN_compare,

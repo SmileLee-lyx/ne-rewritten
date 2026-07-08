@@ -108,6 +108,7 @@ export const aSAN3: NotationDefinition<any> = {
     id: 'asan-3',
     name: 'aSAN-3',
     simple_name: 'aSAN-3',
+    category_id: 'category-asan',
     display: aSAN_display,
     is_limit: aSAN_able,
     compare: aSAN_compare,

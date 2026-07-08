@@ -258,6 +258,7 @@ export const DEN: NotationDefinition<Expr> = {
     id: 'den',
     name: 'Defective embedding notation (DEN)',
     simple_name: 'DEN',
+    category_id: 'category-den',
     display,
     is_limit: isLimit,
     compare,

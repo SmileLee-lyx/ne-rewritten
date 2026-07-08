@@ -374,6 +374,7 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
     id: 'a-omega2-mn-2',
     name: 'Astral ω·2 mountain notation 2 (Aω2MN2)',
     simple_name: 'Aω2MN2',
+    category_id: 'category-hypcos-w2mn',
     display: mountain_display,
     is_limit: mountain_is_limit,
     compare: mountain_compare,
@@ -387,6 +388,7 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     id: 'weak-a-omega2-mn-2',
     name: 'weak Astral ω·2 mountain notation 2 (wAω2MN2)',
     simple_name: 'wAω2MN2',
+    category_id: 'category-hypcos-w2mn',
     display: mountain_display,
     display_equiv: {
         layer: (m) => mountain_display(convert_to_layer(m)),

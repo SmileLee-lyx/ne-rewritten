@@ -360,6 +360,7 @@ export const draw_diagram_control: DiagramControl<Expr, { offset: number }> = {
 export const DEN2: NotationDefinition<Expr> = {
     id: 'den2',
     name: 'DEN2',
+    category_id: 'category-den',
     display: { plain: display, from_display },
     is_limit: is_limit,
     compare,

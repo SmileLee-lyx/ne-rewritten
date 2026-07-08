@@ -101,6 +101,7 @@ export const BHM: NotationDefinition<Expr> = {
     id: 'bhm',
     name: 'Bashicu hyper matrix (BHM)',
     simple_name: 'BHM',
+    category_id: 'category-bm-like',
     display: { plain: display, from_display },
     is_limit: matrix_is_limit,
     compare: compare,

@@ -1,11 +1,11 @@
 <script setup lang="ts" generic="T">
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { TreeNode } from '@/core/tree';
-import { find_next, find_prev } from '@/core/tree';
-import type { TreeNodeExtra } from '@/core/extra';
+import type { TreeNode } from '@/core/tree.ts';
+import { find_next, find_prev } from '@/core/tree.ts';
+import type { TreeNodeExtra } from '@/core/extra.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
-import { expand_item } from '@/core/expander';
+import { expand_item } from '@/core/expander.ts';
 import { focus_node, focus_node_input, set_last_focus } from '@/composables/use_focus_tracker.ts';
 import { use_diagram } from '@/composables/use_diagram.ts';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';

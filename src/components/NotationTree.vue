@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T">
-import type { TreeNode } from '@/core/tree';
+import type { TreeNode } from '@/core/tree.ts';
 import NotationTreeItem from '@/components/NotationTreeItem.vue';
 import { NotationDefinition } from '@/notation-definition.ts';
 

@@ -388,6 +388,7 @@ export const UPMS: NotationDefinition<Expr> = {
     id: 'upms',
     name: 'Unupgrading projection matrix system (UPMS)',
     simple_name: 'UPMS',
+    category_id: 'category-bm-like',
     display: { plain: display, from_display },
     display_equiv: {
         UP0Y: {

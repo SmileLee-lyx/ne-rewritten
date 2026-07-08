@@ -1,5 +1,5 @@
 import { computed, reactive } from 'vue';
-import { lex_compare, number_compare } from '@/utils';
+import { lex_compare, number_compare } from '@/utils.ts';
 
 interface SelectionEntry {
     path: string;
