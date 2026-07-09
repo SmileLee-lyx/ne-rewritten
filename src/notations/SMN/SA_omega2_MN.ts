@@ -6,7 +6,7 @@ import {
     number_compare,
     tuple_lex_compare,
 } from '@/utils.ts';
-import { MN_FS_variants } from '@/notations/FS_util.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 export type Sep = number[];

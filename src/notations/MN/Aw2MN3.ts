@@ -18,7 +18,7 @@ import {
     vertical_compare,
     vertical_increase,
 } from '@/notations/MN/Aw2MN2.ts';
-import { sequence_FS_variants } from '@/notations/FS_util.ts';
+import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 function subtract1(A0: Expr, V0: Vertical[][]): Expr {

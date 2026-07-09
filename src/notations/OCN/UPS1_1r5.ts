@@ -8,6 +8,7 @@ import {
     number_compare,
     object_lex_compare_by,
 } from '@/utils.ts';
+import { sequence_FS_variants0 } from '@/notations/notation_utils.ts';
 
 type Entry = { value: number; starred: boolean };
 export type Expr = Entry[];
@@ -928,7 +929,7 @@ export const UPS1_1r5: NotationDefinition<Expr> = {
     },
     is_limit,
     compare,
-    FS,
+    ...sequence_FS_variants0(FS, is_infinity, infinity_FS, is_limit, formatSequence),
     credit_text_id: 'credit.ups1_1r5',
     init: () => [INFINITY, []],
 };

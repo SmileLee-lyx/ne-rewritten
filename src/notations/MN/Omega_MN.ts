@@ -1,5 +1,5 @@
 import { deepcopy, DisplayMap, DisplaySet, lex_compare, number_compare } from '@/utils.ts';
-import { MN_FS_variants } from '@/notations/FS_util.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 

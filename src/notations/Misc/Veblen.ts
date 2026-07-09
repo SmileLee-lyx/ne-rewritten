@@ -1,5 +1,6 @@
 import { bind2, boolean_compare, lex_compare, tuple_lex_compare_by } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
+import { merge_sum } from '@/notations/notation_utils.ts';
 
 type VeblenList = [VeblenList, Expr][];
 // 0: 0
@@ -14,25 +15,6 @@ function is_infinity(e: Expr) {
 }
 
 type DisplayType = 'plain' | 'html' | 'latex';
-
-function merge(terms: string[]): string {
-    let result: string[] = [];
-    let i = 0;
-    while (i < terms.length) {
-        let j = i + 1;
-        let t = terms[i];
-        while (j < terms.length && terms[j] === t) j++;
-        if (j === i + 1) {
-            result.push(terms[i]);
-        } else {
-            let count = j - i;
-            if (t === '1') result.push('' + count);
-            else result.push(t + count);
-        }
-        i = j;
-    }
-    return result.join('+');
-}
 
 function display_list_impl(l: VeblenList, d: (e: Expr) => string): string {
     function impl_list(l: VeblenList): string {
@@ -102,7 +84,7 @@ function display(e: Expr, type: DisplayType): string {
             case 0:
                 return '0';
             case 1:
-                return merge(e[1].map(impl));
+                return merge_sum(e[1].map(impl));
             case 2:
                 const phi = is_latex ? '\\varphi ' : 'φ';
                 if (e[1].length === 0) {
@@ -134,7 +116,7 @@ function display_separate(e: Expr, type: DisplayType): string {
             case 0:
                 return '0';
             case 1:
-                return merge(e[1].map(impl));
+                return merge_sum(e[1].map(impl));
             case 2:
                 const phi = is_latex ? '\\varphi ' : 'φ';
                 if (e[1].length === 0) {

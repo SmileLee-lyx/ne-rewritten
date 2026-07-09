@@ -1,5 +1,6 @@
 import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
+import { merge_sum } from '@/notations/notation_utils.ts';
 
 type PrimExpr = [Expr, Expr];
 type Expr = [0] | [1, PrimExpr, Expr];
@@ -40,9 +41,7 @@ function display(e: Expr, type: DisplayType): string {
     let latex = type === 'latex';
     if (is_infinity(e)) return latex ? '\\text{Limit}' : 'Limit';
     if (is_zero(e)) return '0';
-    return prim_list(e)
-        .map((p) => display_prim(p, type))
-        .join('+');
+    return merge_sum(prim_list(e).map((p) => display_prim(p, type)));
 }
 
 function display_prim(p: PrimExpr, type: DisplayType): string {

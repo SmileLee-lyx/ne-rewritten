@@ -7,7 +7,7 @@ import {
     number_compare,
     tuple_lex_compare,
 } from '@/utils.ts';
-import { MN_FS_variants } from '@/notations/FS_util.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { draw_mountain_diagram, MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import type { NotationCategoryDefinition } from '@/core/notation_category.ts';

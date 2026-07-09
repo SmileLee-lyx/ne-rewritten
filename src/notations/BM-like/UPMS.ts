@@ -7,7 +7,7 @@ import {
     from_display_as_0Y,
     from_display_simple,
 } from '@/notations/BM-like/BM.ts';
-import { sequence_FS_variants } from '@/notations/FS_util.ts';
+import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 const isPseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';

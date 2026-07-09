@@ -1,5 +1,6 @@
 import { bind2, boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
+import { merge_sum } from '@/notations/notation_utils.ts';
 
 type Expr = ['zero'] | ['sum', Expr[]] | ['omega_pow', Expr] | ['Omega', Expr] | ['I'] | ['psi', Expr, Expr];
 
@@ -37,10 +38,6 @@ function is_zero(e: Expr): boolean {
 
 function is_one(e: Expr): boolean {
     return e[0] === 'omega_pow' && is_zero(e[1]);
-}
-
-function is_omega(e: Expr): boolean {
-    return e[0] === 'omega_pow' && is_one(e[1]);
 }
 
 function prim_list(e: Expr): Expr[] {
@@ -122,7 +119,7 @@ function display(e: Expr, type: DisplayType): string {
                 return '0';
             }
             case 'sum': {
-                return a[1].map(impl).join('+');
+                return merge_sum(a[1].map(impl));
             }
             case 'omega_pow': {
                 let str_a1 = impl(a[1]);

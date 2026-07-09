@@ -1,5 +1,6 @@
 import { bind2, boolean_compare, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
+import { merge_sum } from '@/notations/notation_utils.ts';
 
 /**
  * 0: 0
@@ -52,7 +53,7 @@ function display(e: Expr, type: DisplayType): string {
                 return '0';
             }
             case 1: {
-                return a[1].map(impl).join('+');
+                return merge_sum(a[1].map(impl));
             }
             case 2: {
                 let str_a1 = impl(a[1]);
