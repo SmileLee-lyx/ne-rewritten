@@ -1,4 +1,4 @@
-import { aSAN_able, aSAN_base, aSAN_compare, aSAN_display } from './asan_helpers.ts';
+import { aSAN_able, aSAN_base, aSAN_compare, aSAN_display, aSAN_semiable } from './asan_helpers.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 var data: any = {};
@@ -113,6 +113,7 @@ export const aSAN_tilde3plus: NotationDefinition<any> = {
     is_limit: aSAN_able,
     compare: aSAN_compare,
     FS: (A: any, FSterm: any) => {
+        if (!aSAN_semiable(A)) return A;
         if ('' + A === '1,Infinity') return FSterm ? Array(FSterm).fill(1).concat(2) : 2;
         if (aSAN_base(A) > 1) return pre(A);
         var key = aSAN_display(A);
