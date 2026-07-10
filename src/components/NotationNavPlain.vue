@@ -67,21 +67,22 @@ function toggle_hidden(id: string) {
 
 .nav-btn {
     padding: 0 6px 2px;
-    border: 2px solid #90f;
+    border: 2px solid var(--color-primary);
     border-radius: 10px;
     font-size: 20px;
     font-family: inherit;
     cursor: pointer;
-    background: #daf;
+    background: var(--color-primary-bg);
+    color: var(--color-text);
 }
 
 .nav-btn:hover {
-    background: #c8f;
+    background: var(--color-primary-hover);
 }
 
-.nav-btn--current {
-    background: #60a;
-    color: #fff;
+button.nav-btn--current {
+    background: var(--color-primary-active);
+    color: var(--color-bg);
 }
 
 .nav-btn-stack {

@@ -67,38 +67,38 @@ function close_bar() {
     align-items: center;
     gap: 12px;
     padding: 10px 20px;
-    background: #fff;
-    color: #333;
+    background: var(--color-bg);
+    color: var(--color-text);
     font-size: 14px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 12px var(--color-shadow);
     font-family: inherit;
     white-space: nowrap;
 }
 
 .multi-select-count {
-    color: #888;
+    color: var(--color-text-secondary);
     margin-right: 4px;
 }
 
 .ms-btn {
     padding: 5px 14px;
-    border: 1px solid #bbb;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
-    background: #f8f8f8;
-    color: #333;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
     cursor: pointer;
     font-size: 13px;
     font-family: inherit;
 }
 
 .ms-btn:hover {
-    background: #e8e8e8;
+    background: var(--color-bg-hover);
 }
 
 .ms-btn-close {
-    color: #c00;
+    color: var(--color-danger);
 }
 
 .ms-btn-close:hover {
@@ -112,11 +112,11 @@ function close_bar() {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--color-modal-overlay);
 }
 
 .ms-modal {
-    background: #fff;
+    background: var(--color-bg);
     border-radius: 8px;
     padding: 20px;
     min-width: 400px;
@@ -137,7 +137,7 @@ function close_bar() {
     width: 100%;
     min-height: 120px;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
     font-family: monospace;
     font-size: 13px;

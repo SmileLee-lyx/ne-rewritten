@@ -122,7 +122,7 @@ function on_fill() {
     font-family: inherit;
     font-size: 14px;
     padding: 4px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
 }
 .expand-row label {
@@ -136,31 +136,31 @@ function on_fill() {
     font-family: inherit;
     font-size: 13px;
     padding: 2px 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
 }
 .expand-preview {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border-light);
     border-radius: 4px;
     padding: 8px 12px;
     min-height: 40px;
     font-family: inherit;
     font-size: 14px;
-    background: #fafafa;
+    background: var(--color-bg-secondary);
     width: 100%;
     box-sizing: border-box;
     word-break: break-all;
 }
 .expand-preview-hint {
-    color: #080;
+    color: var(--color-success);
     font-family: inherit;
     margin-top: 4px;
 }
 .expand-preview-result {
-    color: #000;
+    color: var(--color-text);
 }
 .expand-preview-error {
-    color: #c00;
+    color: var(--color-danger);
     font-family: inherit;
 }
 .expand-buttons {
@@ -170,17 +170,17 @@ function on_fill() {
     font-family: inherit;
     font-size: 13px;
     padding: 4px 16px;
-    border: 1px solid #888;
+    border: 1px solid var(--color-text-secondary);
     border-radius: 4px;
-    background: #fff;
+    background: var(--color-bg);
     cursor: pointer;
 }
 .expand-btn:hover {
-    background: #f0f0f0;
+    background: var(--color-bg-hover);
 }
 .expand-btn:disabled {
-    color: #aaa;
-    border-color: #ddd;
+    color: var(--color-text-muted);
+    border-color: var(--color-border-light);
     cursor: default;
 }
 </style>

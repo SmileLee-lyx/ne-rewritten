@@ -25,6 +25,7 @@ export interface Settings {
     equiv_active: Record<string, string | undefined>;
     equiv_hide_original: Record<string, boolean>;
     language: 'zh' | 'en';
+    color_scheme: string;
     hidden_notations: string[];
     generator_state: Record<string, number>;
     expand: ExpandSettings;
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
     equiv_active: {},
     equiv_hide_original: {},
     language: 'zh',
+    color_scheme: 'default',
     hidden_notations: [],
     generator_state: {},
     expand: { FS_index: 1, notation_id: 'omega', notation_equiv: undefined, variant: 'FS_short' },

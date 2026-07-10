@@ -197,12 +197,13 @@ function on_find_keydown(e: KeyboardEvent) {
                 </label>
             </div>
             <div class="toolbar-row">
-                <button class="reset-btn" @mousedown="save_load.handle_reset()">{{ t('toolbar.reset') }}</button>
+                <button class="reset-btn" @mousedown="ui.showReset.value = true">{{ t('toolbar.reset') }}</button>
                 <button @mousedown="save_load.handle_export()">{{ t('toolbar.export') }}</button>
                 <button @mousedown="save_load.handle_import()">{{ t('toolbar.import') }}</button>
                 <button @mousedown="save_load.save_analysis()">{{ t('toolbar.save') }}</button>
                 <button @mousedown="ui.showHotkeys.value = true">{{ t('toolbar.hotkeys') }}</button>
                 <button class="toolbar-btn-tips" @mousedown="ui.showTips.value = true">{{ t('toolbar.tips') }}</button>
+                <button @mousedown="ui.showColorTheme.value = true">{{ t('toolbar.theme') }}</button>
             </div>
             <div class="toolbar-row">
                 <label v-if="notation?.draw_diagram">

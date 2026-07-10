@@ -14,6 +14,8 @@ const state = reactive<UiState>({
 
 const showHotkeys = ref(false);
 const showTips = ref(false);
+const showColorTheme = ref(false);
+const showReset = ref(false);
 
 export function use_ui_states() {
     let flash_timer: ReturnType<typeof setInterval> | null = null;
@@ -48,5 +50,7 @@ export function use_ui_states() {
         stop_flash,
         showHotkeys,
         showTips,
+        showColorTheme,
+        showReset,
     };
 }

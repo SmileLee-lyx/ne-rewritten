@@ -10,18 +10,22 @@ import { use_diagram } from '@/composables/use_diagram.ts';
 import DiagramViewer from '@/components/DiagramViewer.vue';
 import HotkeyDialog from '@/components/HotkeyDialog.vue';
 import TipsDialog from '@/components/TipsDialog.vue';
+import ColorThemePanel from '@/components/ColorThemePanel.vue';
+import ResetPanel from '@/components/ResetPanel.vue';
 import { create_t, I18N_KEY } from '@/composables/use_i18n.ts';
 import ExpandDialog from '@/components/ExpandDialog.vue';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
 import LaTeXViewer from '@/components/LaTeXViewer.vue';
 import MultiSelectBar from '@/components/MultiSelectBar.vue';
+import ConfigBar from '@/components/ConfigBar.vue';
 import NotationNav from '@/components/NotationNav.vue';
 import NotationNavPlain from '@/components/NotationNavPlain.vue';
 import SettingsBar from '@/components/SettingsBar.vue';
 import { use_multi_select } from '@/composables/use_multi_select.ts';
 import { use_ui_states } from '@/composables/use_ui_states.ts';
 import { SAVE_LOAD_KEY, use_save_load } from '@/composables/use_save_load.ts';
+import { apply_color_theme } from '@/composables/use_color_theme.ts';
 
 const settings = inject(SETTINGS_KEY)!;
 const t = (key: string, params?: Record<string, string>) => create_t(settings.language)(key, params);
@@ -37,23 +41,18 @@ const save_load = use_save_load(reactive(new Map()));
 provide(SAVE_LOAD_KEY, save_load);
 const { trees, notation, root, save_indicator } = save_load;
 
-function toggle_hidden(id: string) {
-    const idx = settings.hidden_notations.indexOf(id);
-    if (idx >= 0) {
-        settings.hidden_notations = settings.hidden_notations.filter((x) => x !== id);
-    } else {
-        settings.hidden_notations = [...settings.hidden_notations, id];
-    }
-}
-
-function unhide_all() {
-    settings.hidden_notations = [];
-}
-
 watch(
     () => settings.font_family,
     (v) => {
         document.body.style.fontFamily = v + ', sans-serif';
+    },
+    { immediate: true },
+);
+
+watch(
+    () => settings.color_scheme,
+    (v) => {
+        apply_color_theme(v);
     },
     { immediate: true },
 );
@@ -176,23 +175,47 @@ function debug_compare_order(notation_id?: string) {
         <HotkeyDialog :show="ui.showHotkeys.value" @close="ui.showHotkeys.value = false" />
         <ExpandDialog :show="expand_dialog_state.visible.value" @close="expand_dialog_state.close()" />
         <TipsDialog :show="ui.showTips.value" @close="ui.showTips.value = false" />
+        <ColorThemePanel />
+        <ResetPanel />
         <MultiSelectBar />
-        <Teleport to="body">
-            <div v-if="ui.configMode.value" class="config-bar">
-                <button class="ms-btn" @mousedown.stop="unhide_all">
-                    {{ t('config-display.unhide-all') }}
-                </button>
-                <button class="ms-btn ms-btn-confirm" @mousedown.stop="ui.setConfigMode(false)">
-                    {{ t('config-display.confirm') }}
-                </button>
-            </div>
-        </Teleport>
+        <ConfigBar />
     </div>
 </template>
 
 <style>
+:root {
+    --color-text: #000;
+    --color-text-secondary: #888;
+    --color-text-muted: #999;
+    --color-primary: #90f;
+    --color-primary-hover: #c8f;
+    --color-primary-active: #60a;
+    --color-primary-bg: #daf;
+    --color-category: #f90;
+    --color-category-hover: #fd9;
+    --color-category-bg: #feb;
+    --color-accent: #06c;
+    --color-danger: #c00;
+    --color-success: #080;
+    --color-border: #ccc;
+    --color-border-light: #ddd;
+    --color-border-subtle: #eee;
+    --color-bg: #fff;
+    --color-bg-secondary: #f8f8f8;
+    --color-bg-hover: #e8e8e8;
+    --color-bg-active: #d0d0d0;
+    --color-tree-hover: #cff;
+    --color-tree-analyzed: #eee;
+    --color-tree-analyzed-hover: #bee;
+    --color-selected: #cfc;
+    --color-selected-hover: #afa;
+    --color-shadow: rgba(0, 0, 0, 0.15);
+    --color-overlay: rgba(0, 0, 0, 0.35);
+    --color-modal-overlay: rgba(0, 0, 0, 0.4);
+}
+
 .settings-box {
-    border: 2px solid #ddd;
+    border: 2px solid var(--color-border-light);
     border-radius: 8px;
     padding: 8px 12px 4px;
     margin: 8px 0;
@@ -204,16 +227,16 @@ function debug_compare_order(notation_id?: string) {
     margin-top: 6px;
     padding: 2px 0;
     border: none;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--color-border-subtle);
     background: transparent;
     cursor: pointer;
     font-size: 12px;
-    color: #888;
+    color: var(--color-text-secondary);
     font-family: inherit;
 }
 
 .collapse-btn:hover {
-    color: #333;
+    color: var(--color-text);
 }
 
 .toolbar {
@@ -243,7 +266,7 @@ function debug_compare_order(notation_id?: string) {
 .toolbar-sep {
     width: 1px;
     height: 1.2em;
-    background: #ccc;
+    background: var(--color-border);
 }
 
 .toolbar button {
@@ -253,9 +276,10 @@ function debug_compare_order(notation_id?: string) {
     align-items: center;
     justify-content: center;
     height: 24px;
-    border: 1px solid #bbb;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
-    background: #f8f8f8;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
     cursor: pointer;
     font-size: 14px;
     vertical-align: middle;
@@ -264,27 +288,28 @@ function debug_compare_order(notation_id?: string) {
 }
 
 .toolbar button:hover {
-    background: #e8e8e8;
+    background: var(--color-bg-hover);
 }
 
 .toolbar button:active {
-    background: #d0d0d0;
+    background: var(--color-bg-active);
 }
 
-.reset-btn {
-    color: #c00;
+.toolbar button.reset-btn {
+    color: var(--color-danger);
 }
 
 .reset-btn:hover {
     background: #fdd !important;
 }
 
-.toolbar-btn-tips {
-    color: #06c !important;
+.toolbar button.toolbar-btn-tips {
+    color: var(--color-accent);
     font-weight: 600;
 }
-.toolbar-btn-tips:hover {
-    background: #e0ecff !important;
+
+.toolbar button.toolbar-btn-tips:hover {
+    background: #e0ecff;
 }
 
 .tier-icon {
@@ -316,7 +341,7 @@ function debug_compare_order(notation_id?: string) {
 .credit-line {
     text-align: center;
     margin-top: 1.5em;
-    color: #888;
+    color: var(--color-text-secondary);
     font-size: 13px;
 }
 
@@ -327,28 +352,28 @@ function debug_compare_order(notation_id?: string) {
 }
 
 .shown-item:hover {
-    background-color: #cff;
+    background-color: var(--color-tree-hover);
 }
 
 .shown-item.analyzed {
-    background-color: #eee;
+    background-color: var(--color-tree-analyzed);
 }
 
 .shown-item.analyzed:hover {
-    background-color: #bee;
+    background-color: var(--color-tree-analyzed-hover);
 }
 
 .shown-item.selected {
-    background-color: #cfc !important;
+    background-color: var(--color-selected) !important;
 }
 
 .shown-item.selected:hover {
-    background-color: #afa !important;
+    background-color: var(--color-selected-hover) !important;
 }
 
 .shown-item > span:empty::before {
     content: '(empty)';
-    color: #999;
+    color: var(--color-text-muted);
 }
 
 .expr-display.shifted {
@@ -362,10 +387,10 @@ function debug_compare_order(notation_id?: string) {
     z-index: 1073741824;
     bottom: 100%;
     padding: 8px;
-    background: #fff;
-    border: 1px solid #ccc;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--color-shadow);
     text-align: left;
     line-height: 1.4;
 }
@@ -391,7 +416,7 @@ ul {
     left: -16px;
     top: 0;
     bottom: 0;
-    border-left: 1px solid #ddd;
+    border-left: 1px solid var(--color-border-light);
 }
 
 .tree-item:last-child::before {
@@ -404,7 +429,7 @@ ul {
     left: -16px;
     top: 0.6em;
     width: 14px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--color-border-light);
 }
 
 .tree-item:last-child::after {
@@ -412,11 +437,11 @@ ul {
 }
 
 .tree-children > .tree-item:last-child::before {
-    border-left: 1px solid #ddd;
+    border-left: 1px solid var(--color-border-light);
 }
 
 .tree-children > .tree-item:only-child::before {
-    border-left: 1px solid #ddd;
+    border-left: 1px solid var(--color-border-light);
 }
 
 .fold-icon {
@@ -425,7 +450,7 @@ ul {
     cursor: pointer;
     user-select: none;
     font-size: 0.75em;
-    color: #888;
+    color: var(--color-text-secondary);
     vertical-align: middle;
 }
 
@@ -435,20 +460,22 @@ ul {
 }
 
 .fold-icon:hover {
-    color: #333;
+    color: var(--color-text);
 }
 
 .toolbar input[type='text'],
+.toolbar input[type='number'],
 .tree-item input[type='text'] {
     font-family: inherit;
     padding: 2px 8px;
     height: 24px;
-    border: 1px solid #bbb;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
     font-size: 14px;
     line-height: 1.4;
     box-sizing: border-box;
-    background: #fff;
+    background: var(--color-bg);
+    color: var(--color-text);
     vertical-align: middle;
 }
 
@@ -480,9 +507,10 @@ ul {
 .toolbar select {
     padding: 2px 6px;
     height: 24px;
-    border: 1px solid #bbb;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
-    background: #f8f8f8;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
     cursor: pointer;
     font-size: 14px;
     font-family: inherit;
@@ -494,7 +522,13 @@ ul {
 }
 
 .toolbar select:hover {
-    background: #e8e8e8;
+    background: var(--color-bg-hover);
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    margin: 8px;
 }
 
 body::after {
@@ -506,10 +540,10 @@ body::after {
 .diagram-floating {
     position: fixed;
     z-index: 9999;
-    background: #fff;
-    border: 1px solid #ccc;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--color-shadow);
     padding: 8px;
 }
 
@@ -518,8 +552,8 @@ body::after {
     left: 8px;
     bottom: 8px;
     font-size: 12px;
-    color: #888;
-    background: rgba(255, 255, 255, 0.85);
+    color: var(--color-text-secondary);
+    background: var(--color-bg-secondary);
     padding: 2px 8px;
     border-radius: 4px;
     z-index: 9999;
@@ -534,52 +568,12 @@ body::after {
     background: transparent;
     cursor: pointer;
     font-size: 14px;
-    color: #999;
+    color: var(--color-text-muted);
     line-height: 1;
     padding: 0 4px;
 }
 
 .diagram-close:hover {
-    color: #333;
-}
-
-.config-bar {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
-    background: #fff;
-    color: #333;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
-    font-family: inherit;
-    white-space: nowrap;
-}
-
-.config-bar button {
-    padding: 5px 14px;
-    border: 1px solid #bbb;
-    border-radius: 5px;
-    background: #f8f8f8;
-    color: #333;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: inherit;
-}
-
-.config-bar button:hover {
-    background: #e8e8e8;
-}
-
-.config-bar .ms-btn-confirm {
-    color: #06c;
-    font-weight: 600;
+    color: var(--color-text);
 }
 </style>

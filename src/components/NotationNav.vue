@@ -205,18 +205,19 @@ function row_can_decrement(level: string[]): boolean {
 }
 
 .nav-row + .nav-row {
-    border-top: 2px solid #ccc;
+    border-top: 2px solid var(--color-border);
 }
 
 .nav-btn {
     position: relative;
     padding: 0 6px 2px;
-    border: 2px solid #90f;
+    border: 2px solid var(--color-primary);
     border-radius: 10px;
     font-size: 20px;
     font-family: inherit;
     cursor: pointer;
-    background: #daf;
+    background: var(--color-primary-bg);
+    color: var(--color-text);
 }
 
 .nav-btn--open::after {
@@ -227,25 +228,25 @@ function row_can_decrement(level: string[]): boolean {
     transform: translateX(-50%);
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
-    border-top: 10px solid #f90;
+    border-top: 10px solid var(--color-category);
 }
 
 .nav-btn:hover {
-    background: #c8f;
+    background: var(--color-primary-hover);
 }
 
-.nav-btn--notation.nav-btn--current {
-    background: #60a;
-    color: #fff;
+button.nav-btn--notation.nav-btn--current {
+    background: var(--color-primary-active);
+    color: var(--color-bg);
 }
 
 .nav-btn--category {
-    border-color: #f90;
-    background: #feb;
+    border-color: var(--color-category);
+    background: var(--color-category-bg);
 }
 
 .nav-btn--category:hover {
-    background: #fd9;
+    background: var(--color-category-hover);
 }
 
 .nav-btn-stack {
@@ -273,7 +274,7 @@ function row_can_decrement(level: string[]): boolean {
 .gen-row-btns .nav-btn {
     min-width: 28px;
     text-align: center;
-    border-color: #90f;
+    border-color: var(--color-primary);
     background: #e0c0ff;
 }
 

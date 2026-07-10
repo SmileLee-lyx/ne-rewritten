@@ -42,11 +42,11 @@ const t = inject(I18N_KEY)!;
     max-width: 520px;
     line-height: 1.7;
     font-size: 14px;
-    color: #333;
+    color: var(--color-text);
 }
 .tips-intro {
     margin: 0 0 16px;
-    color: #555;
+    color: var(--color-text);
 }
 .tips-section {
     margin-bottom: 16px;
@@ -58,9 +58,9 @@ const t = inject(I18N_KEY)!;
     font-weight: 600;
     font-size: 15px;
     margin-bottom: 8px;
-    color: #222;
+    color: var(--color-text);
     padding-bottom: 4px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border-subtle);
 }
 .tips-list {
     margin: 0;
@@ -77,9 +77,10 @@ const t = inject(I18N_KEY)!;
     padding: 2px 6px;
     font-size: 12px;
     font-family: Consolas, monospace;
-    background: #f4f4f4;
-    border: 1px solid #ccc;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    box-shadow: 0 1px 0 #bbb;
+    box-shadow: 0 1px 0 var(--color-border);
 }
 </style>

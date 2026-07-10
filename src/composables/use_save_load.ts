@@ -83,7 +83,7 @@ export function use_save_load(trees: Map<string, TreeNode<any>>) {
 
     function handle_reset() {
         const n = notation.value;
-        if (!n || !confirm('Reset this notation? All expanded data will be lost.')) return;
+        if (!n) return;
         localStorage.removeItem(ANALYSIS_STORAGE_PREFIX + n.id);
         const new_root: TreeNode<any> = reactive(init_dataset(n));
         trees.set(n.id, new_root);

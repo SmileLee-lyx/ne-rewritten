@@ -70,17 +70,17 @@ const input_hotkeys = [
     text-align: right;
 }
 .hotkey-desc {
-    color: #555;
+    color: var(--color-text);
 }
 .hotkey-section + .hotkey-section {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--color-border-subtle);
 }
 .hotkey-section-title {
     font-weight: 600;
     font-size: 13px;
-    color: #666;
+    color: var(--color-text-secondary);
     margin-bottom: 4px;
     padding: 0 12px;
 }
@@ -89,9 +89,10 @@ kbd {
     padding: 2px 6px;
     font-size: 12px;
     font-family: Consolas, monospace;
-    background: #f4f4f4;
-    border: 1px solid #ccc;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    box-shadow: 0 1px 0 #bbb;
+    box-shadow: 0 1px 0 var(--color-border);
 }
 </style>

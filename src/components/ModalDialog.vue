@@ -37,14 +37,14 @@ function on_keydown(e: KeyboardEvent) {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--color-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100000;
 }
 .modal-dialog {
-    background: #fff;
+    background: var(--color-bg);
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
     min-width: 300px;
@@ -57,7 +57,7 @@ function on_keydown(e: KeyboardEvent) {
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border-subtle);
 }
 .modal-title {
     font-weight: 600;
@@ -68,11 +68,11 @@ function on_keydown(e: KeyboardEvent) {
     background: none;
     cursor: pointer;
     font-size: 16px;
-    color: #999;
+    color: var(--color-text-muted);
     padding: 0 4px;
 }
 .modal-close:hover {
-    color: #333;
+    color: var(--color-text);
 }
 .modal-body {
     padding: 16px;
