@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { merge_sum } from '@/notations/notation_utils.ts';
+import { type OCNDisplay, display_OCN, merge_sum } from '@/notations/OCN/OCN_utils.ts';
 
 type PrimExpr = [Expr, Expr];
 type Expr = [0] | [1, PrimExpr, Expr];
@@ -35,32 +35,16 @@ function infinity_FS(index: number): Expr {
     return [1, [[0], result], [0]];
 }
 
-type DisplayType = 'plain' | 'html_psi' | 'latex';
-
-function display(e: Expr, type: DisplayType): string {
-    let latex = type === 'latex';
-    if (is_infinity(e)) return latex ? '\\text{Limit}' : 'Limit';
-    if (is_zero(e)) return '0';
-    return merge_sum(prim_list(e).map((p) => display_prim(p, type)));
+function to_OCN_display(e: Expr): OCNDisplay {
+    if (is_infinity(e)) return { type: 'constant', display: 'Limit', display_latex: '\\text{Limit}' };
+    if (is_zero(e)) return { type: 'number', value: 0 };
+    return merge_sum(prim_list(e).map(to_OCN_display_prim));
 }
 
-function display_prim(p: PrimExpr, type: DisplayType): string {
-    let [v, a] = p;
-    let v_display = is_zero(v) ? undefined : display(v, type);
-    let a_display = display(a, type);
-    let psi = type === 'latex' ? '\\psi ' : 'ψ';
-    switch (type) {
-        case 'plain':
-            return v_display === undefined ? 'ψ(' + a_display + ')' : 'ψ_{' + v_display + '}(' + a_display + ')';
-        case 'html_psi':
-            return v_display === undefined
-                ? 'ψ(' + a_display + ')'
-                : 'ψ<sub>' + v_display + '</sub>(' + a_display + ')';
-        case 'latex':
-            return v_display === undefined
-                ? psi + '(' + a_display + ')'
-                : psi + '_{' + v_display + '}(' + a_display + ')';
-    }
+function to_OCN_display_prim(p: PrimExpr): OCNDisplay {
+    const [v, a] = p;
+    if (is_zero(v)) return { type: 'psi', arg: to_OCN_display(a) };
+    return { type: 'psi', sub: to_OCN_display(v), arg: to_OCN_display(a) };
 }
 
 function compare(a: Expr, b: Expr): number {
@@ -159,9 +143,9 @@ export const BOCF_EBO: NotationDefinition<Expr> = {
     compare,
     FS: (e, index) => FS(e, from_nat(index)),
     display: {
-        plain: (e) => display(e, 'plain'),
-        html: (e) => display(e, 'html_psi'),
-        latex: (e) => display(e, 'latex'),
+        plain: (e) => display_OCN(to_OCN_display(e), 'plain'),
+        html: (e) => display_OCN(to_OCN_display(e), 'html'),
+        latex: (e) => display_OCN(to_OCN_display(e), 'latex'),
     },
     credit_text_id: 'credit.bocf',
 

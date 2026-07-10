@@ -115,9 +115,13 @@ function debug_compare_order(notation_id?: string) {
     const nodes = collect_nodes(r);
 
     const errors: string[] = [];
+    let count = 0;
     for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
             const cmp = compare(nodes[i], nodes[j]);
+            count++;
+            if (count % 100 === 0)
+                console.log(`  progress: ${count} pairs checked, ${errors.length} error(s) found...`);
             if (cmp <= 0) {
                 errors.push(
                     `node[${i}] < node[${j}] should be positive (later in pre-order = smaller), but compare returned ${cmp}`,

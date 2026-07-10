@@ -73,6 +73,7 @@ import { category_den } from '@/notations/DEN/categories.ts';
 import { category_bm_like } from '@/notations/BM-like/categories.ts';
 import { category_y } from '@/notations/Y/categories.ts';
 import { category_ocf, category_ocn } from '@/notations/OCN/categories.ts';
+import { finite_Mahlo_OCF } from '@/notations/OCN/finite_Mahlo_OCF.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -128,6 +129,7 @@ register_notation(BOCF_EBO);
 register_notation(MOCF_EBO);
 register_notation(NOCF_EBO);
 register_notation(Inacc_OCF);
+register_notation(finite_Mahlo_OCF);
 register_category(category_y);
 register_notation(Minus1_Y);
 register_notation(T_Minus1_Y);

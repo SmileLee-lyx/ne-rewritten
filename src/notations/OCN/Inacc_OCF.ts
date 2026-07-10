@@ -1,6 +1,6 @@
-import { bind2, boolean_compare, lex_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { merge_sum } from '@/notations/notation_utils.ts';
+import { type OCNDisplay, display_OCN, merge_sum } from '@/notations/OCN/OCN_utils.ts';
 
 type Expr = ['zero'] | ['sum', Expr[]] | ['omega_pow', Expr] | ['Omega', Expr] | ['I'] | ['psi', Expr, Expr];
 
@@ -107,71 +107,32 @@ function compare(a: Expr, b: Expr): number {
     return impl(a, b);
 }
 
-type DisplayType = 'plain' | 'html_psi' | 'latex';
-
-function display(e: Expr, type: DisplayType): string {
-    let latex = type === 'latex';
-    if (is_infinity(e)) return latex ? '\\text{Limit}' : 'Limit';
-
-    function impl(a: Expr): string {
-        switch (a[0]) {
-            case 'zero': {
-                return '0';
-            }
-            case 'sum': {
-                return merge_sum(a[1].map(impl));
-            }
-            case 'omega_pow': {
-                let str_a1 = impl(a[1]);
-                if (str_a1 === '0') return '1';
-                if (str_a1 === '1') return latex ? '\\omega' : 'ω';
-                switch (type) {
-                    case 'plain':
-                        return 'ω(' + str_a1 + ')';
-                    case 'html_psi':
-                        return 'ω<sup>' + str_a1 + '</sup>';
-                    case 'latex':
-                        return '\\omega^{' + str_a1 + '}';
-                    default:
-                        throw new Error('unreachable');
-                }
-            }
-            case 'Omega': {
-                let str_a1 = impl(a[1]);
-                if (str_a1 === '1') return latex ? '\\Omega' : 'Ω';
-                switch (type) {
-                    case 'plain':
-                        return 'Ω(' + str_a1 + ')';
-                    case 'html_psi':
-                        return 'Ω<sub>' + str_a1 + '</sub>';
-                    case 'latex':
-                        return '\\Omega_{' + str_a1 + '}';
-                    default:
-                        throw new Error('unreachable');
-                }
-            }
-            case 'I': {
-                return latex ? '\\mathrm{I}' : 'I';
-            }
-            case 'psi': {
-                let str_a1 = impl(a[1]);
-                let str_a2 = impl(a[2]);
-                if (str_a1 === 'Ω') return 'ψ(' + str_a2 + ')';
-                switch (type) {
-                    case 'plain':
-                        return 'ψ_{' + str_a1 + '}(' + str_a2 + ')';
-                    case 'html_psi':
-                        return 'ψ<sub>' + str_a1 + '</sub>(' + str_a2 + ')';
-                    case 'latex':
-                        return '\\psi_{' + str_a1 + '}(' + str_a2 + ')';
-                    default:
-                        throw new Error('unreachable');
-                }
-            }
+function to_OCN_display(e: Expr): OCNDisplay {
+    if (is_infinity(e)) return { type: 'constant', display: 'Limit', display_latex: '\\text{Limit}' };
+    switch (e[0]) {
+        case 'zero':
+            return { type: 'number', value: 0 };
+        case 'sum':
+            return merge_sum(e[1].map(to_OCN_display));
+        case 'omega_pow': {
+            if (is_zero(e[1])) return { type: 'number', value: 1 };
+            if (is_one(e[1])) return { type: 'omega' };
+            return { type: 'omega', sup: to_OCN_display(e[1]) };
+        }
+        case 'Omega': {
+            if (is_one(e[1])) return { type: 'Omega' };
+            return { type: 'Omega', sub: to_OCN_display(e[1]) };
+        }
+        case 'I':
+            return { type: 'constant', display: 'I', display_latex: '\\mathrm{I}' };
+        case 'psi': {
+            const sub = to_OCN_display(e[1]);
+            const arg = to_OCN_display(e[2]);
+            // ψ_Ω(a) = ψ(a)，省略下标 Ω
+            if (display_OCN(sub, 'plain') === 'Ω') return { type: 'psi', arg };
+            return { type: 'psi', sub, arg };
         }
     }
-
-    return impl(e);
 }
 
 function add(a: Expr, b: Expr): Expr {
@@ -336,9 +297,9 @@ export const Inacc_OCF: NotationDefinition<Expr> = {
     compare,
     FS: (e, index) => FS(e, from_nat(index)),
     display: {
-        plain: bind2(display, 'plain'),
-        html: bind2(display, 'html_psi'),
-        latex: bind2(display, 'latex'),
+        plain: (e) => display_OCN(to_OCN_display(e), 'plain'),
+        html: (e) => display_OCN(to_OCN_display(e), 'html'),
+        latex: (e) => display_OCN(to_OCN_display(e), 'latex'),
     },
     credit_text_id: 'credit.bocf',
 
