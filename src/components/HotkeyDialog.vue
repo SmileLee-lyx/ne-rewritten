@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { inject } from 'vue';
+import { I18N_KEY } from '@/composables/use_i18n.ts';
 import ModalDialog from './ModalDialog.vue';
 
 defineProps<{
@@ -9,45 +11,47 @@ const emit = defineEmits<{
     close: [];
 }>();
 
+const t = inject(I18N_KEY)!;
+
 const global_hotkeys = [
-    { keys: 'Ctrl+R', desc: 'Focus last focused input' },
-    { keys: 'Ctrl+S', desc: 'Export analysis to xlsx' },
-    { keys: 'Ctrl+L', desc: 'Import analysis from xlsx' },
+    { keys: 'Ctrl+R', desc_key: 'hotkey.focus-last' },
+    { keys: 'Ctrl+S', desc_key: 'hotkey.export' },
+    { keys: 'Ctrl+L', desc_key: 'hotkey.import' },
 ];
 
 const input_hotkeys = [
-    { keys: 'Enter', desc: 'Expand current expression (tier 0)' },
-    { keys: 'Shift+Enter', desc: 'Expand current expression (tier 1)' },
-    { keys: 'Ctrl+E', desc: 'Expand analysis expression' },
-    { keys: 'Ctrl+D', desc: 'Debug: log raw expr to console' },
-    { keys: 'Ctrl+H', desc: 'Hide/show children' },
-    { keys: '↑ / ↓', desc: 'Move between inputs' },
-    { keys: 'Ctrl+↑ / ↓', desc: 'Diagram operations' },
-    { keys: 'Delete', desc: 'Clear analysis text (toggle in settings)' },
+    { keys: 'Enter', desc_key: 'hotkey.expand-0' },
+    { keys: 'Shift+Enter', desc_key: 'hotkey.expand-1' },
+    { keys: 'Ctrl+E', desc_key: 'hotkey.expand-analysis' },
+    { keys: 'Ctrl+D', desc_key: 'hotkey.debug-log' },
+    { keys: 'Ctrl+H', desc_key: 'hotkey.toggle-children' },
+    { keys: '↑ / ↓', desc_key: 'hotkey.move-inputs' },
+    { keys: 'Ctrl+↑ / ↓', desc_key: 'hotkey.diagram-ops' },
+    { keys: 'Delete', desc_key: 'hotkey.delete-clear' },
 ];
 </script>
 
 <template>
-    <ModalDialog :show="show" title="Keyboard Shortcuts" @close="emit('close')">
+    <ModalDialog :show="show" :title="t('hotkey.title')" @close="emit('close')">
         <div class="hotkey-section">
-            <div class="hotkey-section-title">Global</div>
+            <div class="hotkey-section-title">{{ t('hotkey.global') }}</div>
             <table class="hotkey-table">
                 <tr v-for="hk in global_hotkeys" :key="hk.keys">
                     <td class="hotkey-keys">
                         <kbd>{{ hk.keys }}</kbd>
                     </td>
-                    <td class="hotkey-desc">{{ hk.desc }}</td>
+                    <td class="hotkey-desc">{{ t(hk.desc_key) }}</td>
                 </tr>
             </table>
         </div>
         <div class="hotkey-section">
-            <div class="hotkey-section-title">Input focus</div>
+            <div class="hotkey-section-title">{{ t('hotkey.input') }}</div>
             <table class="hotkey-table">
                 <tr v-for="hk in input_hotkeys" :key="hk.keys">
                     <td class="hotkey-keys">
                         <kbd>{{ hk.keys }}</kbd>
                     </td>
-                    <td class="hotkey-desc">{{ hk.desc }}</td>
+                    <td class="hotkey-desc">{{ t(hk.desc_key) }}</td>
                 </tr>
             </table>
         </div>

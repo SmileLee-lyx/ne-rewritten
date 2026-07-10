@@ -62,9 +62,9 @@ function handle_find() {
     if (!display_spec.from_display) return;
     try {
         const expr = display_spec.from_display(val);
-        const matched = import_analysis(r, [{ expr, analysis: [] }], n as any, settings.variant, settings.max_find_fs);
+        const matched = import_analysis(r, [{ expr, analysis: [] }], n, settings.variant, settings.max_find_fs);
         if (matched.length > 0) {
-            focus_node_input(matched[0] as any);
+            focus_node_input(matched[0]);
         } else {
             alert(t('import.error'));
         }

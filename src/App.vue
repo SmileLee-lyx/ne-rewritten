@@ -148,7 +148,7 @@ function debug_compare_order(notation_id?: string) {
         <SettingsBar />
 
         <div v-if="root && notation" class="preview-container">
-            <NotationTree :root="root" :notation="notation as any" :tier="settings.tier" />
+            <NotationTree :root="root" :notation="notation" :tier="settings.tier" />
             <div v-if="notation.credit_text_id" class="credit-line">{{ t(notation.credit_text_id) }}</div>
         </div>
         <div v-else>{{ t('notation-tree.empty') }}</div>

@@ -57,7 +57,7 @@ export function get_category_ancestors(category_id: string): string[] {
 
 // ========== Notation registry ==========
 
-const map = new Map<string, NotationDefinition<unknown>>();
+const map = new Map<string, NotationDefinition<any>>();
 
 /** 内部注册：不校验 generator 限制（供 init_generator / increment 使用） */
 function _register_notation<T>(notation: NotationDefinition<T>): void {
@@ -67,7 +67,7 @@ function _register_notation<T>(notation: NotationDefinition<T>): void {
     if (category_defs.has(notation.id)) {
         throw new Error(`A category with id '${notation.id}' already exists; cannot register as notation.`);
     }
-    map.set(notation.id, notation as NotationDefinition<unknown>);
+    map.set(notation.id, notation);
     add_item(notation.category_id, 'notation', notation.id);
 }
 

@@ -32,6 +32,8 @@ if (!props.node.extraData) props.node.extraData = {};
 const ed = props.node.extraData as TreeNodeExtra;
 if (!Array.isArray(ed.analysis)) ed.analysis = [];
 
+const saved_analysis = ref<string | undefined>(undefined);
+
 const analysis0 = computed({
     get: () => ed.analysis![0] ?? '',
     set: (v: string) => {
@@ -195,20 +197,27 @@ function on_keydown(e: KeyboardEvent) {
     } else if (e.key.toLowerCase() === 'h' && e.ctrlKey) {
         e.preventDefault();
         ed.hide_child = !ed.hide_child;
+    } else if (e.key.toLowerCase() === 'z' && e.ctrlKey && !e.shiftKey && !e.altKey) {
+        if (saved_analysis.value !== undefined) {
+            e.preventDefault();
+            ed.analysis![0] = saved_analysis.value;
+            saved_analysis.value = undefined;
+        }
     } else if (e.key === 'Delete' && settings.use_delete_to_clear) {
         e.preventDefault();
+        if (ed.analysis?.[0] !== undefined) saved_analysis.value = ed.analysis[0];
         ed.analysis![0] = undefined as unknown as string;
     }
 }
 
-function has_analysis(node: TreeNode<unknown>): boolean {
+function has_analysis(node: TreeNode<T>): boolean {
     const ed = node.extraData as TreeNodeExtra | undefined;
     return ed?.analysis?.[0] !== undefined;
 }
 
 function find_prev_analysis(node: TreeNode<T>, skip: number): TreeNode<T> | undefined {
     let cur = find_prev(node, skip);
-    while (cur && !has_analysis(cur as unknown as TreeNode<unknown>)) {
+    while (cur && !has_analysis(cur)) {
         cur = find_prev(cur, skip);
     }
     return cur;
@@ -216,7 +225,7 @@ function find_prev_analysis(node: TreeNode<T>, skip: number): TreeNode<T> | unde
 
 function find_next_analysis(node: TreeNode<T>, skip: number): TreeNode<T> | undefined {
     let cur = find_next(node, skip);
-    while (cur && !has_analysis(cur as unknown as TreeNode<unknown>)) {
+    while (cur && !has_analysis(cur)) {
         cur = find_next(cur, skip);
     }
     return cur;
@@ -282,7 +291,7 @@ function on_blur() {
         <div
             class="shown-item"
             :class="{
-                analyzed: has_analysis(node as unknown as TreeNode<unknown>),
+                analyzed: has_analysis(node),
                 selected: multi.is_selected(node_path),
             }"
             @mousedown="on_expr_mousedown"

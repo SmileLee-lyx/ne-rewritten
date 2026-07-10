@@ -28,13 +28,13 @@ export const SAVE_LOAD_KEY: InjectionKey<SaveLoadInstance> = Symbol('save_load')
 
 const ANALYSIS_STORAGE_PREFIX = 'ne-analysis-';
 
-export function use_save_load(trees: Map<string, TreeNode<unknown>>) {
+export function use_save_load(trees: Map<string, TreeNode<any>>) {
     const settings = inject(SETTINGS_KEY)!;
     const t = inject(I18N_KEY)!;
 
     const current_id = computed(() => settings.current_notation_id);
-    const notation = computed<NotationDefinition<unknown> | undefined>(() => get_notation(current_id.value));
-    const root = computed<TreeNode<unknown> | null>(() => {
+    const notation = computed<NotationDefinition<any> | undefined>(() => get_notation(current_id.value));
+    const root = computed<TreeNode<any> | null>(() => {
         let r = trees.get(current_id.value);
         if (!r) {
             const n = notation.value;
@@ -68,14 +68,14 @@ export function use_save_load(trees: Map<string, TreeNode<unknown>>) {
         update_save_indicator();
     }
 
-    function load_analysis(id: string, r: TreeNode<unknown>) {
+    function load_analysis(id: string, r: TreeNode<any>) {
         const n = get_notation(id);
         if (!n) return;
         const raw = localStorage.getItem(ANALYSIS_STORAGE_PREFIX + id);
         if (!raw) return;
         try {
             const entries: any[] = JSON.parse(raw);
-            import_analysis(r, entries, n as any, settings.variant, settings.max_find_fs);
+            import_analysis(r, entries, n, settings.variant, settings.max_find_fs);
         } catch {
             /* ignore corrupt data */
         }
@@ -85,7 +85,7 @@ export function use_save_load(trees: Map<string, TreeNode<unknown>>) {
         const n = notation.value;
         if (!n || !confirm('Reset this notation? All expanded data will be lost.')) return;
         localStorage.removeItem(ANALYSIS_STORAGE_PREFIX + n.id);
-        const new_root: TreeNode<unknown> = reactive(init_dataset(n));
+        const new_root: TreeNode<any> = reactive(init_dataset(n));
         trees.set(n.id, new_root);
     }
 
@@ -123,7 +123,7 @@ export function use_save_load(trees: Map<string, TreeNode<unknown>>) {
             if (!display_spec.from_display) return;
             const buf = await file.arrayBuffer();
             const entries = await import_from_xlsx(buf, display_spec.from_display);
-            const matched = import_analysis(r, entries, n as any, settings.variant, settings.max_find_fs);
+            const matched = import_analysis(r, entries, n, settings.variant, settings.max_find_fs);
             if ((entries as any).skipped?.length || matched.length !== entries.length) {
                 alert(t('import.error'));
             }

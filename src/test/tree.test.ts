@@ -87,7 +87,7 @@ function build_test_tree(): TreeNode<string> {
     h.parent = g;
 
     const root: TreeNode<string> = {
-        expr: '' as unknown as string,
+        expr: '',
         children: [a, g],
         parent: null,
         index: -1,
