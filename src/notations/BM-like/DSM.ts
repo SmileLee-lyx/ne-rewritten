@@ -451,5 +451,6 @@ export const DSM: NotationDefinition<Matrix> = {
     is_limit,
     compare,
     ...Y_FS_variants(expand_normal, is_infinity, generate_limit_matrix, is_limit, display),
+    credit_text_id: 'credit.dsm',
     init: () => [INFINITY(), []],
 };

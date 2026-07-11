@@ -201,6 +201,7 @@ export const wMM: NotationDefinition<any> = {
     is_limit,
     compare,
     ...Y_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
+    credit_text_id: 'credit.wmm',
     init: function (): any {
         return [[[Infinity]], []];
     },

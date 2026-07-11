@@ -96,6 +96,8 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.mocf': '由 Madore 给出最初定义.',
         'credit.nocf': '由社区定义.',
         'credit.ups1_1r5': '由 Optimism 最初创作, Alice 完善. 由 Alice 给出展开器与可视化方案.',
+        'credit.dsm': '由 Alice 定义并给出展开器.',
+        'credit.wmm': '由社区从 Aarex 定义的 MMS 改进而来. 展开器来自原 NE 项目.',
         'diagram.show': '显示图表',
         'latex.show': '显示分析 LaTeX',
         'multi-select.count': '已选中 {{n}} 项',
@@ -235,6 +237,8 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.mocf': 'Initially defined by Madore.',
         'credit.nocf': 'Defined by the community.',
         'credit.ups1_1r5': 'Originally created by Optimism, refined by Alice. Expander and visualization by Alice.',
+        'credit.dsm': 'Defined by Alice, with expander by the same author.',
+        'credit.wmm': 'A community improvement upon MMS defined by Aarex. Expander from the original NE project.',
         'tips.intro':
             'This site is designed for keyboard-first analysis on PC to avoid breaking flow with mouse. Features below serve this goal. Suggestions welcome.',
         'tips.features': 'Features',
