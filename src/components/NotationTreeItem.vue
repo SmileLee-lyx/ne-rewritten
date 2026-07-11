@@ -116,8 +116,12 @@ function on_leave() {
 
 function do_expand(tier?: number, focus?: boolean) {
     const v = settings.variant;
-    const child = expand_item(props.node, props.notation, v, tier ?? props.tier ?? 0);
-    if (focus && child) focus_node_input(child);
+    try {
+        const child = expand_item(props.node, props.notation, v, tier ?? props.tier ?? 0, settings.max_find_fs);
+        if (focus && child) focus_node_input(child);
+    } catch (e) {
+        alert('当前节点试展开次数过多, 可能基本列实现有误');
+    }
 }
 
 function on_expr_mousedown(e: MouseEvent) {

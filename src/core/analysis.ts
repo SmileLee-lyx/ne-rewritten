@@ -3,6 +3,7 @@ import { find_prev, last_descendant } from '@/core/tree.ts';
 import type { TreeNodeExtra } from '@/core/extra.ts';
 import { expand_item } from '@/core/expander.ts';
 import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
+import { init } from 'vitest/worker';
 
 /** 单个导出条目。expr 保留原始类型，不做字符串化。 */
 export interface AnalysisEntry<T> {
@@ -47,7 +48,7 @@ export function import_analysis<T>(
     entries: AnalysisEntry<T>[],
     notation: NotationDefinition<T>,
     variant: string,
-    max_find_fs: number = 100,
+    max_find_fs: number = 10,
 ): TreeNode<T>[] {
     const matched: TreeNode<T>[] = [];
     let node = last_descendant(root);
@@ -72,16 +73,25 @@ export function import_analysis<T>(
                 index++;
                 continue;
             }
-            const created = expand_item(node, notation, variant);
-            if (!created) {
+            try {
+                const created = expand_item(node, notation, variant, 0, max_find_fs);
+                if (!created) {
+                    console.log(
+                        'import: skipped (expand failed — expression order may be wrong):',
+                        resolve_display(notation.display).plain(entries[index].expr),
+                    );
+                    index++;
+                    continue;
+                }
+                node = created;
+            } catch {
                 console.log(
-                    'import: skipped (expand failed — expression order may be wrong):',
+                    'import: skipped (max_find_fs reached — possible non-standard expression):',
                     resolve_display(notation.display).plain(entries[index].expr),
                 );
                 index++;
                 continue;
             }
-            node = created;
         } else {
             const prev = find_prev(node, 0);
             if (!prev) {
