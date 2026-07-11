@@ -2,53 +2,53 @@ export type DisplayType = 'plain' | 'html' | 'latex';
 
 // ========== OCNDisplay AST ==========
 
-export interface OCNDisplayNumber {
+interface OCNDisplayNumber {
     type: 'number';
     value: number;
 }
 
-export interface OCNDisplaySum {
+interface OCNDisplaySum {
     type: 'sum';
-    terms: OCNDisplay[];
+    terms: OCNDisplayIR[];
 }
 
-export interface OCNDisplayMul {
+interface OCNDisplayMul {
     type: 'mul_nat';
-    value: OCNDisplay;
+    value: OCNDisplayIR;
     coe: number;
 }
 
-export interface OCNDisplayConst {
+interface OCNDisplayConst {
     type: 'constant';
     /** 纯文本表示 */
     display: string;
     /** LaTeX 表示 */
     display_latex: string;
-    sup?: OCNDisplay;
-    sub?: OCNDisplay;
-    arg?: OCNDisplay;
+    sup?: OCNDisplayIR;
+    sub?: OCNDisplayIR;
+    arg?: OCNDisplayIR;
 }
 
 /** ω^{sup} */
-export interface OCNDisplayOmega {
+interface OCNDisplayOmega {
     type: 'omega';
-    sup?: OCNDisplay;
+    sup?: OCNDisplayIR;
 }
 
 /** Ω_{sub} */
-export interface OCNDisplayOmega0 {
+interface OCNDisplayOmega0 {
     type: 'Omega';
-    sub?: OCNDisplay;
+    sub?: OCNDisplayIR;
 }
 
 /** ψ_{sub}(arg) */
-export interface OCNDisplayPsi {
+interface OCNDisplayPsi {
     type: 'psi';
-    sub?: OCNDisplay;
-    arg?: OCNDisplay;
+    sub?: OCNDisplayIR;
+    arg?: OCNDisplayIR;
 }
 
-export type OCNDisplay =
+export type OCNDisplayIR =
     | OCNDisplayNumber
     | OCNDisplaySum
     | OCNDisplayMul
@@ -60,14 +60,14 @@ export type OCNDisplay =
 // ========== 合并同类项 ==========
 
 /** 合并 sum 中相邻的同类项。同类指 displayOCN(-, 'plain') 结果相同。 */
-export function merge_sum(terms: OCNDisplay[]): OCNDisplay {
+export function merge_sum(terms: OCNDisplayIR[]): OCNDisplayIR {
     if (terms.length === 0) return { type: 'number', value: 0 };
-    const result: OCNDisplay[] = [];
+    const result: OCNDisplayIR[] = [];
     let i = 0;
     while (i < terms.length) {
         let j = i + 1;
-        const key = display_OCN(terms[i], 'plain');
-        while (j < terms.length && display_OCN(terms[j], 'plain') === key) j++;
+        const key = display_OCN_IR(terms[i], 'plain');
+        while (j < terms.length && display_OCN_IR(terms[j], 'plain') === key) j++;
         const count = j - i;
         if (count === 1) {
             result.push(terms[i]);
@@ -85,23 +85,23 @@ export function merge_sum(terms: OCNDisplay[]): OCNDisplay {
 
 // ========== 渲染 ==========
 
-export function display_OCN(e: OCNDisplay, type: DisplayType): string {
+export function display_OCN_IR(e: OCNDisplayIR, type: DisplayType): string {
     switch (e.type) {
         case 'number':
             return '' + e.value;
 
         case 'sum':
-            return e.terms.map((t) => display_OCN(t, type)).join('+');
+            return e.terms.map((t) => display_OCN_IR(t, type)).join('+');
 
         case 'mul_nat': {
-            const v = display_OCN(e.value, type);
+            const v = display_OCN_IR(e.value, type);
             // 序数乘法：value × coe，整数写在右边
             if (type === 'latex') return v + '\\cdot ' + e.coe;
             return v + '·' + e.coe;
         }
 
         case 'omega':
-            return display_OCN(
+            return display_OCN_IR(
                 {
                     type: 'constant',
                     display: 'ω',
@@ -112,7 +112,7 @@ export function display_OCN(e: OCNDisplay, type: DisplayType): string {
             );
 
         case 'Omega':
-            return display_OCN(
+            return display_OCN_IR(
                 {
                     type: 'constant',
                     display: 'Ω',
@@ -123,7 +123,7 @@ export function display_OCN(e: OCNDisplay, type: DisplayType): string {
             );
 
         case 'psi':
-            return display_OCN(
+            return display_OCN_IR(
                 {
                     type: 'constant',
                     display: 'ψ',
@@ -136,9 +136,9 @@ export function display_OCN(e: OCNDisplay, type: DisplayType): string {
 
         case 'constant': {
             const name = type === 'latex' ? e.display_latex : e.display;
-            const sup_str = e.sup ? display_OCN(e.sup, type) : undefined;
-            const sub_str = e.sub ? display_OCN(e.sub, type) : undefined;
-            const arg_str = e.arg ? display_OCN(e.arg, type) : '';
+            const sup_str = e.sup ? display_OCN_IR(e.sup, type) : undefined;
+            const sub_str = e.sub ? display_OCN_IR(e.sub, type) : undefined;
+            const arg_str = e.arg ? display_OCN_IR(e.arg, type) : '';
 
             let result = name;
             if (sup_str !== undefined) {
@@ -155,4 +155,17 @@ export function display_OCN(e: OCNDisplay, type: DisplayType): string {
             return result;
         }
     }
+}
+
+/** 辅助函数：传入 to_OCN_display 转换函数，返回 DisplaySpec 对象 */
+export function make_OCN_display<T>(to_ir: (e: T) => OCNDisplayIR): {
+    plain: (e: T) => string;
+    html: (e: T) => string;
+    latex: (e: T) => string;
+} {
+    return {
+        plain: (e) => display_OCN_IR(to_ir(e), 'plain'),
+        html: (e) => display_OCN_IR(to_ir(e), 'html'),
+        latex: (e) => display_OCN_IR(to_ir(e), 'latex'),
+    };
 }

@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { type OCNDisplay, display_OCN, merge_sum } from '@/notations/OCN/OCN_utils.ts';
+import { make_OCN_display, type OCNDisplayIR, merge_sum } from '@/notations/OCN/OCN_utils.ts';
 
 /**
  * 0: 0
@@ -43,7 +43,7 @@ function infinity_FS(index: number): Expr {
 
 type DisplayType = 'plain' | 'html_psi' | 'latex';
 
-function to_OCN_display(e: Expr): OCNDisplay {
+function to_OCN_IR(e: Expr): OCNDisplayIR {
     if (is_infinity(e)) {
         return { type: 'constant', display: 'Limit', display_latex: '\\text{Limit}' };
     }
@@ -51,20 +51,20 @@ function to_OCN_display(e: Expr): OCNDisplay {
         case 0:
             return { type: 'number', value: 0 };
         case 1:
-            return merge_sum(e[1].map(to_OCN_display));
+            return merge_sum(e[1].map(to_OCN_IR));
         case 2: {
             if (e[1][0] === 0) return { type: 'number', value: 1 }; // ω^0 = 1
             if (e[1][0] === 2 && e[1][1][0] === 0) return { type: 'omega' }; // ω^1 = ω
-            return { type: 'omega', sup: to_OCN_display(e[1]) };
+            return { type: 'omega', sup: to_OCN_IR(e[1]) };
         }
         case 3: {
             if (e[1][0] === 2 && e[1][1][0] === 0) return { type: 'Omega' }; // Ω_1 = Ω
-            return { type: 'Omega', sub: to_OCN_display(e[1]) };
+            return { type: 'Omega', sub: to_OCN_IR(e[1]) };
         }
         case 4: {
-            const arg = to_OCN_display(e[2]);
+            const arg = to_OCN_IR(e[2]);
             if (e[1][0] === 0) return { type: 'psi', arg };
-            const sub = to_OCN_display(e[1]);
+            const sub = to_OCN_IR(e[1]);
             return { type: 'psi', sub, arg };
         }
     }
@@ -228,11 +228,7 @@ export const MOCF_EBO: NotationDefinition<Expr> = {
     is_limit: (e) => is_infinity(e) || cofinality(e) !== undefined,
     compare,
     FS: (e, index) => FS(e, from_nat(index)),
-    display: {
-        plain: (e) => display_OCN(to_OCN_display(e), 'plain'),
-        html: (e) => display_OCN(to_OCN_display(e), 'html'),
-        latex: (e) => display_OCN(to_OCN_display(e), 'latex'),
-    },
+    display: make_OCN_display(to_OCN_IR),
     credit_text_id: 'credit.mocf',
 
     init: () => [INFINITY(), ZERO()],

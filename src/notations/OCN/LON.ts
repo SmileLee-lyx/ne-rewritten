@@ -144,7 +144,7 @@ var LON_FS = (x: any, FSterm: any): any => {
 
 export const LON: NotationDefinition<Expr> = {
     id: 'lon',
-    name: 'lifting Omega notation (LON)',
+    name: 'lifting Omega notation',
     simple_name: 'LON',
     category_id: 'category-ocn',
     display: {

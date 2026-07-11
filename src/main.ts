@@ -23,6 +23,9 @@ import { LMN } from '@/notations/OCN/LMN.ts';
 import { LON } from '@/notations/OCN/LON.ts';
 import { UPMS } from '@/notations/BM-like/UPMS.ts';
 import { LPMS, LPTSS } from '@/notations/BM-like/LPMS.ts';
+import { wMM } from '@/notations/BM-like/wMM.ts';
+import { CMS } from '@/notations/BM-like/CMS.ts';
+import { BLM } from '@/notations/BM-like/BLM.ts';
 import {
     get_generator_state,
     init_generator,
@@ -74,6 +77,8 @@ import { category_bm_like } from '@/notations/BM-like/categories.ts';
 import { category_y } from '@/notations/Y/categories.ts';
 import { category_ocf, category_ocn } from '@/notations/OCN/categories.ts';
 import { finite_Mahlo_OCF } from '@/notations/OCN/finite_Mahlo_OCF.ts';
+import { cOCF } from '@/notations/OCN/cOCF.ts';
+import { n_shifted_psi } from '@/notations/OCN/n_shifted_psi.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -145,9 +150,12 @@ register_notation(BM4);
 register_notation(TBM);
 register_notation(BHM);
 register_notation(BSM);
+register_notation(BLM);
 register_notation(UPMS);
 register_notation(LPMS);
 register_notation(LPTSS);
+register_notation(wMM);
+register_notation(CMS);
 register_category(category_bm_minus1_y_nss);
 init_generator(category_bm_minus1_y_nss);
 register_category(category_bm_t_minus1_y_nss);
@@ -180,6 +188,8 @@ register_category(category_ocn);
 register_notation(LMN);
 register_notation(LON);
 register_notation(UPS1_1r5);
+register_notation(cOCF);
+register_notation(n_shifted_psi);
 register_category(category_ton);
 register_notation(TON_DRC);
 register_notation(TON_DRP);

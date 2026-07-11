@@ -101,7 +101,7 @@ export function matrix_is_limit(a: Expr): boolean {
     return is_infinity(a) || (a.length > 0 && a[a.length - 1][0] > 0);
 }
 
-function normalize(m: Expr): Expr {
+export function normalize(m: Expr): Expr {
     return m.map((col) => {
         let end = col.length;
         while (end > 0 && col[end - 1] === 0) end--;
@@ -109,7 +109,7 @@ function normalize(m: Expr): Expr {
     });
 }
 
-function standardize(m: Expr): Expr {
+export function standardize(m: Expr): Expr {
     if (m.length === 0) return m;
     const H = Math.max(...m.map((col) => col.length));
     return m.map((col) => [...col, ...Array.from({ length: H - col.length }, () => 0)]);
@@ -422,7 +422,7 @@ const draw_diagram_control_0Y: DiagramControl<Expr, DiagramData> = {
 
 export const BM4: NotationDefinition<Expr> = {
     id: 'bm4',
-    name: 'Bashicu matrix (BMS)',
+    name: 'Bashicu matrix system',
     simple_name: 'BMS',
     category_id: 'category-bm-like',
     display: { plain: display, from_display },

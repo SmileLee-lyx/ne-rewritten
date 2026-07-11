@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare, number_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { type OCNDisplay, display_OCN, merge_sum } from '@/notations/OCN/OCN_utils.ts';
+import { make_OCN_display, type OCNDisplayIR, display_OCN_IR, merge_sum } from '@/notations/OCN/OCN_utils.ts';
 
 type Expr = ['zero'] | ['sum', Expr[]] | ['omega_pow', Expr] | ['M', number] | ['psi', Expr, Expr];
 
@@ -52,17 +52,17 @@ function from_prim_list(es: Expr[]): Expr {
     return ['sum', es];
 }
 
-function to_OCN_display(e: Expr): OCNDisplay {
+function to_OCN_IR(e: Expr): OCNDisplayIR {
     if (is_infinity(e)) return { type: 'constant', display: 'Limit', display_latex: '\\text{Limit}' };
     switch (e[0]) {
         case 'zero':
             return { type: 'number', value: 0 };
         case 'sum':
-            return merge_sum(e[1].map(to_OCN_display));
+            return merge_sum(e[1].map(to_OCN_IR));
         case 'omega_pow': {
             if (is_zero(e[1])) return { type: 'number', value: 1 };
             if (is_one(e[1])) return { type: 'omega' };
-            return { type: 'omega', sup: to_OCN_display(e[1]) };
+            return { type: 'omega', sup: to_OCN_IR(e[1]) };
         }
         case 'M': {
             if (e[1] === 1) return { type: 'Omega' };
@@ -75,9 +75,9 @@ function to_OCN_display(e: Expr): OCNDisplay {
             };
         }
         case 'psi': {
-            const sub = to_OCN_display(e[1]);
-            const arg = to_OCN_display(e[2]);
-            if (display_OCN(sub, 'plain') === 'Ω') return { type: 'psi', arg };
+            const sub = to_OCN_IR(e[1]);
+            const arg = to_OCN_IR(e[2]);
+            if (display_OCN_IR(sub, 'plain') === 'Ω') return { type: 'psi', arg };
             return { type: 'psi', sub, arg };
         }
     }
@@ -346,11 +346,7 @@ export const finite_Mahlo_OCF: NotationDefinition<Expr> = {
     is_limit,
     compare,
     FS: (e, index) => FS(e, from_nat(index)),
-    display: {
-        plain: (e) => display_OCN(to_OCN_display(e), 'plain'),
-        html: (e) => display_OCN(to_OCN_display(e), 'html'),
-        latex: (e) => display_OCN(to_OCN_display(e), 'latex'),
-    },
+    display: make_OCN_display(to_OCN_IR),
     credit_text_id: 'credit.bocf',
 
     init: () => [INFINITY(), zero()],

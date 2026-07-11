@@ -256,7 +256,7 @@ const diagram_control: DiagramControl<Expr, { offset: number }> = {
 
 export const DEN: NotationDefinition<Expr> = {
     id: 'den',
-    name: 'Defective embedding notation (DEN)',
+    name: 'Defective embedding notation',
     simple_name: 'DEN',
     category_id: 'category-den',
     display,

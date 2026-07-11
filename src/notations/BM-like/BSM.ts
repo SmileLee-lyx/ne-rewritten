@@ -107,7 +107,7 @@ function from_display(str: string): Expr {
 
 export const BSM: NotationDefinition<Expr> = {
     id: 'bsm',
-    name: 'Bashicu sudden matrix (BSM)',
+    name: 'Bashicu sudden matrix',
     simple_name: 'BSM',
     category_id: 'category-bm-like',
     display: { plain: display, from_display },

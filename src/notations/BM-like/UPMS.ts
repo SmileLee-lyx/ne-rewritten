@@ -386,7 +386,7 @@ const infinityFS = (index: number): Expr => {
 
 export const UPMS: NotationDefinition<Expr> = {
     id: 'upms',
-    name: 'Unupgrading projection matrix system (UPMS)',
+    name: 'Unupgrading projection matrix system',
     simple_name: 'UPMS',
     category_id: 'category-bm-like',
     display: { plain: display, from_display },

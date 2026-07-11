@@ -386,7 +386,7 @@ function infinity_FS(index: number): Expr {
 
 export const TBM: NotationDefinition<Expr> = {
     id: 'tbm',
-    name: 'Transfinite Bashicu matrix (TBMS)',
+    name: 'Transfinite Bashicu matrix',
     simple_name: 'TBMS',
     category_id: 'category-bm-like',
     display: {

@@ -76,9 +76,9 @@ var get_n = (term: any, index: any): any => {
 };
 var BuiltQ = (a: any, b: any, n: any, x: any): any =>
     n
-        ? BuiltQ(n - 1, b, x, x) ||
-          (TON_noraise_compare(x, a) <= 0 &&
-              (typeof x === 'number' ? x >= 0 : BuiltQ(n, b, a, x[1]) && BuiltQ(n, b, a, x[0])))
+        ? (TON_noraise_compare(x, 0) < 0 && BuiltQ(x, b, n - 1, x)) ||
+          ((TON_noraise_compare(x, 0) >= 0 || TON_noraise_compare(x, a) <= 0) &&
+              (x === 0 || (BuiltQ(a, b, n, x[0]) && BuiltQ(a, b, n, x[1]))))
         : TON_noraise_compare(a, b) < 0;
 var StandardQ = (a: any): any => {
     var str = JSON.stringify(a);
@@ -175,5 +175,5 @@ export const TON_I: NotationDefinition<any> = {
         };
     })(),
     credit_text_id: 'credit.ton',
-    init: () => [Infinity, [-1, [[0, [0, -1, -2], -2], 0, -2], -2], [-1, [0, 0, -2], -2], [-1, 0, -2], -1],
+    init: () => [Infinity, [-1, [0, [0, -1, -2], -2], -2], [-1, [0, 0, -2], -2], [-1, 0, -2], -1],
 };

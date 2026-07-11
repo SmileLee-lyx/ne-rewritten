@@ -99,7 +99,7 @@ function from_display(str: string): Expr {
 
 export const BHM: NotationDefinition<Expr> = {
     id: 'bhm',
-    name: 'Bashicu hyper matrix (BHM)',
+    name: 'Bashicu hyper matrix',
     simple_name: 'BHM',
     category_id: 'category-bm-like',
     display: { plain: display, from_display },

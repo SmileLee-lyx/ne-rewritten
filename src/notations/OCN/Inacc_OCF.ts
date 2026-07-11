@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { type OCNDisplay, display_OCN, merge_sum } from '@/notations/OCN/OCN_utils.ts';
+import { make_OCN_display, type OCNDisplayIR, display_OCN_IR, merge_sum } from '@/notations/OCN/OCN_utils.ts';
 
 type Expr = ['zero'] | ['sum', Expr[]] | ['omega_pow', Expr] | ['Omega', Expr] | ['I'] | ['psi', Expr, Expr];
 
@@ -107,29 +107,29 @@ function compare(a: Expr, b: Expr): number {
     return impl(a, b);
 }
 
-function to_OCN_display(e: Expr): OCNDisplay {
+function to_OCN_IR(e: Expr): OCNDisplayIR {
     if (is_infinity(e)) return { type: 'constant', display: 'Limit', display_latex: '\\text{Limit}' };
     switch (e[0]) {
         case 'zero':
             return { type: 'number', value: 0 };
         case 'sum':
-            return merge_sum(e[1].map(to_OCN_display));
+            return merge_sum(e[1].map(to_OCN_IR));
         case 'omega_pow': {
             if (is_zero(e[1])) return { type: 'number', value: 1 };
             if (is_one(e[1])) return { type: 'omega' };
-            return { type: 'omega', sup: to_OCN_display(e[1]) };
+            return { type: 'omega', sup: to_OCN_IR(e[1]) };
         }
         case 'Omega': {
             if (is_one(e[1])) return { type: 'Omega' };
-            return { type: 'Omega', sub: to_OCN_display(e[1]) };
+            return { type: 'Omega', sub: to_OCN_IR(e[1]) };
         }
         case 'I':
             return { type: 'constant', display: 'I', display_latex: '\\mathrm{I}' };
         case 'psi': {
-            const sub = to_OCN_display(e[1]);
-            const arg = to_OCN_display(e[2]);
+            const sub = to_OCN_IR(e[1]);
+            const arg = to_OCN_IR(e[2]);
             // ψ_Ω(a) = ψ(a)，省略下标 Ω
-            if (display_OCN(sub, 'plain') === 'Ω') return { type: 'psi', arg };
+            if (display_OCN_IR(sub, 'plain') === 'Ω') return { type: 'psi', arg };
             return { type: 'psi', sub, arg };
         }
     }
@@ -296,11 +296,7 @@ export const Inacc_OCF: NotationDefinition<Expr> = {
     is_limit,
     compare,
     FS: (e, index) => FS(e, from_nat(index)),
-    display: {
-        plain: (e) => display_OCN(to_OCN_display(e), 'plain'),
-        html: (e) => display_OCN(to_OCN_display(e), 'html'),
-        latex: (e) => display_OCN(to_OCN_display(e), 'latex'),
-    },
+    display: make_OCN_display(to_OCN_IR),
     credit_text_id: 'credit.bocf',
 
     init: () => [INFINITY(), zero()],

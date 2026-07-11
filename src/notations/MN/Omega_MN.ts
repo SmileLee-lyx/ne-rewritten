@@ -481,7 +481,7 @@ const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
 
 export const omega_MN: NotationDefinition<Expr> = {
     id: 'omega-mn',
-    name: 'ω mountain notation (ωMN)',
+    name: 'ω mountain notation',
     simple_name: 'ωMN',
     category_id: 'category-mn',
     display: {

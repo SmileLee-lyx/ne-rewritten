@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { type OCNDisplay, display_OCN } from '@/notations/OCN/OCN_utils.ts';
+import { make_OCN_display, type OCNDisplayIR } from '@/notations/OCN/OCN_utils.ts';
 
 type Expr = [0] | [1, Expr, Expr];
 
@@ -22,12 +22,12 @@ function infinity_FS(index: number): Expr {
     return [1, [0], result];
 }
 
-function to_OCN_display(e: Expr): OCNDisplay {
+function to_OCN_IR(e: Expr): OCNDisplayIR {
     if (is_infinity(e)) return { type: 'constant', display: 'Limit', display_latex: '\\text{Limit}' };
     if (is_zero(e)) return { type: 'number', value: 0 };
     const [, v, a] = e;
-    if (is_zero(v)) return { type: 'psi', arg: to_OCN_display(a) };
-    return { type: 'psi', sub: to_OCN_display(v), arg: to_OCN_display(a) };
+    if (is_zero(v)) return { type: 'psi', arg: to_OCN_IR(a) };
+    return { type: 'psi', sub: to_OCN_IR(v), arg: to_OCN_IR(a) };
 }
 
 function compare(a: Expr, b: Expr): number {
@@ -108,11 +108,7 @@ export const NOCF_EBO: NotationDefinition<Expr> = {
     is_limit: (e) => is_infinity(e) || cofinality(e) !== undefined,
     compare,
     FS: (e, index) => FS(e, from_nat(index)),
-    display: {
-        plain: (e) => display_OCN(to_OCN_display(e), 'plain'),
-        html: (e) => display_OCN(to_OCN_display(e), 'html'),
-        latex: (e) => display_OCN(to_OCN_display(e), 'latex'),
-    },
+    display: make_OCN_display(to_OCN_IR),
     credit_text_id: 'credit.nocf',
 
     init: () => [INFINITY(), ZERO()],
