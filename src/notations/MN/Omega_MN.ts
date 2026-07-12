@@ -479,6 +479,21 @@ const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     },
 };
 
+type MarkSpec = 'label' | 'sub';
+
+function column_display_marked(c: Column, type: MarkSpec, index: number): string {
+    let result = c.map((e) => entry_display(e, false)).join('');
+    if (type === 'label') result += ':' + index;
+    result = '(' + result + ')';
+    if (type === 'sub') result += '<sub>' + index + '</sub>';
+    return result;
+}
+
+function mountain_display_marked(m: Expr, type: MarkSpec): string {
+    if (is_infinity(m)) return 'Limit';
+    return m.map((col, i) => column_display_marked(col, type, i + 1)).join('');
+}
+
 export const omega_MN: NotationDefinition<Expr> = {
     id: 'omega-mn',
     name: 'ω mountain notation',
@@ -492,6 +507,10 @@ export const omega_MN: NotationDefinition<Expr> = {
         layer: {
             plain: (m) => mountain_display(convert_to_layer(m), false),
             from_display: (str) => convert_from_layer(mountain_from_display(str)),
+        },
+        marked: {
+            plain: (m) => mountain_display_marked(m, 'label'),
+            html: (m) => mountain_display_marked(m, 'sub'),
         },
         simple: {
             plain: (m) => mountain_display(m, true),

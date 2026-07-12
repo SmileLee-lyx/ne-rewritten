@@ -504,6 +504,33 @@ function convert_from_layer(dm: Expr): Expr {
     return om;
 }
 
+type MarkSpec = 'label' | 'sub';
+
+function sep_display_marked(sep: Sep, type: MarkSpec): string {
+    if (sep.every((col) => !col.length)) {
+        let sep_len = sep.length;
+        return ','.repeat(sep_len);
+    }
+    return mountain_display_marked(sep, type);
+}
+
+function entry_display_marked([v, sep]: Entry, type: MarkSpec): string {
+    return sep_display_marked(sep, type) + v;
+}
+
+function column_display_marked(c: Column, type: MarkSpec, index: number): string {
+    let result = c.map((e) => entry_display_marked(e, type)).join('');
+    if (type === 'label') result += ':' + index;
+    result = '(' + result + ')';
+    if (type === 'sub') result += '<sub>' + index + '</sub>';
+    return result;
+}
+
+function mountain_display_marked(m: Expr, type: MarkSpec): string {
+    if (is_infinity(m)) return 'Limit';
+    return m.map((col, i) => column_display_marked(col, type, i + 1)).join('');
+}
+
 export const T_omega_MN: NotationDefinition<Expr> = {
     id: 't-omega-mn',
     name: 'Transfinite ωMN',
@@ -517,6 +544,10 @@ export const T_omega_MN: NotationDefinition<Expr> = {
         layer: {
             plain: (m) => mountain_display(convert_to_layer(m), false),
             from_display: (s) => convert_from_layer(mountain_from_display(s)),
+        },
+        marked: {
+            plain: (m) => mountain_display_marked(m, 'label'),
+            html: (m) => mountain_display_marked(m, 'sub'),
         },
         simple: {
             plain: (m) => mountain_display(m, true),

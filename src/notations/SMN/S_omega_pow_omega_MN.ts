@@ -473,6 +473,21 @@ function convert_from_layer(dm: Mountain): Mountain {
     return om;
 }
 
+type MarkSpec = 'label' | 'sub';
+
+function column_display_marked(c: Column, type: MarkSpec, index: number): string {
+    let result = c.map(entry_display).join('');
+    if (type === 'label') result += ':' + index;
+    result = '(' + result + ')';
+    if (type === 'sub') result += '<sub>' + index + '</sub>';
+    return result;
+}
+
+function mountain_display_marked(m: Mountain, type: MarkSpec): string {
+    if (is_infinity(m)) return 'Limit';
+    return m.map((col, i) => column_display_marked(col, type, i + 1)).join('');
+}
+
 export const S_omega_pow_omega_MN: NotationDefinition<Mountain> = {
     id: 'S-omega^omega-MN',
     name: "Smile's ω^ω MN",
@@ -483,6 +498,10 @@ export const S_omega_pow_omega_MN: NotationDefinition<Mountain> = {
         layer: {
             plain: (m) => display(convert_to_layer(m)),
             from_display: (str) => convert_from_layer(from_display(str)),
+        },
+        marked: {
+            plain: (m) => mountain_display_marked(m, 'label'),
+            html: (m) => mountain_display_marked(m, 'sub'),
         },
     },
     ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),

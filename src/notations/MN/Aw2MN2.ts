@@ -370,12 +370,33 @@ export function convert_from_layer(dm: Expr): Expr {
     return om;
 }
 
+type MarkSpec = 'label' | 'sub';
+
+function column_display_marked(c: Column, type: MarkSpec, index: number): string {
+    let result = c.map(entry_display).join('');
+    if (type === 'label') result += ':' + index;
+    result = '(' + result + ')';
+    if (type === 'sub') result += '<sub>' + index + '</sub>';
+    return result;
+}
+
+export function mountain_display_marked(m: Expr, type: MarkSpec): string {
+    if (is_infinity(m)) return 'Limit';
+    return m.map((col, i) => column_display_marked(col, type, i + 1)).join('');
+}
+
 export const A_omega2_MN2: NotationDefinition<Expr> = {
     id: 'a-omega2-mn-2',
     name: 'Astral ω·2 mountain notation 2',
     simple_name: 'Aω2MN2',
     category_id: 'category-hypcos-w2mn',
     display: mountain_display,
+    display_equiv: {
+        marked: {
+            plain: (m) => mountain_display_marked(m, 'label'),
+            html: (m) => mountain_display_marked(m, 'sub'),
+        },
+    },
     is_limit: mountain_is_limit,
     compare: mountain_compare,
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, mountain_display),

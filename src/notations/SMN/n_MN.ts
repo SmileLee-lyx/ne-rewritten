@@ -61,6 +61,21 @@ function vertical_display(v: Vertical): string {
     return v.map((s) => sep_display(s, false)).join('/');
 }
 
+type MarkSpec = 'label' | 'sub';
+
+function mountain_display_marked(m: Mountain, type: MarkSpec): string {
+    if (is_infinity(m)) return 'Limit';
+    return m.map((col, i) => column_display_marked(col, type, i + 1)).join('');
+}
+
+function column_display_marked(c: Column, type: MarkSpec, index: number): string {
+    let result = c.map((e) => entry_display(e, false)).join('');
+    if (type === 'label') result += ':' + index;
+    result = '(' + result + ')';
+    if (type === 'sub') result += '<sub>' + index + '</sub>';
+    return result;
+}
+
 function from_display(str: string): Mountain {
     if (str === 'Limit') return INFINITY();
 
@@ -569,6 +584,10 @@ export function n_MN(n: number): NotationDefinition<Mountain> {
             layer: {
                 plain: (m) => mountain_display(convert_to_layer(m), false),
                 from_display: (str) => convert_from_layer(from_display(str)),
+            },
+            marked: {
+                plain: (m) => mountain_display_marked(m, 'label'),
+                html: (m) => mountain_display_marked(m, 'sub'),
             },
             simple: {
                 plain: (m) => mountain_display(m, true),

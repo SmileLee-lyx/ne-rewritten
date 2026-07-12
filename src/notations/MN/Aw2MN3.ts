@@ -9,6 +9,7 @@ import {
     is_infinity,
     mountain_compare,
     mountain_display,
+    mountain_display_marked,
     mountain_is_limit,
     mountain_is_one,
     Parent,
@@ -177,6 +178,12 @@ export const A_omega2_MN3: NotationDefinition<Expr> = {
     id: 'a-omega2-mn-3',
     name: 'Aω2MN3',
     display: mountain_display,
+    display_equiv: {
+        marked: {
+            plain: (m) => mountain_display_marked(m, 'label'),
+            html: (m) => mountain_display_marked(m, 'sub'),
+        },
+    },
     simple_name: 'Aω2MN3',
     category_id: 'category-hypcos-w2mn',
     is_limit: mountain_is_limit,
