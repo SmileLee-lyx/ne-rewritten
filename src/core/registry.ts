@@ -2,13 +2,23 @@ import { NotationCategoryDefinition } from '@/core/notation_category.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { index_of_first } from '@/utils.ts';
 
+// ========== RegisterError ==========
+
+export class RegisterError extends Error {
+    readonly id: string;
+
+    constructor(id: string, message?: string) {
+        super(message ?? `Item '${id}' is already registered.`);
+        this.name = 'RegisterError';
+        this.id = id;
+    }
+}
+
 // ========== Category registry ==========
 
 const category_defs = new Map<string, NotationCategoryDefinition>();
 const root_items: { kind: 'category' | 'notation'; id: string }[] = [];
 const category_items = new Map<string, { kind: 'category' | 'notation'; id: string }[]>();
-/** 用于 Vue 响应式追踪的版本信号 —— 组件可在 computed/watch 中依赖其 .value。 */
-export const registry_version = { value: 0 };
 
 function add_item(cat_id: string | undefined, kind: 'category' | 'notation', id: string): void {
     const list = cat_id ? (category_items.get(cat_id) ?? []) : root_items;
@@ -19,14 +29,11 @@ function add_item(cat_id: string | undefined, kind: 'category' | 'notation', id:
 }
 
 export function register_category(cat: NotationCategoryDefinition): void {
-    if (category_defs.has(cat.id)) {
-        throw new Error(`Category '${cat.id}' is already registered.`);
-    }
-    if (map.has(cat.id)) {
-        throw new Error(`A notation with id '${cat.id}' already exists; cannot register as category.`);
+    if (category_defs.has(cat.id) || map.has(cat.id)) {
+        throw new RegisterError(cat.id, `Category '${cat.id}' conflicts with an existing item.`);
     }
     if (cat.parent_id !== undefined && !category_defs.has(cat.parent_id)) {
-        throw new Error(`Parent category '${cat.parent_id}' not found for '${cat.id}'.`);
+        throw new RegisterError(cat.id, `Parent category '${cat.parent_id}' not found for '${cat.id}'.`);
     }
     category_defs.set(cat.id, cat);
     add_item(cat.parent_id, 'category', cat.id);
@@ -62,10 +69,19 @@ const map = new Map<string, NotationDefinition<any>>();
 /** 内部注册：不校验 generator 限制（供 init_generator / increment 使用） */
 function _register_notation<T>(notation: NotationDefinition<T>): void {
     if (notation.category_id !== undefined && !category_defs.has(notation.category_id)) {
-        throw new Error(`Category '${notation.category_id}' not found for notation '${notation.id}'.`);
+        throw new RegisterError(
+            notation.id,
+            `Category '${notation.category_id}' not found for notation '${notation.id}'.`,
+        );
     }
     if (category_defs.has(notation.id)) {
-        throw new Error(`A category with id '${notation.id}' already exists; cannot register as notation.`);
+        throw new RegisterError(
+            notation.id,
+            `A category with id '${notation.id}' already exists; cannot register as notation.`,
+        );
+    }
+    if (map.has(notation.id)) {
+        throw new RegisterError(notation.id, `Notation '${notation.id}' is already registered.`);
     }
     map.set(notation.id, notation);
     add_item(notation.category_id, 'notation', notation.id);
@@ -75,7 +91,8 @@ export function register_notation<T>(notation: NotationDefinition<T>): void {
     if (notation.category_id !== undefined) {
         const cat = category_defs.get(notation.category_id);
         if (cat?.generator) {
-            throw new Error(
+            throw new RegisterError(
+                notation.id,
                 `Cannot directly register '${notation.id}' under generator category '${cat.id}'. ` +
                     `Use init_generator instead.`,
             );
@@ -92,13 +109,47 @@ export function list_notations(): NotationDefinition<unknown>[] {
     return Array.from(map.values());
 }
 
-export function unregister_notation(id: string): void {
+export function unregister_notation(id: string): string[] {
     const notation = get_notation(id);
-    if (!notation) return;
+    if (!notation) return [];
     map.delete(id);
     const list = notation.category_id ? (category_items.get(notation.category_id) ?? root_items) : root_items;
     const idx = list.findIndex((item) => item.id === id);
     if (idx !== -1) list.splice(idx, 1);
+    return [id];
+}
+
+export function unregister_category(id: string): string[] {
+    const cat = category_defs.get(id);
+    if (!cat) return [];
+    const removed: string[] = [];
+
+    // recursively unregister children
+    const children = category_items.get(id) ?? [];
+    for (const child of children) {
+        if (child.kind === 'category') {
+            removed.push(...unregister_category(child.id));
+        } else {
+            removed.push(...unregister_notation(child.id));
+        }
+    }
+
+    category_defs.delete(id);
+    category_items.delete(id);
+
+    // remove from parent's child list
+    const parent_list = cat.parent_id ? (category_items.get(cat.parent_id) ?? root_items) : root_items;
+    const idx = parent_list.findIndex((item) => item.id === id);
+    if (idx !== -1) parent_list.splice(idx, 1);
+
+    removed.unshift(id);
+    return removed;
+}
+
+export function unregister_item(id: string): string[] {
+    if (category_defs.has(id)) return unregister_category(id);
+    if (map.has(id)) return unregister_notation(id);
+    return [];
 }
 
 // ========== Generator ==========
@@ -112,6 +163,24 @@ export function set_generator_state(state: Record<string, number>): void {
 
 export function get_generator_state(): Record<string, number> {
     return gen_state;
+}
+
+// Generator 变更监听器（供 UI 层订阅）
+type Listener = () => void;
+const change_listeners = new Set<Listener>();
+
+export function on_registry_change(listener: Listener): void {
+    change_listeners.add(listener);
+}
+
+export function remove_registry_change_listener(listener: Listener): void {
+    change_listeners.delete(listener);
+}
+
+export function notify_change(): void {
+    for (const listener of change_listeners) {
+        listener();
+    }
 }
 
 export function is_extra_generated(id: string): boolean {
@@ -133,7 +202,6 @@ export function init_generator(cat: NotationCategoryDefinition): void {
         _register_notation(gen.create(n));
     }
     gen_state[cat.id] = cur;
-    registry_version.value++;
 }
 
 export function generator_current(cat_id: string): number {
@@ -161,7 +229,7 @@ export function generator_increment(cat_id: string): string | null {
     const notation = cat.generator.create(next_n);
     _register_notation(notation);
     gen_state[cat_id] = next_n;
-    registry_version.value++;
+    notify_change();
     return notation.id;
 }
 
@@ -175,5 +243,5 @@ export function generator_decrement(cat_id: string): void {
     const last_id = items.length > 0 ? items[items.length - 1].id : undefined;
     if (last_id) unregister_notation(last_id);
     gen_state[cat_id] = cur - 1;
-    registry_version.value++;
+    notify_change();
 }

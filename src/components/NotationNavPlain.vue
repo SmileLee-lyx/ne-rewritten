@@ -10,6 +10,7 @@ const t = inject(I18N_KEY)!;
 const ui = use_ui_states();
 
 const all = computed(() => {
+    ui.registry_notifier.listen();
     const notations = list_notations();
     if (ui.configMode.value) return notations;
     return notations.filter((n) => !is_extra_generated(n.id) && !settings.hidden_notations.includes(n.id));

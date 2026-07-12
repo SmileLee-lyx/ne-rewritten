@@ -31,9 +31,9 @@ import {
     get_generator_state,
     init_generator,
     list_notations,
+    on_registry_change,
     register_category,
     register_notation,
-    registry_version,
     set_generator_state,
 } from '@/core/registry.ts';
 import { DEFAULT_SETTINGS, Settings } from '@/core/settings.ts';
@@ -120,13 +120,10 @@ watch(
     { deep: true },
 );
 
-// generator 状态变更时同步回 settings（由 settings 的 deep watch 自动保存）
-watch(
-    () => registry_version.value,
-    () => {
-        settings.generator_state = { ...get_generator_state() };
-    },
-);
+// registry 变更时同步 generator state 回 settings（由 settings 的 deep watch 自动保存）
+on_registry_change(() => {
+    settings.generator_state = { ...get_generator_state() };
+});
 
 register_notation(omega);
 register_notation(VeblenPhi);

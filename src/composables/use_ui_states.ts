@@ -1,4 +1,6 @@
 import { computed, reactive, ref } from 'vue';
+import { on_registry_change } from '@/core/registry.ts';
+import { Notifier } from '@/composables/use_notify.ts';
 
 interface UiState {
     configMode: boolean;
@@ -16,6 +18,11 @@ const showHotkeys = ref(false);
 const showTips = ref(false);
 const showColorTheme = ref(false);
 const showReset = ref(false);
+const showUserDefined = ref(false);
+
+// registry 变更通知器
+const registry_notifier = new Notifier();
+on_registry_change(() => registry_notifier.notify());
 
 export function use_ui_states() {
     let flash_timer: ReturnType<typeof setInterval> | null = null;
@@ -52,5 +59,7 @@ export function use_ui_states() {
         showTips,
         showColorTheme,
         showReset,
+        showUserDefined,
+        registry_notifier,
     };
 }

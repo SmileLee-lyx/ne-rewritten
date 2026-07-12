@@ -1,5 +1,6 @@
 import { computed, ref, watch } from 'vue';
 import { get_notation, list_notations } from '@/core/registry.ts';
+import { use_ui_states } from '@/composables/use_ui_states.ts';
 import type { ExpandSettings, Variant } from '@/core/settings.ts';
 import { focus_node, get_last_focus } from '@/composables/use_focus_tracker.ts';
 import { resolve_display } from '@/notation-definition.ts';
@@ -13,7 +14,12 @@ const variant = ref<Variant>('FS_short');
 const preview = ref<string | null>(null);
 const preview_status = ref<'none' | 'ok' | 'error-parse' | 'error-no-from-display' | 'error-fs'>('none');
 
-const notation_options = computed(() => list_notations());
+const _ui = use_ui_states();
+
+const notation_options = computed(() => {
+    _ui.registry_notifier.listen();
+    return list_notations();
+});
 const equiv_options = computed(() => {
     const n = get_notation(notation_id.value);
     return n?.display_equiv ? Object.keys(n.display_equiv) : [];

@@ -8,6 +8,12 @@ export interface ExpandSettings {
     variant: Variant;
 }
 
+export interface UserScript {
+    file_name: string;
+    code: string;
+    enabled: boolean;
+}
+
 export interface Settings {
     current_notation_id: string;
     tier: number;
@@ -28,6 +34,7 @@ export interface Settings {
     color_scheme: string;
     hidden_notations: string[];
     generator_state: Record<string, number>;
+    user_scripts: UserScript[];
     expand: ExpandSettings;
 }
 
@@ -51,5 +58,6 @@ export const DEFAULT_SETTINGS: Settings = {
     color_scheme: 'default',
     hidden_notations: [],
     generator_state: {},
+    user_scripts: [],
     expand: { FS_index: 1, notation_id: 'omega', notation_equiv: undefined, variant: 'FS_short' },
 };

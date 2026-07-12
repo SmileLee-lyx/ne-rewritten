@@ -8,6 +8,7 @@ import { use_diagram } from '@/composables/use_diagram.ts';
 import { import_analysis } from '@/core/analysis.ts';
 import { resolve_display } from '@/notation-definition.ts';
 import { focus_node_input } from '@/composables/use_focus_tracker.ts';
+import { reload_all } from '@/core/user_defined_notation.ts';
 
 const settings = inject(SETTINGS_KEY)!;
 const t = inject(I18N_KEY)!;
@@ -20,6 +21,26 @@ const settings_collapsed = ref(true);
 const find_input = ref<HTMLInputElement>();
 const font_options = ['Comic Sans MS', 'Consolas', 'Microsoft YaHei UI'];
 const DISPLAY_MODES = ['plain', 'html', 'latex'] as const;
+
+// 用户记号恢复：页面加载时不自动加载，等用户确认后再执行
+const user_scripts_recovered = ref(false);
+const has_pending_scripts = computed(
+    () => !user_scripts_recovered.value && settings.user_scripts.some((s) => s.enabled),
+);
+
+function resume_scripts(): void {
+    reload_all(settings.user_scripts);
+    user_scripts_recovered.value = true;
+    ui.registry_notifier.notify();
+}
+
+function disable_all(): void {
+    for (const sc of settings.user_scripts) {
+        sc.enabled = false;
+    }
+    settings.user_scripts = [...settings.user_scripts];
+    user_scripts_recovered.value = true;
+}
 
 const equiv_options = computed(() => {
     const n = notation.value;
@@ -309,6 +330,16 @@ function on_find_keydown(e: KeyboardEvent) {
                         <option value="en">English</option>
                     </select>
                 </label>
+            </div>
+            <div v-if="!settings_collapsed" class="toolbar-row">
+                <span>{{ t('user-defined.label') }}</span>
+                <template v-if="has_pending_scripts">
+                    <button @mousedown="resume_scripts">{{ t('user-defined.resume') }}</button>
+                    <button @mousedown="disable_all">{{ t('user-defined.disable-all') }}</button>
+                </template>
+                <template v-else>
+                    <button @mousedown="ui.showUserDefined.value = true">{{ t('user-defined.configure') }}</button>
+                </template>
             </div>
         </div>
         <button class="collapse-btn" @mousedown="settings_collapsed = !settings_collapsed">

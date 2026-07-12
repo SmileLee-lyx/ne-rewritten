@@ -13,7 +13,6 @@ import {
     get_category_children,
     get_notation,
     get_root_items,
-    registry_version,
 } from '@/core/registry.ts';
 
 const settings = inject(SETTINGS_KEY)!;
@@ -83,7 +82,7 @@ function toggle_hidden(id: string) {
 
 const rev = ref(0);
 watch(
-    () => registry_version.value,
+    () => ui.registry_notifier.listen(),
     () => {
         rev.value++;
     },
