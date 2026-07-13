@@ -330,18 +330,16 @@ function on_blur() {
                     @blur="on_blur"
                 />
             </span>
-            <span v-if="equiv_name" class="expr-display equiv">
+            <template v-if="equiv_name">
                 <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display(node.expr)" />
-                <span v-else v-html="expr_display(node.expr)" />
-            </span>
-            <span
+                <span v-else class="expr-display equiv" v-html="expr_display(node.expr)" />
+            </template>
+            <template
                 v-if="!equiv_name || !(settings.equiv_hide_original[props.notation.id] ?? true)"
-                class="expr-display"
-                :class="{ shifted: !!equiv_name }"
             >
                 <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display_original(node.expr)" />
-                <span v-else v-html="expr_display_original(node.expr)" />
-            </span>
+                <span v-else class="expr-display" :class="{ shifted: !!equiv_name }" v-html="expr_display_original(node.expr)" />
+            </template>
             <div v-if="tooltip" class="tooltip" @mousedown.stop>
                 <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display(node.expr)" />
                 <span v-else v-html="expr_display(node.expr)" />{{ t('notation-tree.fundamental-sequence') }}
