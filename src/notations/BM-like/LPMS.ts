@@ -685,6 +685,7 @@ export const LPMS: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
+            name_id: 'display.simple',
         },
     },
     is_limit: lpmsLimit,
@@ -710,6 +711,7 @@ export const LPTSS: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
+            name_id: 'display.simple',
         },
     },
     is_limit: lpmsLimit,

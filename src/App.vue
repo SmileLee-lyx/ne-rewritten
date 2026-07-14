@@ -199,6 +199,9 @@ function debug_compare_order(notation_id?: string) {
     --color-category-hover: #fd9;
     --color-category-bg: #feb;
     --color-accent: #06c;
+    --color-accent-hover: #08e;
+    --color-accent-active: #048;
+    --color-accent-bg: #cdf;
     --color-danger: #c00;
     --color-success: #080;
     --color-border: #ccc;

@@ -602,18 +602,21 @@ export const BTBM: NotationDefinition<Expr> = {
         plain: bind2(display, false),
         html: bind2(display, true),
         from_display,
+        name_id: 'display.index',
     },
     display_equiv: {
         layer: {
             plain: (e) => display(convert_to_layer(e), false),
             html: (e) => display(convert_to_layer(e), true),
             from_display: (str) => convert_from_layer(from_display(str)),
+            name_id: 'display.layer',
         },
         marked: {
             plain: (e) => display_marked(e, 'plain'),
             html: (e) => display_marked(e, 'html'),
             latex: (e) => display_marked(e, 'latex'),
             from_display,
+            name_id: 'display.index-marked',
         },
     },
     is_limit,

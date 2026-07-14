@@ -137,6 +137,36 @@ function row_can_decrement(level: string[]): boolean {
     if (level.length === 0) return false;
     return generator_can_decrement(level[level.length - 1]);
 }
+
+interface EquivItem {
+    id: string;
+    label: string;
+}
+
+const equiv_items = computed<EquivItem[]>(() => {
+    const notation = get_notation(settings.current_notation_id);
+    if (!notation?.display_equiv) return [];
+    return Object.keys(notation.display_equiv).map((id) => {
+        const spec = notation.display_equiv![id];
+        const name_id = typeof spec !== 'function' && spec.name_id ? spec.name_id : undefined;
+        return { id, label: name_id ? t(name_id) : id };
+    });
+});
+
+const orig_label = computed(() => {
+    const notation = get_notation(settings.current_notation_id);
+    if (!notation) return t('equiv.default');
+    const name_id =
+        typeof notation.display !== 'function' && notation.display.name_id ? notation.display.name_id : undefined;
+    return name_id ? t(name_id) : t('equiv.default');
+});
+
+function set_equiv(name: string | undefined) {
+    settings.equiv_active = {
+        ...settings.equiv_active,
+        [settings.current_notation_id]: name,
+    };
+}
 </script>
 
 <template>
@@ -184,6 +214,24 @@ function row_can_decrement(level: string[]): boolean {
                     −
                 </button>
             </span>
+        </div>
+        <div v-if="equiv_items.length > 0" class="nav-row nav-row--equiv">
+            <button
+                class="nav-btn nav-btn--equiv"
+                :class="{ 'nav-btn--current': !settings.equiv_active[settings.current_notation_id] }"
+                @mousedown.prevent="set_equiv(undefined)"
+            >
+                {{ orig_label }}
+            </button>
+            <button
+                v-for="item in equiv_items"
+                :key="item.id"
+                class="nav-btn nav-btn--equiv"
+                :class="{ 'nav-btn--current': settings.equiv_active[settings.current_notation_id] === item.id }"
+                @mousedown.prevent="set_equiv(item.id)"
+            >
+                {{ item.label }}
+            </button>
         </div>
     </div>
 </template>
@@ -246,6 +294,20 @@ button.nav-btn--notation.nav-btn--current {
 
 .nav-btn--category:hover {
     background: var(--color-category-hover);
+}
+
+.nav-btn--equiv {
+    border-color: var(--color-accent);
+    background: var(--color-accent-bg);
+}
+
+.nav-btn--equiv:hover {
+    background: var(--color-accent-hover);
+}
+
+button.nav-btn--equiv.nav-btn--current {
+    background: var(--color-accent-active);
+    color: var(--color-bg);
 }
 
 .nav-btn-stack {

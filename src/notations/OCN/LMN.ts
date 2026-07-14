@@ -273,10 +273,14 @@ export const LMN: NotationDefinition<Expr> = {
         from_display,
     },
     display_equiv: {
-        plain: (e) => LMN_display(e, 'plain'),
+        plain: {
+            plain: (e) => LMN_display(e, 'plain'),
+            name_id: 'display.simple',
+        },
         sup: {
             plain: (e) => LMN_display(e, 'plain'),
             html: (e) => LMN_display(e, 'html-plain'),
+            name_id: 'display.pocn-sup',
         },
     },
     is_limit: LMN_is_limit,

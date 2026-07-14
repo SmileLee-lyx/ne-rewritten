@@ -54,14 +54,18 @@ export type NotationDisplaySpec<T> =
           html?: NotationDisplay<T>;
           latex?: NotationDisplay<T>;
           from_display?: (str: string) => T;
+          name_id?: string;
       };
 
-export function resolve_display<T>(spec: NotationDisplaySpec<T>): {
+export interface ResolvedDisplaySpec<T> {
     plain: NotationDisplay<T>;
     html: NotationDisplay<T>;
     latex: NotationDisplay<T>;
     from_display?: (str: string) => T;
-} {
+    name_id?: string;
+}
+
+export function resolve_display<T>(spec: NotationDisplaySpec<T>): ResolvedDisplaySpec<T> {
     if (typeof spec === 'function') {
         const html = spec;
         const latex = (a: T) => html_to_latex(html(a));
@@ -74,6 +78,7 @@ export function resolve_display<T>(spec: NotationDisplaySpec<T>): {
         html: html_fn,
         latex: latex_fn,
         from_display: spec.from_display,
+        name_id: spec.name_id,
     };
 }
 

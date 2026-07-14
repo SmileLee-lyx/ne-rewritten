@@ -579,6 +579,7 @@ export function BTL_Minus1_Y_nSS(n: number): NotationDefinition<ExprCompact> {
                 plain: (e) => display(decompactify(e), false, false),
                 html: (e) => display(decompactify(e), true, false),
                 from_display: (s) => compactify(from_display(s, n)),
+                name_id: 'display.btl-m1y-nss-combined',
             },
         },
         is_limit: (e) => is_limit(decompactify(e)),

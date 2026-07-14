@@ -373,6 +373,7 @@ export const VeblenPhi: NotationDefinition<Expr> = {
             plain: bind2(display_separate, 'plain'),
             html: bind2(display_separate, 'html'),
             latex: bind2(display_separate, 'latex'),
+            name_id: 'display.veblen-separate',
         },
     },
     init: () => [INFINITY, zero()],

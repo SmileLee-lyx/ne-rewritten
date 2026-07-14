@@ -642,24 +642,29 @@ export function n_MN(n: number): NotationDefinition<Mountain> {
         display: {
             plain: (m) => mountain_display(m, false),
             from_display: from_display,
+            name_id: 'display.index',
         },
         display_equiv: {
             layer: {
                 plain: (m) => mountain_display(convert_to_layer(m), false),
                 from_display: (str) => convert_from_layer(from_display(str)),
+                name_id: 'display.layer',
             },
             marked: {
                 plain: (m) => mountain_display_marked(m, 'label'),
                 html: (m) => mountain_display_marked(m, 'sub'),
                 from_display: from_display,
+                name_id: 'display.index-marked',
             },
             simple: {
                 plain: (m) => mountain_display(m, true),
                 from_display: from_display_simple,
+                name_id: 'display.index-simple',
             },
             'layer simple': {
                 plain: (m) => mountain_display(convert_to_layer(m), true),
                 from_display: (s) => convert_from_layer(from_display_simple(s)),
+                name_id: 'display.layer-simple',
             },
         },
         draw_diagram: draw_diagram_control,

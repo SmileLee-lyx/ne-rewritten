@@ -42,9 +42,19 @@ function disable_all(): void {
     user_scripts_recovered.value = true;
 }
 
-const equiv_options = computed(() => {
+interface EquivOption {
+    id: string;
+    label: string;
+}
+
+const equiv_options = computed<EquivOption[]>(() => {
     const n = notation.value;
-    return n?.display_equiv ? Object.keys(n.display_equiv) : [];
+    if (!n?.display_equiv) return [];
+    return Object.keys(n.display_equiv).map((id) => {
+        const spec = n.display_equiv![id];
+        const name_id = typeof spec !== 'function' && spec.name_id ? spec.name_id : undefined;
+        return { id, label: name_id ? t(name_id) : id };
+    });
 });
 
 const tier_name = computed(() => {
@@ -232,9 +242,9 @@ function on_find_keydown(e: KeyboardEvent) {
                                 }
                             "
                         >
-                            <option value="">{{ t('equiv.none') }}</option>
-                            <option v-for="k in equiv_options" :key="k" :value="k">
-                                {{ k }}
+                            <option value="">{{ t('equiv.default') }}</option>
+                            <option v-for="k in equiv_options" :key="k.id" :value="k.id">
+                                {{ k.label }}
                             </option>
                         </select>
                     </label>

@@ -395,6 +395,7 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
         marked: {
             plain: (m) => mountain_display_marked(m, 'label'),
             html: (m) => mountain_display_marked(m, 'sub'),
+            name_id: 'display.index-marked',
         },
     },
     is_limit: mountain_is_limit,
@@ -410,9 +411,17 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     name: 'weak Astral ω·2 mountain notation 2',
     simple_name: 'wAω2MN2',
     category_id: 'category-hypcos-w2mn',
-    display: mountain_display,
+    display: { plain: mountain_display, name_id: 'display.index' },
     display_equiv: {
-        layer: (m) => mountain_display(convert_to_layer(m)),
+        layer: {
+            plain: (m) => mountain_display(convert_to_layer(m)),
+            name_id: 'display.layer',
+        },
+        marked: {
+            plain: (m) => mountain_display_marked(m, 'label'),
+            html: (m) => mountain_display_marked(m, 'sub'),
+            name_id: 'display.index-marked',
+        },
     },
     is_limit: mountain_is_limit,
     compare: mountain_compare,

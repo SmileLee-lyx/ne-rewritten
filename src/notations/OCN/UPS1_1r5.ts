@@ -920,11 +920,13 @@ export const UPS1_1r5: NotationDefinition<Expr> = {
             plain: bind2(display_as_OCN, 'plain'),
             html: bind2(display_as_OCN, 'html'),
             latex: bind2(display_as_OCN, 'latex'),
+            name_id: 'display.pocn',
         },
         colored: {
             plain: bind2(display_as_OCN, 'plain'),
             html: bind2(display_as_OCN, 'html-colored'),
             latex: bind2(display_as_OCN, 'latex-colored'),
+            name_id: 'display.pocn-colored',
         },
     },
     is_limit,
