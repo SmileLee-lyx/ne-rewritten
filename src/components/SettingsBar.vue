@@ -216,15 +216,44 @@ function on_find_keydown(e: KeyboardEvent) {
                         <option value="FS_short">{{ t('fs-variant.short') }}</option>
                     </select>
                 </label>
-            </div>
-            <div class="toolbar-row">
-                <button class="reset-btn" @mousedown="ui.showReset.value = true">{{ t('toolbar.reset') }}</button>
-                <button @mousedown="save_load.handle_export()">{{ t('toolbar.export') }}</button>
-                <button @mousedown="save_load.handle_import()">{{ t('toolbar.import') }}</button>
-                <button @mousedown="save_load.save_analysis()">{{ t('toolbar.save') }}</button>
-                <button @mousedown="ui.showHotkeys.value = true">{{ t('toolbar.hotkeys') }}</button>
-                <button class="toolbar-btn-tips" @mousedown="ui.showTips.value = true">{{ t('toolbar.tips') }}</button>
-                <button @mousedown="ui.showColorTheme.value = true">{{ t('toolbar.theme') }}</button>
+                <span v-if="equiv_options.length > 0" style="margin-left: 8px">
+                    <label>
+                        {{ t('equiv.label') }}
+                        <select
+                            :value="settings.equiv_active[settings.current_notation_id] ?? ''"
+                            @mousedown.stop
+                            @change="
+                                (e: any) => {
+                                    settings.equiv_active = {
+                                        ...settings.equiv_active,
+                                        [settings.current_notation_id]:
+                                            (e.target as HTMLSelectElement).value || undefined,
+                                    };
+                                }
+                            "
+                        >
+                            <option value="">{{ t('equiv.none') }}</option>
+                            <option v-for="k in equiv_options" :key="k" :value="k">
+                                {{ k }}
+                            </option>
+                        </select>
+                    </label>
+                    <label style="margin-left: 8px" v-if="settings.equiv_active[settings.current_notation_id]">
+                        <input
+                            type="checkbox"
+                            :checked="settings.equiv_hide_original[settings.current_notation_id] ?? true"
+                            @change="
+                                (e: any) => {
+                                    settings.equiv_hide_original = {
+                                        ...settings.equiv_hide_original,
+                                        [settings.current_notation_id]: (e.target as HTMLInputElement).checked,
+                                    };
+                                }
+                            "
+                        />
+                        {{ t('equiv.hide-original') }}
+                    </label>
+                </span>
             </div>
             <div class="toolbar-row">
                 <label v-if="notation?.draw_diagram">
@@ -237,43 +266,16 @@ function on_find_keydown(e: KeyboardEvent) {
                 </label>
                 <button @mousedown="ui.showLatexAnalysis.value = true">{{ t('latex-analysis.title') }}</button>
             </div>
-            <div v-if="!settings_collapsed && equiv_options.length > 0" class="toolbar-row">
-                <label>
-                    {{ t('equiv.label') }}
-                    <select
-                        :value="settings.equiv_active[settings.current_notation_id] ?? ''"
-                        @mousedown.stop
-                        @change="
-                            (e: any) => {
-                                settings.equiv_active = {
-                                    ...settings.equiv_active,
-                                    [settings.current_notation_id]: (e.target as HTMLSelectElement).value || undefined,
-                                };
-                            }
-                        "
-                    >
-                        <option value="">{{ t('equiv.none') }}</option>
-                        <option v-for="k in equiv_options" :key="k" :value="k">
-                            {{ k }}
-                        </option>
-                    </select>
-                </label>
-                <label style="margin-left: 8px" v-if="settings.equiv_active[settings.current_notation_id]">
-                    <input
-                        type="checkbox"
-                        :checked="settings.equiv_hide_original[settings.current_notation_id] ?? true"
-                        @change="
-                            (e: any) => {
-                                settings.equiv_hide_original = {
-                                    ...settings.equiv_hide_original,
-                                    [settings.current_notation_id]: (e.target as HTMLInputElement).checked,
-                                };
-                            }
-                        "
-                    />
-                    {{ t('equiv.hide-original') }}
-                </label>
+            <div class="toolbar-row">
+                <button class="reset-btn" @mousedown="ui.showReset.value = true">{{ t('toolbar.reset') }}</button>
+                <button @mousedown="save_load.handle_export()">{{ t('toolbar.export') }}</button>
+                <button @mousedown="save_load.handle_import()">{{ t('toolbar.import') }}</button>
+                <button @mousedown="save_load.save_analysis()">{{ t('toolbar.save') }}</button>
+                <button @mousedown="ui.showHotkeys.value = true">{{ t('toolbar.hotkeys') }}</button>
+                <button class="toolbar-btn-tips" @mousedown="ui.showTips.value = true">{{ t('toolbar.tips') }}</button>
+                <button @mousedown="ui.showColorTheme.value = true">{{ t('toolbar.theme') }}</button>
             </div>
+            <hr v-if="!settings_collapsed" class="toolbar-separator" />
             <div v-if="!settings_collapsed" class="toolbar-row">
                 <span style="margin-right: 8px">
                     {{ t('display.label') }}
@@ -348,3 +350,11 @@ function on_find_keydown(e: KeyboardEvent) {
         </button>
     </div>
 </template>
+
+<style scoped>
+.toolbar-separator {
+    border: none;
+    border-top: 2px solid var(--color-border);
+    margin: 12px 0 8px;
+}
+</style>
