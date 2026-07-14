@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, ref, watch } from 'vue';
 import {
+    drawSelection,
     EditorView,
+    highlightActiveLine,
+    highlightActiveLineGutter,
     keymap,
     lineNumbers,
-    highlightActiveLineGutter,
-    drawSelection,
-    highlightActiveLine,
 } from '@codemirror/view';
-import { EditorState, Compartment } from '@codemirror/state';
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, bracketMatching } from '@codemirror/language';
+import { Compartment, EditorState } from '@codemirror/state';
+import { bracketMatching, defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { defaultKeymap, history } from '@codemirror/commands';
 import { closeBrackets } from '@codemirror/autocomplete';
 import { javascript } from '@codemirror/lang-javascript';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { use_ui_states } from '@/composables/use_ui_states.ts';
-import { reload_all, get_script_warnings } from '@/core/user_defined_notation.ts';
+import { get_script_warnings, reload_all } from '@/core/user_defined_notation.ts';
 import type { UserScript } from '@/core/settings.ts';
 import ModalDialog from './ModalDialog.vue';
 import TEMPLATE_JS from '@/assets/template.js?raw';

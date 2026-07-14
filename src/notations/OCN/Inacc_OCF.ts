@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { make_OCN_display, type OCNDisplayIR, display_OCN_IR, merge_sum } from '@/notations/OCN/OCN_utils.ts';
+import { display_OCN_IR, make_OCN_display, merge_sum, type OCNDisplayIR } from '@/notations/OCN/OCN_utils.ts';
 
 type Expr = ['zero'] | ['sum', Expr[]] | ['omega_pow', Expr] | ['Omega', Expr] | ['I'] | ['psi', Expr, Expr];
 

@@ -1,5 +1,5 @@
-import { computed, inject, type InjectionKey, reactive, ref, watch } from 'vue';
 import type { Ref } from 'vue';
+import { computed, inject, type InjectionKey, reactive, ref, watch } from 'vue';
 import { get_notation } from '@/core/registry.ts';
 import { init_dataset, type TreeNode } from '@/core/tree.ts';
 import { export_analysis, import_analysis } from '@/core/analysis.ts';

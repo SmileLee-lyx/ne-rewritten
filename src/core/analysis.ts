@@ -3,7 +3,6 @@ import { find_prev, last_descendant } from '@/core/tree.ts';
 import type { TreeNodeExtra } from '@/core/extra.ts';
 import { expand_item } from '@/core/expander.ts';
 import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
-import { init } from 'vitest/worker';
 
 /** 单个导出条目。expr 保留原始类型，不做字符串化。 */
 export interface AnalysisEntry<T> {

@@ -1,6 +1,6 @@
 import { boolean_compare, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-import { make_OCN_display, type OCNDisplayIR, merge_sum } from '@/notations/OCN/OCN_utils.ts';
+import { make_OCN_display, merge_sum, type OCNDisplayIR } from '@/notations/OCN/OCN_utils.ts';
 
 /**
  * 0: 0

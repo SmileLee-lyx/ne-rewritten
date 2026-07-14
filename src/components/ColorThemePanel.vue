@@ -3,7 +3,7 @@ import { inject } from 'vue';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { use_ui_states } from '@/composables/use_ui_states.ts';
-import { use_color_theme, themes } from '@/composables/use_color_theme.ts';
+import { themes, use_color_theme } from '@/composables/use_color_theme.ts';
 import ModalDialog from './ModalDialog.vue';
 
 const t = inject(I18N_KEY)!;

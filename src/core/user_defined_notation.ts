@@ -1,12 +1,12 @@
 import type { NotationDefinition } from '@/notation-definition.ts';
 import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 import {
-    register_notation,
-    register_category,
-    unregister_item,
-    init_generator,
     get_category_children,
+    init_generator,
     notify_change,
+    register_category,
+    register_notation,
+    unregister_item,
 } from '@/core/registry.ts';
 import type { UserScript } from '@/core/settings.ts';
 

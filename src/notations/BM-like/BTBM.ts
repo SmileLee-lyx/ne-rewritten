@@ -6,9 +6,7 @@ import {
     lex_compare_by,
     number_compare,
     object_lex_compare_by,
-    tuple_lex_compare_by,
 } from '@/utils.ts';
-import { r } from '@/notations/TON/ton_helpers.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 type CompactExpr = [number, CompactExpr][][];
@@ -320,7 +318,7 @@ function display_entry(entry: Entry, html: boolean): string {
     const v_display = '' + (entry.value + 1);
     if (entry.height.length === 0) return v_display;
     const h_display = display(entry.height, html);
-    return html ? v_display + '<sup>' + v_display + '</sup>' : v_display + '^' + h_display;
+    return html ? v_display + '<sup>' + h_display + '</sup>' : v_display + '^' + h_display;
 }
 
 function compare(a: Expr, b: Expr): number {

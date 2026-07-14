@@ -1,8 +1,5 @@
-import { find_prev, last_descendant, TreeNode } from '@/core/tree.ts';
-import { append_sibling, get_bound, prepend_child } from '@/core/tree.ts';
-import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
-import type { TreeNodeExtra } from '@/core/extra.ts';
-import { AnalysisEntry } from '@/core/analysis.ts';
+import { append_sibling, get_bound, prepend_child, TreeNode } from '@/core/tree.ts';
+import { NotationDefinition } from '@/notation-definition.ts';
 
 function resolve_fs<T>(notation: NotationDefinition<T>, variant: string): (expr: T, index: number) => T {
     switch (variant) {
