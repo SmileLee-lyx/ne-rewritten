@@ -94,6 +94,28 @@ function to_height(e: Expr, r: number): Height {
     return result;
 }
 
+function from_height(h: Height, r: number): Expr {
+    const result: Expr = [];
+
+    for (let i = 0; i < h.length; i++) {
+        const col = h[i];
+
+        const result_col: Column = [];
+
+        for (const entry of col) {
+            const { mark, value } = entry;
+            result_col.push({
+                value: value + (mark ? r : 0),
+                height: from_height(entry.height, r),
+            });
+        }
+
+        result.push(result_col);
+    }
+
+    return result;
+}
+
 function height_compare(a: Height, b: Height): number {
     return lex_compare(a, b, lex_compare_by(height_entry_comparator));
 }
@@ -102,25 +124,6 @@ const height_entry_comparator = object_lex_compare_by(
     { mark: boolean_compare, value: number_compare, height: height_compare },
     ['mark', 'value', 'height'],
 );
-
-function vertical_compare(a: Vertical, b: Vertical): number {
-    return lex_compare(a, b, height_compare);
-}
-
-function vertical_increase(vert: Vertical, h_diff: Height): Vertical {
-    const result = [...vert];
-    while (result.length > 0 && height_compare(result[result.length - 1], h_diff) < 0) {
-        result.pop();
-    }
-    result.push(h_diff);
-    return result;
-}
-
-function vertical_sub(vert: Vertical, base: Vertical): Vertical {
-    let i = 0;
-    while (i < base.length && i < vert.length && height_compare(vert[i], base[i]) === 0) i++;
-    return vert.slice(i);
-}
 
 function has_next_layer<T extends object>(expr: ExprData<T>): boolean {
     const right = expr.length - 1;
@@ -311,7 +314,12 @@ function FS(expr: Expr, index: number): Expr {
 function display(expr: Expr, html: boolean): string {
     if (is_infinity(expr)) return 'Limit';
 
-    return expr.map((col) => '(' + col.map((entry) => display_entry(entry, html)).join(',') + ')').join('');
+    return expr.map(bind2(display_column, html)).join('');
+}
+
+function display_column(col: Column, html: boolean) {
+    if (col.length === 0) return '(0)';
+    return '(' + col.map(bind2(display_entry, html)).join(',') + ')';
 }
 
 function display_entry(entry: Entry, html: boolean): string {
@@ -319,6 +327,86 @@ function display_entry(entry: Entry, html: boolean): string {
     if (entry.height.length === 0) return v_display;
     const h_display = display(entry.height, html);
     return html ? v_display + '<sup>' + h_display + '</sup>' : v_display + '^' + h_display;
+}
+
+function from_display(s: string): Expr {
+    let i = 0;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    function parse_number(): number {
+        skip_spaces();
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_expr(): Expr {
+        const result: Expr = [];
+        skip_spaces();
+        while (i < s.length && s[i] === '(') {
+            result.push(parse_column());
+            skip_spaces();
+        }
+        return result;
+    }
+
+    function parse_column(): Column {
+        skip_spaces();
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+
+        const entries: Entry[] = [];
+        skip_spaces();
+        if (i < s.length && s[i] !== ')') {
+            entries.push(parse_entry());
+            skip_spaces();
+            while (i < s.length && s[i] === ',') {
+                i++;
+                skip_spaces();
+                if (i < s.length && s[i] === ')') break;
+                entries.push(parse_entry());
+                skip_spaces();
+            }
+        }
+
+        skip_spaces();
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+        // 删去列尾的 0 项（显示值 0 = 内部值 -1）
+        while (entries.length > 0 && entries[entries.length - 1].value === -1) entries.pop();
+        return entries;
+    }
+
+    function parse_entry(): Entry {
+        const v = parse_number() - 1; // display 为 1-based，内部为 0-based
+        skip_spaces();
+        if (i < s.length && s[i] === '^') {
+            i++;
+            return { value: v, height: parse_expr() };
+        }
+        return { value: v, height: [] };
+    }
+
+    skip_spaces();
+    if (i + 5 <= s.length && s.substring(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY;
+    }
+
+    const result = parse_expr();
+    skip_spaces();
+    if (i !== s.length) error();
+    return result;
 }
 
 function compare(a: Expr, b: Expr): number {
@@ -333,6 +421,81 @@ const entry_comparator: Comparator<Entry> = object_lex_compare_by(
     ['value', 'height'],
 );
 
+type LayerColumn = { value: number; height: Height }[];
+
+function vertical_increase(vert: Vertical, h_diff: Height): Vertical {
+    const result = [...vert];
+    while (result.length > 0 && height_compare(result[result.length - 1], h_diff) < 0) {
+        result.pop();
+    }
+    result.push(h_diff);
+    return result;
+}
+
+function convert_to_layer(e: Expr, parsed_stack: LayerColumn[] = []): Expr {
+    if (is_infinity(e)) return e;
+
+    const lS = parsed_stack.length;
+    const result: Expr = [];
+
+    for (let i = 0; i < e.length; i++) {
+        const iS = parsed_stack.length;
+
+        const col = e[i];
+        const parsed_col: LayerColumn = [];
+
+        let current_vertical: Vertical = [];
+
+        for (let j = 0; j < col.length; j++) {
+            const entry = col[j];
+            const p = entry.value;
+            const height = to_height(entry.height, iS);
+
+            let kp = 0,
+                ki = 0;
+            while (kp !== parsed_stack[p].length && ki !== current_vertical.length) {
+                const cmp = height_compare(parsed_stack[p][kp].height, current_vertical[ki]);
+                if (cmp <= 0) kp++;
+                if (cmp >= 0) ki++;
+            }
+            if (kp === parsed_stack[p].length) {
+                parsed_col.push({ value: 0, height });
+            } else {
+                while (kp <= parsed_stack[p].length) {
+                    if (kp === parsed_stack[p].length) {
+                        parsed_col.push({ value: 0, height });
+                        break;
+                    }
+                    const cmp = height_compare(parsed_stack[p][kp].height, height);
+                    if (cmp < 0) {
+                        parsed_col.push({ value: parsed_stack[p][kp].value + 1, height: parsed_stack[p][kp].height });
+                    } else {
+                        parsed_col.push({ value: parsed_stack[p][kp].value + 1, height });
+                        break;
+                    }
+                    kp++;
+                }
+            }
+            current_vertical = vertical_increase(current_vertical, height);
+        }
+        parsed_stack.push(parsed_col);
+
+        const result_col: Column = [];
+        for (let parsed_entry of parsed_col) {
+            const height_expr = from_height(parsed_entry.height, iS);
+            result_col.push({
+                value: parsed_entry.value,
+                height: convert_to_layer(height_expr, parsed_stack),
+            });
+        }
+
+        result.push(result_col);
+    }
+
+    parsed_stack.splice(lS);
+    return result;
+}
+
 export const BTBM: NotationDefinition<Expr> = {
     id: 'btbm',
     name: 'Branching Transfinite BMS',
@@ -341,6 +504,13 @@ export const BTBM: NotationDefinition<Expr> = {
     display: {
         plain: bind2(display, false),
         html: bind2(display, true),
+        from_display,
+    },
+    display_equiv: {
+        layer: {
+            plain: (e) => display(convert_to_layer(e), false),
+            html: (e) => display(convert_to_layer(e), true),
+        },
     },
     is_limit,
     compare,
