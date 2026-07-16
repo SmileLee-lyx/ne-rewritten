@@ -57,6 +57,144 @@ export function mountain_display(m: Expr): string {
     return m.map(column_display).join('');
 }
 
+export function INFINITY(): Expr {
+    return [[[Infinity]]] as any;
+}
+
+export function from_display(str: string): Expr {
+    if (str === 'Limit') return INFINITY();
+
+    const OMEGA_SEP: Expr = [[], [[1, [[]]]]];
+
+    let i = 0;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + str);
+    }
+
+    function skip_spaces(): void {
+        while (i < str.length && str[i] === ' ') i++;
+    }
+
+    function skip_index(): void {
+        if (i < str.length && str[i] === ':') {
+            i++;
+            skip_spaces();
+            while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+        }
+    }
+
+    function parse_sep(): Expr {
+        if (i < str.length && str[i] === ';') {
+            i++;
+            let c0 = 0;
+            while (i < str.length && str[i] === ',') {
+                c0++;
+                i++;
+            }
+            const sep: Expr = [OMEGA_SEP[0], OMEGA_SEP[1]];
+            for (let k = 0; k < c0; k++) sep.push([]);
+            return sep;
+        }
+        let c0 = 0;
+        while (i < str.length && str[i] === ',') {
+            c0++;
+            i++;
+        }
+        if (c0 === 0) error();
+        const sep: Expr = [];
+        for (let k = 0; k < c0; k++) sep.push([]);
+        return sep;
+    }
+
+    function parse_number(): number {
+        const start = i;
+        while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(str.substring(start, i), 10);
+    }
+
+    function parse_parenthesized_column(): Column {
+        i++; // skip '('
+        const col: Column = [];
+        skip_spaces();
+        while (i < str.length && str[i] !== ')' && str[i] !== ':') {
+            skip_spaces();
+            const sep = parse_sep();
+            skip_spaces();
+            let astral = false;
+            if (i < str.length && str[i] === '*') {
+                astral = true;
+                i++;
+            }
+            const v = parse_number();
+            col.push(astral ? [v, sep, true] : [v, sep]);
+            skip_spaces();
+        }
+        skip_index();
+        skip_spaces();
+        if (i >= str.length || str[i] !== ')') error();
+        i++; // skip ')'
+        return col;
+    }
+
+    function parse_unparenthesized_column(): Column {
+        skip_spaces();
+        if (i >= str.length) error();
+
+        // bare '0' followed by terminator → empty column
+        if (
+            str[i] === '0' &&
+            (i + 1 >= str.length ||
+                str[i + 1] === ':' ||
+                str[i + 1] === ' ' ||
+                str[i + 1] === '(' ||
+                str[i + 1] === ',' ||
+                str[i + 1] === ';')
+        ) {
+            i++;
+            skip_index();
+            return [];
+        }
+
+        const col: Column = [];
+
+        // ':' at start → empty column with column index
+        if (str[i] === ':') {
+            skip_index();
+            return [];
+        }
+
+        // entries: separator + value
+        while (i < str.length && str[i] !== ' ' && str[i] !== '(' && str[i] !== ':') {
+            const sep = parse_sep();
+            skip_spaces();
+            let astral = false;
+            if (i < str.length && str[i] === '*') {
+                astral = true;
+                i++;
+            }
+            const v = parse_number();
+            col.push(astral ? [v, sep, true] : [v, sep]);
+        }
+
+        skip_index();
+        return col;
+    }
+
+    const result: Expr = [];
+    skip_spaces();
+    while (i < str.length) {
+        if (str[i] === '(') {
+            result.push(parse_parenthesized_column());
+        } else {
+            result.push(parse_unparenthesized_column());
+        }
+        skip_spaces();
+    }
+    return result;
+}
+
 export function vertical_compare(a: Vertical, b: Vertical): number {
     return lex_compare(a, b, mountain_compare);
 }
@@ -390,7 +528,7 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
     name: 'Astral ω·2 mountain notation 2',
     simple_name: 'Aω2MN2',
     category_id: 'category-hypcos-w2mn',
-    display: mountain_display,
+    display: { plain: mountain_display, from_display, name_id: 'display.index' },
     display_equiv: {
         marked: {
             plain: (m) => mountain_display_marked(m, 'label'),
@@ -403,7 +541,7 @@ export const A_omega2_MN2: NotationDefinition<Expr> = {
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
     credit_text_id: 'credit.hypcos_mn',
 
-    init: () => [[[[Infinity] as unknown as Entry]], []],
+    init: () => [INFINITY(), []],
 };
 
 export const wA_omega2_MN2: NotationDefinition<Expr> = {
@@ -411,7 +549,7 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     name: 'weak Astral ω·2 mountain notation 2',
     simple_name: 'wAω2MN2',
     category_id: 'category-hypcos-w2mn',
-    display: { plain: mountain_display, name_id: 'display.index' },
+    display: { plain: mountain_display, from_display, name_id: 'display.index' },
     display_equiv: {
         layer: {
             plain: (m) => mountain_display(convert_to_layer(m)),
@@ -427,5 +565,5 @@ export const wA_omega2_MN2: NotationDefinition<Expr> = {
     compare: mountain_compare,
     ...sequence_FS_variants(expand_weak, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
     credit_text_id: 'credit.hypcos_mn',
-    init: () => [[[[Infinity] as unknown as Entry]], []],
+    init: () => [INFINITY(), []],
 };

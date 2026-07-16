@@ -16,7 +16,7 @@ function resolve_fs<T>(notation: NotationDefinition<T>, variant: string): (expr:
 
 function is_last_child<T>(node: TreeNode<T>): boolean {
     const p = node.parent;
-    return p !== null && p.children[p.children.length - 1] === node;
+    return p !== null && p.children[p.children.length - 1].index === node.index;
 }
 
 function generate_fs<T>(

@@ -51,43 +51,142 @@ function sep_display(sep: Sep): string {
 function from_display(str: string): Mountain {
     if (str === 'Limit') return Limit_expr();
 
-    function normalizeSep(s: Sep): Sep {
+    let i = 0;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + str);
+    }
+
+    function normalize_sep(s: Sep): Sep {
         while (s.length > 0 && s[s.length - 1] === 0) s.pop();
         return s;
     }
 
-    function parseSimpleSep(start: number): [Sep, number] {
+    function skip_spaces(): void {
+        while (i < str.length && str[i] === ' ') i++;
+    }
+
+    function skip_index(): void {
+        if (i < str.length && str[i] === ':') {
+            i++;
+            skip_spaces();
+            while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+        }
+    }
+
+    function is_sep_start(ch: string): boolean {
+        return ch === ',' || ch === ';' || ch === '[';
+    }
+
+    function parse_sep(): Sep {
+        if (i < str.length && str[i] === '[') {
+            i++; // skip '['
+            const parts: number[] = [];
+            skip_spaces();
+            while (i < str.length && str[i] !== ']') {
+                const start = i;
+                while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+                if (start === i) error();
+                parts.push(parseInt(str.substring(start, i), 10));
+                skip_spaces();
+                if (i < str.length && str[i] === ',') {
+                    i++;
+                    skip_spaces();
+                }
+            }
+            if (i >= str.length || str[i] !== ']') error();
+            i++; // skip ']'
+            // display order is reversed from internal order
+            return normalize_sep(parts.toReversed());
+        }
+        // ; and , notation
         let c0 = 0,
             c1 = 0;
-        while (start + c1 < str.length && str[start + c1] === ';') c1++;
-        while (start + c1 + c0 < str.length && str[start + c1 + c0] === ',') c0++;
-        return [normalizeSep([c0, c1]), start + c1 + c0];
-    }
-
-    function parseExprPrefix(start: number): [Mountain, number] {
-        const Mountain: Mountain = [];
-        let i = start;
-        while (i < str.length && str[i] === '(') {
-            i++;
-            const col: Column = [];
-            while (i < str.length && str[i] !== ')') {
-                const [sep, nextI] = parseSimpleSep(i);
-                i = nextI;
-                let valueStart = i;
-                while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
-                const valueStr = str.substring(valueStart, i);
-                if (valueStr === '') throw new Error('illegal input string: ' + str);
-                col.push([parseInt(valueStr), sep]);
-            }
-            Mountain.push(col);
-            if (i === str.length || str[i] !== ')') throw new Error('illegal input string: ' + str);
+        while (i < str.length && str[i] === ';') {
+            c1++;
             i++;
         }
-        return [Mountain, i];
+        while (i < str.length && str[i] === ',') {
+            c0++;
+            i++;
+        }
+        if (c0 === 0 && c1 === 0) error();
+        return normalize_sep([c0, c1]);
     }
 
-    const [result, end] = parseExprPrefix(0);
-    if (end !== str.length) throw new Error('illegal input string: ' + str);
+    function parse_number(): number {
+        const start = i;
+        while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(str.substring(start, i), 10);
+    }
+
+    function parse_parenthesized_column(): Column {
+        i++; // skip '('
+        const col: Column = [];
+        skip_spaces();
+        while (i < str.length && str[i] !== ')' && str[i] !== ':') {
+            skip_spaces();
+            const sep = parse_sep();
+            skip_spaces();
+            const v = parse_number();
+            col.push([v, sep]);
+            skip_spaces();
+        }
+        skip_index();
+        skip_spaces();
+        if (i >= str.length || str[i] !== ')') error();
+        i++; // skip ')'
+        return col;
+    }
+
+    function parse_unparenthesized_column(): Column {
+        skip_spaces();
+        if (i >= str.length) error();
+
+        // bare '0' followed by terminator → empty column
+        if (
+            str[i] === '0' &&
+            (i + 1 >= str.length ||
+                str[i + 1] === ':' ||
+                str[i + 1] === ' ' ||
+                str[i + 1] === '(' ||
+                is_sep_start(str[i + 1]))
+        ) {
+            i++;
+            skip_index();
+            return [];
+        }
+
+        const col: Column = [];
+
+        // ':' at start → empty column with column index
+        if (str[i] === ':') {
+            skip_index();
+            return [];
+        }
+
+        // entries: separator + value
+        while (i < str.length && str[i] !== ' ' && str[i] !== '(' && str[i] !== ':') {
+            const sep = parse_sep();
+            skip_spaces();
+            col.push([parse_number(), sep]);
+        }
+
+        skip_index();
+        return col;
+    }
+
+    const result: Mountain = [];
+    skip_spaces();
+    while (i < str.length) {
+        if (str[i] === '(') {
+            result.push(parse_parenthesized_column());
+        } else {
+            result.push(parse_unparenthesized_column());
+        }
+        skip_spaces();
+    }
     return result;
 }
 

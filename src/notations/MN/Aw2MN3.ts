@@ -4,7 +4,9 @@ import {
     convert_to_layer,
     Expr,
     find_index_below_row,
+    from_display,
     get_references,
+    INFINITY,
     infinity_FS,
     is_infinity,
     mountain_compare,
@@ -177,7 +179,7 @@ function expand_weak(A0: Expr, index: number, shorter: boolean = false): Expr {
 export const A_omega2_MN3: NotationDefinition<Expr> = {
     id: 'a-omega2-mn-3',
     name: 'Aω2MN3',
-    display: mountain_display,
+    display: { plain: mountain_display, from_display, name_id: 'display.index' },
     display_equiv: {
         marked: {
             plain: (m) => mountain_display_marked(m, 'label'),
@@ -192,14 +194,14 @@ export const A_omega2_MN3: NotationDefinition<Expr> = {
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
     credit_text_id: 'credit.hypcos_mn',
 
-    init: () => [[[Infinity] as any], []],
+    init: () => [INFINITY(), []],
 };
 
 export const wA_omega2_MN3: NotationDefinition<Expr> = {
     id: 'weak-a-omega2-mn-3',
     name: 'weak Aω2MN3',
     category_id: 'category-hypcos-w2mn',
-    display: { plain: mountain_display, name_id: 'display.index' },
+    display: { plain: mountain_display, from_display, name_id: 'display.index' },
     display_equiv: {
         layer: {
             plain: (m) => mountain_display(convert_to_layer(m)),
@@ -216,5 +218,5 @@ export const wA_omega2_MN3: NotationDefinition<Expr> = {
     compare: mountain_compare,
     ...sequence_FS_variants(expand_weak, is_infinity, infinity_FS, mountain_is_limit, mountain_display),
     credit_text_id: 'credit.hypcos_mn',
-    init: () => [[[Infinity] as any], []],
+    init: () => [INFINITY(), []],
 };
