@@ -97,6 +97,7 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.den':
             '由 Hypcos 基于 test_alpha0 定义的 BLP 作出定义; 展开器来自原 NE 项目; 可视化方案由 test_alpha0 给出.',
         'credit.den23': '由 test_alpha0 基于 DEN 作出定义; 展开器来自原 NE 项目; 可视化方案由 test_alpha0 给出.',
+        'credit.btbm': '由 Bubby3 最初提出设想, 由社区完善. 笑姐姐 基于与 Asheep233 的讨论给出展开器.',
         'credit.hypcos_mn': '由 Hypcos 定义; 展开器来自原 NE 项目.',
         'credit.n_mn': '由 笑姐姐 基于 Hypcos 的 MN 系列作出定义, 并给出展开器.',
         'credit.alpha0': '由 test_alpha0 定义, 并给出展开器.',
@@ -293,6 +294,8 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.asan': 'Defined by Aarex; expander from the original NE project.',
         'credit.community_y': 'Defined by the community.',
         'credit.asheep': 'Rough definition by Asheep233; expander by 笑姐姐 (Smile Lee) based on it.',
+        'credit.btbm':
+            'Originally conceived by Bubby3, refined by the community. Expander by 笑姐姐 (Smile Lee) based on discussions with Asheep233.',
         'credit.bocf': 'Initially defined by Buchholz; refined by the community.',
         'credit.mocf': 'Initially defined by Madore.',
         'credit.nocf': 'Defined by the community.',

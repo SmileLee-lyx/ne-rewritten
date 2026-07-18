@@ -623,4 +623,6 @@ export const BTBM: NotationDefinition<Expr> = {
     compare,
     FS,
     init: () => [INFINITY, []],
+
+    credit_text_id: 'credit.btbm',
 };
