@@ -82,7 +82,7 @@ import { cOCF } from '@/notations/OCN/cOCF.ts';
 import { n_shifted_psi } from '@/notations/OCN/n_shifted_psi.ts';
 import { category_bm_bt_star_minus1_y_nss1 } from "@/notations/BM-like/BT_star_Minus1_Y_nSS'.ts";
 import { BTBM } from '@/notations/BM-like/BTBM.ts';
-import { WSMv4 } from '@/notations/BM-like/WSM.ts';
+import { WSMv1_4_1 } from '@/notations/BM-like/WSM.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -171,7 +171,7 @@ init_generator(category_bm_bt_star_minus1_y_nss1);
 register_category(category_bm_btl_minus1_y_nss);
 init_generator(category_bm_btl_minus1_y_nss);
 register_notation(BTBM);
-register_notation(WSMv4);
+register_notation(WSMv1_4_1);
 register_category(category_mn);
 register_category(category_n_mn);
 init_generator(category_n_mn);
