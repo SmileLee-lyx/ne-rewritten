@@ -20,6 +20,7 @@ const show_color_theme = ref(false);
 const show_reset = ref(false);
 const show_user_defined = ref(false);
 const show_latex_analysis = ref(false);
+const show_api_doc = ref(false);
 
 // registry 变更通知器
 const registry_notifier = new Notifier();
@@ -62,6 +63,7 @@ export function use_ui_states() {
         show_reset,
         show_user_defined,
         show_latex_analysis,
+        show_api_doc,
         registry_notifier,
     };
 }

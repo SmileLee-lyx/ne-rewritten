@@ -389,6 +389,7 @@ watch(warnings, (w) => {
                 <button class="ud-btn" @mousedown.prevent="add_template">
                     {{ t('user-defined.template') }}
                 </button>
+                <button class="ud-btn" @mousedown.prevent="ui.show_api_doc.value = true">查看 API 文档</button>
             </div>
         </div>
     </ModalDialog>

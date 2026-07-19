@@ -14,6 +14,7 @@ import ColorThemePanel from '@/components/ColorThemePanel.vue';
 import ResetPanel from '@/components/ResetPanel.vue';
 import AnalysisLatexSettingsPanel from '@/components/AnalysisLatexSettingsPanel.vue';
 import UserDefinedNotationPanel from '@/components/UserDefinedNotationPanel.vue';
+import UserDefinedApiPanel from '@/components/UserDefinedApiPanel.vue';
 import { create_t, I18N_KEY } from '@/composables/use_i18n.ts';
 import ExpandDialog from '@/components/ExpandDialog.vue';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
@@ -180,6 +181,7 @@ function debug_compare_order(notation_id?: string) {
         <ColorThemePanel />
         <ResetPanel />
         <UserDefinedNotationPanel />
+        <UserDefinedApiPanel />
         <AnalysisLatexSettingsPanel />
         <MultiSelectBar />
         <ConfigBar />
