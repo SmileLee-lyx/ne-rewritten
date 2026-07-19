@@ -6,10 +6,6 @@ function is_infinity(str: string): boolean {
     return '' + str === '' + INFINITY;
 }
 
-// ============================================================
-//  WSM 类 (核心算法) — 独立 JS 模块
-// ============================================================
-
 class WSM {
     parent: number[][];
 
@@ -328,8 +324,12 @@ class WSM {
                 break;
             }
         }
+        if (origElemRow === -1 || origElemRow < lnzRow) {
+            origElemRow = lnzRow;
+        }
 
         const genCol = WSM.getGenerationColumn(originalRoot, lnzRow, parent, lastCol);
+
         const origRootTrial = this.trialExpand(originalRoot, lnzRow, lastCol, genCol);
 
         let candidateRoots: number[] = [];
@@ -339,129 +339,123 @@ class WSM {
         let smallRoot = -1;
         let badRoot = originalRoot;
 
-        if (origElemRow === -1 || origElemRow < lnzRow) {
-            pendingRoots = [originalRoot];
-            candidateRoots = [originalRoot];
-            trialResults[originalRoot] = origRootTrial;
+        pendingRoots = [originalRoot];
+        let p = parent[originalRoot][origElemRow];
+        while (p !== -1) {
+            pendingRoots.push(p);
+            p = parent[p][origElemRow];
+        }
+
+        let cond1Cols: number[] = [];
+        if (lnzRow > 0) {
+            cond1Cols = this.getAncestorsAt(lastCol, lnzRow - 1);
         } else {
-            pendingRoots = [originalRoot];
-            let p = parent[originalRoot][origElemRow];
-            while (p !== -1) {
-                pendingRoots.push(p);
-                p = parent[p][origElemRow];
+            let temp = lastCol;
+            const vp = Array(cols).fill(-1);
+            for (let c = 1; c < cols; c++) vp[c] = c - 1;
+            while (temp !== -1) {
+                cond1Cols.push(temp);
+                temp = vp[temp];
             }
+            cond1Cols = cond1Cols.filter((c) => c !== lastCol);
+        }
 
-            let cond1Cols: number[] = [];
-            if (lnzRow > 0) {
-                cond1Cols = this.getAncestorsAt(lastCol, lnzRow - 1);
-            } else {
-                let temp = lastCol;
-                const vp = Array(cols).fill(-1);
-                for (let c = 1; c < cols; c++) vp[c] = c - 1;
-                while (temp !== -1) {
-                    cond1Cols.push(temp);
-                    temp = vp[temp];
-                }
-                cond1Cols = cond1Cols.filter((c) => c !== lastCol);
-            }
-
-            const ancestorsSet = new Set<number>();
-            let q = parent[originalRoot][origElemRow];
-            while (q !== -1) {
-                ancestorsSet.add(q);
-                q = parent[q][origElemRow];
-            }
-            const cond2Cols = new Set<number>();
-            for (const anc of ancestorsSet) {
-                cond2Cols.add(anc);
-                for (let c = 0; c < cols; c++) {
-                    if (parent[c][origElemRow] === anc) {
-                        cond2Cols.add(c);
-                    }
-                }
-            }
-
-            const cond3Cols: number[] = [];
+        const ancestorsSet = new Set<number>();
+        let q = parent[originalRoot][origElemRow];
+        while (q !== -1) {
+            ancestorsSet.add(q);
+            q = parent[q][origElemRow];
+        }
+        const cond2Cols = new Set<number>();
+        for (const anc of ancestorsSet) {
+            cond2Cols.add(anc);
             for (let c = 0; c < cols; c++) {
-                if (c === lastCol) continue;
-                const genColC = WSM.getGenerationColumn(c, lnzRow, parent, lastCol);
-                let contains = true;
-                for (let r = 0; r < rows; r++) {
-                    const a = genColC[r];
-                    const b = genCol[r];
-                    if (a === -1) continue;
-                    if (a === b) continue;
-                    let isAncestor = false;
-                    let pp = b;
-                    while (pp !== -1) {
-                        pp = parent[pp][r];
-                        if (pp === a) {
-                            isAncestor = true;
-                            break;
-                        }
-                    }
-                    if (!isAncestor) {
-                        contains = false;
+                if (parent[c][origElemRow] === anc) {
+                    cond2Cols.add(c);
+                }
+            }
+        }
+
+        const cond3Cols: number[] = [];
+        for (let c = 0; c < cols; c++) {
+            if (c === lastCol) continue;
+            const genColC = WSM.getGenerationColumn(c, lnzRow, parent, lastCol);
+            let contains = true;
+            for (let r = 0; r < rows; r++) {
+                const a = genColC[r];
+                const b = genCol[r];
+                if (a === -1) continue;
+                if (a === b) continue;
+                let isAncestor = false;
+                let pp = b;
+                while (pp !== -1) {
+                    pp = parent[pp][r];
+                    if (pp === a) {
+                        isAncestor = true;
                         break;
                     }
                 }
-                if (contains) cond3Cols.push(c);
-            }
-
-            const set1 = new Set(cond1Cols);
-            const set2 = cond2Cols;
-            const set3 = new Set(cond3Cols);
-            for (const c of set1) {
-                if (set2.has(c) && set3.has(c)) {
-                    candidateRoots.push(c);
-                }
-            }
-            candidateRoots.sort((a, b) => a - b);
-
-            if (!candidateRoots.includes(originalRoot)) {
-                candidateRoots.push(originalRoot);
-                candidateRoots.sort((a, b) => a - b);
-            }
-
-            trialResults[originalRoot] = origRootTrial;
-            for (const cr of candidateRoots) {
-                if (cr === originalRoot) continue;
-                trialResults[cr] = this.trialExpand(cr, lnzRow, lastCol, genCol);
-                const cmp = WSM.compareParentMatrices(trialResults[cr], origRootTrial);
-                if (cmp < 0) {
-                    smallerRoots.push(cr);
-                }
-            }
-
-            const sortedCandidates = [...candidateRoots].sort((a, b) => a - b);
-            for (let i = sortedCandidates.length - 1; i >= 0; i--) {
-                const cr = sortedCandidates[i];
-                if (cr === originalRoot) continue;
-                const cmp = WSM.compareParentMatrices(trialResults[cr], origRootTrial);
-                if (cmp < 0) {
-                    smallRoot = cr;
+                if (!isAncestor) {
+                    contains = false;
                     break;
                 }
             }
+            if (contains) cond3Cols.push(c);
+        }
 
-            if (smallRoot !== -1) {
-                let minRight = Infinity;
-                for (const pr of pendingRoots) {
-                    if (pr > smallRoot && pr < minRight) {
-                        minRight = pr;
-                    }
+        const set1 = new Set(cond1Cols);
+        const set2 = cond2Cols;
+        const set3 = new Set(cond3Cols);
+        for (const c of set1) {
+            if (set2.has(c) && set3.has(c)) {
+                candidateRoots.push(c);
+            }
+        }
+        candidateRoots.sort((a, b) => a - b);
+        if (!candidateRoots.includes(originalRoot)) {
+            candidateRoots.push(originalRoot);
+            candidateRoots.sort((a, b) => a - b);
+        }
+        pendingRoots = pendingRoots.filter((root) => candidateRoots.includes(root));
+
+        trialResults[originalRoot] = origRootTrial;
+        for (const cr of candidateRoots) {
+            if (cr === originalRoot) continue;
+            trialResults[cr] = this.trialExpand(cr, lnzRow, lastCol, genCol);
+            const cmp = WSM.compareParentMatrices(trialResults[cr], origRootTrial);
+            if (cmp < 0) {
+                smallerRoots.push(cr);
+            }
+        }
+
+        const sortedCandidates = [...candidateRoots].sort((a, b) => a - b);
+        for (let i = sortedCandidates.length - 1; i >= 0; i--) {
+            const cr = sortedCandidates[i];
+            if (cr === originalRoot) continue;
+            const cmp = WSM.compareParentMatrices(trialResults[cr], origRootTrial);
+            if (cmp < 0) {
+                smallRoot = cr;
+                break;
+            }
+        }
+
+        if (smallRoot !== -1) {
+            let minRight = Infinity;
+            for (const pr of pendingRoots) {
+                if (pr > smallRoot && pr < minRight) {
+                    minRight = pr;
                 }
-                if (minRight !== Infinity) {
-                    badRoot = minRight;
-                } else {
-                    badRoot = pendingRoots.length > 0 ? Math.min(...pendingRoots) : -1;
-                }
+            }
+            if (minRight !== Infinity) {
+                badRoot = minRight;
             } else {
                 badRoot = pendingRoots.length > 0 ? Math.min(...pendingRoots) : -1;
             }
-            if (badRoot === -1) {
-                badRoot = originalRoot;
-            }
+        } else {
+            badRoot = pendingRoots.length > 0 ? Math.min(...pendingRoots) : -1;
+        }
+        if (badRoot === -1) {
+            badRoot = originalRoot;
         }
 
         let newParent = WSM.clone(parent);
@@ -555,9 +549,6 @@ class WSM {
     }
 }
 
-// ============================================================
-//  注册 WSM 记号 (notation)
-// ============================================================
 export const WSMv4: NotationDefinition<string> = {
     id: 'WSMv4',
     name: 'WSM v1.4',
@@ -629,7 +620,6 @@ export const WSMv4: NotationDefinition<string> = {
             const wsm = new WSM(parent);
             return wsm.format();
         }
-        // a 是字符串
         try {
             const wsm = WSM.fromString(a);
             if (i === 0) {
