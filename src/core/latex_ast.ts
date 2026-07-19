@@ -237,9 +237,9 @@ export class Parser {
         }
 
         // ---- parse base ----
-        const baseRes = this.parse_base();
-        if (!baseRes) return null;
-        let { node: current, psi_absorbed: psiFlag } = baseRes;
+        const base_res = this.parse_base();
+        if (!base_res) return null;
+        let { node: current, psi_absorbed: psi_flag } = base_res;
 
         // ---- chain: _ / [ / ^ ----
         while (true) {
@@ -248,16 +248,16 @@ export class Parser {
 
             if (nxt.s === '_') {
                 this.tk.advance();
-                const subRes = this.parse_sub_content();
+                const sub_res = this.parse_sub_content();
                 current = {
                     kind: 'subsup',
                     base: current,
-                    sub: subRes,
+                    sub: sub_res,
                 } satisfies SubSupNode;
-                psiFlag = false; // operator reset
+                psi_flag = false; // operator reset
             } else if (nxt.s === '[' && this.opts.subscript_bracket) {
                 this.tk.advance(); // consume [
-                const subRes = this.parse_bra_content();
+                const sub_res = this.parse_bra_content();
                 // consume matching ]
                 const close = this.tk.peek();
                 if (close && close.s === ']') {
@@ -267,17 +267,17 @@ export class Parser {
                 current = {
                     kind: 'subsup',
                     base: current,
-                    sub: subRes,
+                    sub: sub_res,
                 } satisfies SubSupNode;
-                psiFlag = false;
+                psi_flag = false;
             } else if (nxt.s === '^' && opts.allow_hat) {
                 // ^ always reads one unit (or group); rule-2 extension and whether
                 // subsequent operators apply to the sup vs the base is controlled by
                 // the outer opts.hat_extend in the operator chain loop.
                 this.tk.advance();
-                const supRes = this.parse_sup_content();
-                current = this.merge_sup(current, supRes);
-                psiFlag = false;
+                const sup_res = this.parse_sup_content();
+                current = this.merge_sup(current, sup_res);
+                psi_flag = false;
             } else if (nxt.s === '^' && !opts.allow_hat) {
                 break;
             } else {
@@ -285,7 +285,7 @@ export class Parser {
             }
         }
 
-        return { node: current, psi_absorbed: psiFlag };
+        return { node: current, psi_absorbed: psi_flag };
     }
 
     // ---- base ----
@@ -321,20 +321,20 @@ export class Parser {
         this.tk.advance();
         this.tk.commit();
 
-        const tokenNode: TokenNode = { kind: 'token', value: substituted };
+        const token_node: TokenNode = { kind: 'token', value: substituted };
 
         // ψ rule: if the substituted value matches and option is on
         if (this.opts.psi_subscript && substituted === 'ψ') {
             const absorbed = this.parse_psi_chain();
             if (absorbed.length > 0) {
                 return {
-                    node: { kind: 'subsup', base: tokenNode, sub: absorbed } satisfies SubSupNode,
+                    node: { kind: 'subsup', base: token_node, sub: absorbed } satisfies SubSupNode,
                     psi_absorbed: true,
                 };
             }
         }
 
-        return { node: tokenNode, psi_absorbed: false };
+        return { node: token_node, psi_absorbed: false };
     }
 
     // ---- sub / sup content ----
@@ -474,8 +474,8 @@ export class Parser {
         const body = this.parse_expr();
         // expect close
         const expected = open === '(' ? ')' : '}';
-        const closeTok = this.tk.peek();
-        const close = closeTok && closeTok.s === expected ? expected : '';
+        const close_tok = this.tk.peek();
+        const close = close_tok && close_tok.s === expected ? expected : '';
         if (close) {
             this.tk.advance();
             this.tk.commit();
