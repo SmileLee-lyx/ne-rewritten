@@ -11,15 +11,15 @@ const ui = use_ui_states();
 
 function do_reset() {
     save_load.handle_reset();
-    ui.showReset.value = false;
+    ui.show_reset.value = false;
 }
 </script>
 
 <template>
-    <ModalDialog :show="ui.showReset.value" :title="t('reset.title')" @close="ui.showReset.value = false">
+    <ModalDialog :show="ui.show_reset.value" :title="t('reset.title')" @close="ui.show_reset.value = false">
         <p class="reset-message">{{ t('reset.message') }}</p>
         <div class="reset-buttons">
-            <button class="reset-btn-cancel" @mousedown="ui.showReset.value = false">{{ t('reset.cancel') }}</button>
+            <button class="reset-btn-cancel" @mousedown="ui.show_reset.value = false">{{ t('reset.cancel') }}</button>
             <button class="reset-btn-confirm" @mousedown="do_reset">{{ t('reset.confirm') }}</button>
         </div>
     </ModalDialog>

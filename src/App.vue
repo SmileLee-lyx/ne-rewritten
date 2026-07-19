@@ -174,9 +174,9 @@ function debug_compare_order(notation_id?: string) {
         <div v-if="save_indicator" class="save-indicator">
             {{ t('autosave.last-save', { time: save_indicator }) }}
         </div>
-        <HotkeyDialog :show="ui.showHotkeys.value" @close="ui.showHotkeys.value = false" />
+        <HotkeyDialog :show="ui.show_hotkeys.value" @close="ui.show_hotkeys.value = false" />
         <ExpandDialog :show="expand_dialog_state.visible.value" @close="expand_dialog_state.close()" />
-        <TipsDialog :show="ui.showTips.value" @close="ui.showTips.value = false" />
+        <TipsDialog :show="ui.show_tips.value" @close="ui.show_tips.value = false" />
         <ColorThemePanel />
         <ResetPanel />
         <UserDefinedNotationPanel />

@@ -17,7 +17,11 @@ function select(id: string) {
 </script>
 
 <template>
-    <ModalDialog :show="ui.showColorTheme.value" :title="t('toolbar.theme')" @close="ui.showColorTheme.value = false">
+    <ModalDialog
+        :show="ui.show_color_theme.value"
+        :title="t('toolbar.theme')"
+        @close="ui.show_color_theme.value = false"
+    >
         <div class="theme-grid">
             <button
                 v-for="th in themes"

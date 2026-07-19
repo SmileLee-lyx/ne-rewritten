@@ -99,7 +99,7 @@ const levels = computed(() => {
 
 function level_items(path: string[]): { kind: 'category' | 'notation'; id: string }[] {
     const items = path.length === 0 ? get_root_items() : get_category_children(path[path.length - 1]);
-    if (ui.configMode.value) return items;
+    if (ui.config_mode.value) return items;
     return items.filter((item) => {
         if (item.kind === 'notation') {
             const notation = get_notation(item.id);
@@ -110,7 +110,7 @@ function level_items(path: string[]): { kind: 'category' | 'notation'; id: strin
 }
 
 /** 配置模式下是否显示 checkbox（generator 子项始终不显示） */
-function showCheckbox(item: { kind: 'category' | 'notation'; id: string }): boolean {
+function show_checkbox(item: { kind: 'category' | 'notation'; id: string }): boolean {
     if (item.kind === 'category') return true;
     const notation = get_notation(item.id);
     if (!notation?.category_id) return true;
@@ -181,11 +181,11 @@ function set_equiv(name: string | undefined) {
                     'nav-btn--category': item.kind === 'category',
                     'nav-btn--current': item.kind === 'notation' && item.id === settings.current_notation_id,
                     'nav-btn--open': item.kind === 'category' && nav_path[level.length] === item.id,
-                    'nav-btn--hidden': settings.hidden_notations.includes(item.id) && showCheckbox(item),
+                    'nav-btn--hidden': settings.hidden_notations.includes(item.id) && show_checkbox(item),
                 }"
                 @mousedown.prevent="navigate(item.id)"
             >
-                <label v-if="ui.configMode.value && showCheckbox(item)" class="nav-chk" @mousedown.prevent.stop>
+                <label v-if="ui.config_mode.value && show_checkbox(item)" class="nav-chk" @mousedown.prevent.stop>
                     <input
                         type="checkbox"
                         :checked="settings.hidden_notations.includes(item.id)"
@@ -193,10 +193,10 @@ function set_equiv(name: string | undefined) {
                     />
                 </label>
                 <span v-if="settings.notation_name_mode === 'full' && get_simple_name(item.id)" class="nav-btn-stack">
-                    <span :class="{ active: !ui.isFlashing.value || !ui.flashShowSimple.value }">{{
+                    <span :class="{ active: !ui.is_flashing.value || !ui.flash_show_simple.value }">{{
                         get_name(item.id)
                     }}</span>
-                    <span :class="{ active: ui.isFlashing.value && ui.flashShowSimple.value }">{{
+                    <span :class="{ active: ui.is_flashing.value && ui.flash_show_simple.value }">{{
                         get_simple_name(item.id)
                     }}</span>
                 </span>

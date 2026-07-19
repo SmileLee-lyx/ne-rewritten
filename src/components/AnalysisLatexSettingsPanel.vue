@@ -12,9 +12,9 @@ const ui = use_ui_states();
 
 <template>
     <ModalDialog
-        :show="ui.showLatexAnalysis.value"
+        :show="ui.show_latex_analysis.value"
         :title="t('latex-analysis.title')"
-        @close="ui.showLatexAnalysis.value = false"
+        @close="ui.show_latex_analysis.value = false"
     >
         <div class="las-list">
             <label class="las-item">

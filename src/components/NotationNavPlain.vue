@@ -12,7 +12,7 @@ const ui = use_ui_states();
 const all = computed(() => {
     ui.registry_notifier.listen();
     const notations = list_notations();
-    if (ui.configMode.value) return notations;
+    if (ui.config_mode.value) return notations;
     return notations.filter((n) => !is_extra_generated(n.id) && !settings.hidden_notations.includes(n.id));
 });
 
@@ -73,7 +73,7 @@ function set_equiv(name: string | undefined) {
             }"
             @mousedown.prevent="settings.current_notation_id = n.id"
         >
-            <label v-if="ui.configMode.value" class="nav-chk" @mousedown.prevent.stop>
+            <label v-if="ui.config_mode.value" class="nav-chk" @mousedown.prevent.stop>
                 <input
                     type="checkbox"
                     :checked="settings.hidden_notations.includes(n.id)"
@@ -81,8 +81,8 @@ function set_equiv(name: string | undefined) {
                 />
             </label>
             <span v-if="settings.notation_name_mode === 'full' && n.simple_name" class="nav-btn-stack">
-                <span :class="{ active: !ui.isFlashing.value || !ui.flashShowSimple.value }">{{ n.name }}</span>
-                <span :class="{ active: ui.isFlashing.value && ui.flashShowSimple.value }">{{ n.simple_name }}</span>
+                <span :class="{ active: !ui.is_flashing.value || !ui.flash_show_simple.value }">{{ n.name }}</span>
+                <span :class="{ active: ui.is_flashing.value && ui.flash_show_simple.value }">{{ n.simple_name }}</span>
             </span>
             <span v-else>{{ get_name(n) }}</span>
         </button>

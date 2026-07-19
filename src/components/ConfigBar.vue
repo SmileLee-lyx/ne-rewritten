@@ -15,11 +15,11 @@ function unhide_all() {
 
 <template>
     <Teleport to="body">
-        <div v-if="ui.configMode.value" class="config-bar">
+        <div v-if="ui.config_mode.value" class="config-bar">
             <button class="ms-btn" @mousedown.stop="unhide_all">
                 {{ t('config-display.unhide-all') }}
             </button>
-            <button class="ms-btn ms-btn-confirm" @mousedown.stop="ui.setConfigMode(false)">
+            <button class="ms-btn ms-btn-confirm" @mousedown.stop="ui.set_config_mode(false)">
                 {{ t('config-display.confirm') }}
             </button>
         </div>

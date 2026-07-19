@@ -3,23 +3,23 @@ import { on_registry_change } from '@/core/registry.ts';
 import { Notifier } from '@/composables/use_notify.ts';
 
 interface UiState {
-    configMode: boolean;
-    isFlashing: boolean;
-    flashShowSimple: boolean;
+    config_mode: boolean;
+    is_flashing: boolean;
+    flash_show_simple: boolean;
 }
 
 const state = reactive<UiState>({
-    configMode: false,
-    isFlashing: false,
-    flashShowSimple: false,
+    config_mode: false,
+    is_flashing: false,
+    flash_show_simple: false,
 });
 
-const showHotkeys = ref(false);
-const showTips = ref(false);
-const showColorTheme = ref(false);
-const showReset = ref(false);
-const showUserDefined = ref(false);
-const showLatexAnalysis = ref(false);
+const show_hotkeys = ref(false);
+const show_tips = ref(false);
+const show_color_theme = ref(false);
+const show_reset = ref(false);
+const show_user_defined = ref(false);
+const show_latex_analysis = ref(false);
 
 // registry 变更通知器
 const registry_notifier = new Notifier();
@@ -29,15 +29,15 @@ export function use_ui_states() {
     let flash_timer: ReturnType<typeof setInterval> | null = null;
 
     function start_flash() {
-        state.isFlashing = true;
-        state.flashShowSimple = false;
+        state.is_flashing = true;
+        state.flash_show_simple = false;
         flash_timer = setInterval(() => {
-            state.flashShowSimple = !state.flashShowSimple;
+            state.flash_show_simple = !state.flash_show_simple;
         }, 800);
     }
 
     function stop_flash() {
-        state.isFlashing = false;
+        state.is_flashing = false;
         if (flash_timer !== null) {
             clearInterval(flash_timer);
             flash_timer = null;
@@ -45,23 +45,23 @@ export function use_ui_states() {
     }
 
     return {
-        configMode: computed(() => state.configMode),
-        setConfigMode: (v: boolean) => {
-            state.configMode = v;
+        config_mode: computed(() => state.config_mode),
+        set_config_mode: (v: boolean) => {
+            state.config_mode = v;
         },
-        toggleConfigMode: () => {
-            state.configMode = !state.configMode;
+        toggle_config_mode: () => {
+            state.config_mode = !state.config_mode;
         },
-        isFlashing: computed(() => state.isFlashing),
-        flashShowSimple: computed(() => state.flashShowSimple),
+        is_flashing: computed(() => state.is_flashing),
+        flash_show_simple: computed(() => state.flash_show_simple),
         start_flash,
         stop_flash,
-        showHotkeys,
-        showTips,
-        showColorTheme,
-        showReset,
-        showUserDefined,
-        showLatexAnalysis,
+        show_hotkeys,
+        show_tips,
+        show_color_theme,
+        show_reset,
+        show_user_defined,
+        show_latex_analysis,
         registry_notifier,
     };
 }

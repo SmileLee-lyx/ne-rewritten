@@ -304,7 +304,7 @@ watch(
 
 // Panel 打开时重建编辑器
 watch(
-    () => ui.showUserDefined.value,
+    () => ui.show_user_defined.value,
     (show) => {
         if (show) nextTick(init_editor);
     },
@@ -320,11 +320,11 @@ watch(warnings, (w) => {
 
 <template>
     <ModalDialog
-        :show="ui.showUserDefined.value"
+        :show="ui.show_user_defined.value"
         :title="t('user-defined.title')"
         @close="
             sync_editor();
-            ui.showUserDefined.value = false;
+            ui.show_user_defined.value = false;
         "
     >
         <div class="ud-layout">

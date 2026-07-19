@@ -179,7 +179,7 @@ function on_find_keydown(e: KeyboardEvent) {
                 </span>
                 <span style="margin-left: 12px">
                     {{ t('config-display.label') }}
-                    <button class="toggle-btn" @mousedown="ui.toggleConfigMode()">
+                    <button class="toggle-btn" @mousedown="ui.toggle_config_mode()">
                         {{ t('config-display.configure') }}
                     </button>
                 </span>
@@ -274,16 +274,16 @@ function on_find_keydown(e: KeyboardEvent) {
                     <input type="checkbox" :checked="settings.show_latex" @change="toggle_latex" />
                     {{ t('latex.show') }}
                 </label>
-                <button @mousedown="ui.showLatexAnalysis.value = true">{{ t('latex-analysis.title') }}</button>
+                <button @mousedown="ui.show_latex_analysis.value = true">{{ t('latex-analysis.title') }}</button>
             </div>
             <div class="toolbar-row">
-                <button class="reset-btn" @mousedown="ui.showReset.value = true">{{ t('toolbar.reset') }}</button>
+                <button class="reset-btn" @mousedown="ui.show_reset.value = true">{{ t('toolbar.reset') }}</button>
                 <button @mousedown="save_load.handle_export()">{{ t('toolbar.export') }}</button>
                 <button @mousedown="save_load.handle_import()">{{ t('toolbar.import') }}</button>
                 <button @mousedown="save_load.save_analysis()">{{ t('toolbar.save') }}</button>
-                <button @mousedown="ui.showHotkeys.value = true">{{ t('toolbar.hotkeys') }}</button>
-                <button class="toolbar-btn-tips" @mousedown="ui.showTips.value = true">{{ t('toolbar.tips') }}</button>
-                <button @mousedown="ui.showColorTheme.value = true">{{ t('toolbar.theme') }}</button>
+                <button @mousedown="ui.show_hotkeys.value = true">{{ t('toolbar.hotkeys') }}</button>
+                <button class="toolbar-btn-tips" @mousedown="ui.show_tips.value = true">{{ t('toolbar.tips') }}</button>
+                <button @mousedown="ui.show_color_theme.value = true">{{ t('toolbar.theme') }}</button>
             </div>
             <hr v-if="!settings_collapsed" class="toolbar-separator" />
             <div v-if="!settings_collapsed" class="toolbar-row">
@@ -351,7 +351,7 @@ function on_find_keydown(e: KeyboardEvent) {
                     <button @mousedown="disable_all">{{ t('user-defined.disable-all') }}</button>
                 </template>
                 <template v-else>
-                    <button @mousedown="ui.showUserDefined.value = true">{{ t('user-defined.configure') }}</button>
+                    <button @mousedown="ui.show_user_defined.value = true">{{ t('user-defined.configure') }}</button>
                 </template>
             </div>
         </div>

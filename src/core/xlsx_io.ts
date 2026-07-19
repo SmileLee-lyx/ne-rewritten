@@ -29,16 +29,16 @@ export async function import_from_xlsx<T>(
     sheet.eachRow((row) => {
         const values = row.values as (string | undefined)[];
 
-        const exprStr = values[1];
-        if (exprStr === undefined || exprStr === null || exprStr === '') return;
+        const expr_str = values[1];
+        if (expr_str === undefined || expr_str === null || expr_str === '') return;
 
         let expr: T | undefined;
         try {
-            expr = from_display(exprStr);
+            expr = from_display(expr_str);
         } catch (e) {
-            console.log('xlsx import: skipped row, from_display failed for "' + exprStr + '"', e);
+            console.log('xlsx import: skipped row, from_display failed for "' + expr_str + '"', e);
             if (!(entries as any).skipped) (entries as any).skipped = [];
-            (entries as any).skipped.push(exprStr);
+            (entries as any).skipped.push(expr_str);
         }
 
         if (expr === undefined) return;

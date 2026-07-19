@@ -23,7 +23,7 @@ const props = defineProps<{
 const input_ref = ref<HTMLInputElement | null>(null);
 const resize_span = ref<HTMLSpanElement | null>(null);
 const tooltip = ref(false);
-const tooltipFS = ref<string[]>([]);
+const tooltip_FS = ref<string[]>([]);
 const focused = ref(false);
 const { show: show_diagram, hide: hide_diagram, dispatch_action: dispatch_diagram_action } = use_diagram();
 const { show: show_latex_viewer, hide: hide_latex_viewer } = use_latex();
@@ -106,9 +106,9 @@ onMounted(() => {
 function on_enter() {
     if (!props.notation.is_limit(props.node.expr)) return;
     const n_max = 3;
-    tooltipFS.value = [];
+    tooltip_FS.value = [];
     for (let n = 0; n <= n_max; n++) {
-        tooltipFS.value.push(`${n}: ${expr_display.value(props.notation.FS(props.node.expr, n))}`);
+        tooltip_FS.value.push(`${n}: ${expr_display.value(props.notation.FS(props.node.expr, n))}`);
     }
     tooltip.value = true;
 }
@@ -350,7 +350,7 @@ function on_blur() {
             <div v-if="tooltip" class="tooltip" @mousedown.stop>
                 <RenderLatex v-if="settings.display_mode === 'latex'" :latex="expr_display(node.expr)" />
                 <span v-else v-html="expr_display(node.expr)" />{{ t('notation-tree.fundamental-sequence') }}
-                <div v-for="term in tooltipFS" :key="term">
+                <div v-for="term in tooltip_FS" :key="term">
                     <RenderLatex v-if="settings.display_mode === 'latex'" :latex="term" />
                     <span v-else v-html="term" />
                 </div>

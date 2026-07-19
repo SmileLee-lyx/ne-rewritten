@@ -552,6 +552,7 @@ class WSM {
 export const WSMv1_4_1: NotationDefinition<string> = {
     id: 'WSMv1.4.1',
     name: 'WSM v1.4.1',
+    simple_name: 'WSM',
 
     category_id: 'category-bm-like',
 

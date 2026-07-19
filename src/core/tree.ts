@@ -58,8 +58,8 @@ export function prepend_child<T>(node: TreeNode<T>, expr: T): TreeNode<T> {
 /** 将 expr 追加为 node 的末位兄弟。index 向右递增。 */
 export function append_sibling<T>(node: TreeNode<T>, expr: T): TreeNode<T> {
     const parent = node.parent!;
-    const lastIndex = parent.children[parent.children.length - 1]?.index ?? -1;
-    const child = create_node(expr, parent, lastIndex + 1);
+    const last_index = parent.children[parent.children.length - 1]?.index ?? -1;
+    const child = create_node(expr, parent, last_index + 1);
     parent.children.push(child);
     return child;
 }
