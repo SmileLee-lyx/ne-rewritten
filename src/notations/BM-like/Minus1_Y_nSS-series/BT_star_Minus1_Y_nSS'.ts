@@ -499,7 +499,7 @@ export const category_bm_bt_star_minus1_y_nss1: NotationCategoryDefinition = {
     id: "category-bm-bt-star-minus1-y-nss'",
     name: "Branching Transfinite* -1Y-nSS'",
     simple_name: "BT*(-1)Y-nSS'",
-    parent_id: 'category-bm-like',
+    parent_id: 'category-minus1-y-nss-series',
     generator: { start: 1, initial: 3, create: (n) => BT_star_Minus1_Y_nSS1(n) },
 };
 

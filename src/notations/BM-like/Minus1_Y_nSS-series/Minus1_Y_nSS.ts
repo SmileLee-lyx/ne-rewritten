@@ -252,7 +252,7 @@ export const category_bm_minus1_y_nss: NotationCategoryDefinition = {
     id: 'category-bm-minus1-y-nss',
     name: '-1Y n-tuple Sequence System',
     simple_name: '-1Y-nSS',
-    parent_id: 'category-bm-like',
+    parent_id: 'category-minus1-y-nss-series',
     generator: { start: 0, initial: 3, create: (n) => Minus1_Y_nSS(n) },
 };
 export function Minus1_Y_nSS(n: number): NotationDefinition<Expr> {

@@ -267,11 +267,14 @@ A: 以下为目前内置的记号类别及其层次结构:
 | `category-y` | Y sequence                           |
 | &emsp;&#124; `category-y-omega` | &emsp;omega Y                        |
 | `category-bm-like` | Bashicu Matrix-like notation         |
-| &emsp;&#124; `category-bm-minus1-y-nss` | &emsp;-1Y n-tuple Sequence System    |
-| &emsp;&#124; `category-bm-t-minus1-y-nss` | &emsp;Transfinite -1Y-nSS            |
-| &emsp;&#124; `category-bm-bt-minus1-y-nss` | &emsp;Branching Transfinite -1Y-nSS  |
-| &emsp;&#124; `category-bm-bt-star-minus1-y-nss` | &emsp;Bubby3's Transfinite\* -1Y-nSS |
-| &emsp;&#124; `category-bm-btl-minus1-y-nss` | &emsp;Asheep's Transfinite nSS       |
+| &emsp;&#124; `category-minus1-y-nss-series` | &emsp;-1Y-nSS Series |
+| &emsp;&emsp;&#124; `category-bm-minus1-y-nss` | &emsp;&emsp;-1Y n-tuple Sequence System |
+| &emsp;&emsp;&#124; `category-bm-t-minus1-y-nss` | &emsp;&emsp;Transfinite -1Y-nSS |
+| &emsp;&emsp;&#124; `category-bm-bt-minus1-y-nss` | &emsp;&emsp;Branching Transfinite -1Y-nSS |
+| &emsp;&emsp;&#124; `category-bm-bt-star-minus1-y-nss` | &emsp;&emsp;Bubby3's Transfinite\* -1Y-nSS |
+| &emsp;&emsp;&#124; `category-bm-bt-star-minus1-y-nss'` | &emsp;&emsp;Bubby3's Transfinite\* -1Y-nSS' |
+| &emsp;&emsp;&#124; `category-bm-btl-minus1-y-nss` | &emsp;&emsp;Asheep's Transfinite nSS |
+| &emsp;&#124; `category-upms-partial` | &emsp;BMS(n rows) + UPMS |
 | `category-mn` | Mountain Notation                    |
 | &emsp;&#124; `category-n-mn` | &emsp;n-MN                           |
 | &emsp;&#124; `category-hypcos-w2mn` | &emsp;HypCos's omega2MN              |

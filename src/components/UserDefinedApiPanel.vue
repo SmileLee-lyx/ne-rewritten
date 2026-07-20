@@ -3,7 +3,7 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import { marked } from 'marked';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
-import { EditorView, lineNumbers, keymap } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { defaultKeymap } from '@codemirror/commands';

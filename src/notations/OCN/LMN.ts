@@ -291,7 +291,7 @@ export const LMN: NotationDefinition<Expr> = {
         else if (data[key][index] !== undefined) return data[key][index];
         return (data[key][index] = LMN_FS(x, index));
     },
-    credit_text_id: 'credit.alpha0',
+    credit_text_id: 'credit.test-alpha0',
 
     init: () => [[true, Infinity] as unknown as Expr, [true, 0, 0], 0],
 };

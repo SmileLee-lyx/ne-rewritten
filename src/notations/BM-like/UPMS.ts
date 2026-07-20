@@ -1,4 +1,5 @@
 import {
+    compare,
     display,
     display_as_0Y,
     display_simple,
@@ -6,383 +7,215 @@ import {
     from_display,
     from_display_as_0Y,
     from_display_simple,
+    INFINITY,
+    infinity_FS,
+    is_infinity,
+    is_limit,
+    normalize,
+    parents,
+    standardize,
 } from '@/notations/BM-like/BM.ts';
-import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import { sequence_FS_variants0 } from '@/notations/notation_utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
-
-const isPseudoInfinity = (expr: Expr): boolean => '' + expr === 'Infinity';
-const cloneColumn = (col: number[]) => col.slice();
-
-const isNatural = (value: number): boolean => Number.isInteger(value) && value >= 0 && Number.isFinite(value);
-
-const standardizeMatrix = (matrix: Expr): Expr => {
-    if (!Array.isArray(matrix) || matrix.length === 0) return [];
-    let rows = 1;
-    for (const col of matrix) {
-        if (!Array.isArray(col)) return [];
-        rows = Math.max(rows, col.length);
-    }
-    const result = matrix.map((col) => {
-        const out = col.slice();
-        while (out.length < rows) out.push(0);
-        return out;
-    });
-    while (rows > 1 && result.every((col) => col[rows - 1] === 0)) {
-        result.forEach((col) => col.pop());
-        rows--;
-    }
-    return result;
-};
-
-const isLegalUPMSMatrix = (matrix: Expr): boolean => {
-    if (isPseudoInfinity(matrix)) return true;
-    if (!Array.isArray(matrix)) return false;
-    if (matrix.length === 0) return true;
-    for (const col of matrix) {
-        if (!Array.isArray(col)) return false;
-        for (const value of col) {
-            if (!isNatural(value)) return false;
-        }
-    }
-    const m = standardizeMatrix(matrix);
-    if (m.length === 0) return true;
-    const rows = m[0].length;
-    for (let r = 0; r < rows; r++) {
-        if (m[0][r] !== 0) return false;
-    }
-    for (let c = 0; c < m.length; c++) {
-        const col = m[c];
-        for (let r = 1; r < rows; r++) {
-            if (col[r] > col[r - 1]) return false;
-        }
-    }
-    return true;
-};
-
-const sequenceCompare = (seq1: number[], seq2: number[]) => {
-    const len = Math.max(seq1.length, seq2.length);
-    for (let i = 0; i < len; i++) {
-        const a = i < seq1.length ? seq1[i] : 0;
-        const b = i < seq2.length ? seq2[i] : 0;
-        if (a < b) return -1;
-        if (a > b) return 1;
-    }
-    return 0;
-};
-
-const matrixCompare = (m1: Expr, m2: Expr): number => {
-    const inf1 = isPseudoInfinity(m1),
-        inf2 = isPseudoInfinity(m2);
-    if (inf1 || inf2) return inf1 === inf2 ? 0 : inf1 ? 1 : -1;
-    const a = standardizeMatrix(m1),
-        b = standardizeMatrix(m2);
-    const len = Math.max(a.length, b.length);
-    for (let c = 0; c < len; c++) {
-        if (c >= a.length) return -1;
-        if (c >= b.length) return 1;
-        const cmp = sequenceCompare(a[c], b[c]);
-        if (cmp !== 0) return cmp;
-    }
-    return 0;
-};
+import { bind3, boolean_compare, lex_compare, lex_compare_by, number_compare, tuple_lex_compare_by } from '@/utils.ts';
+import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 
 interface Context {
     m: Expr;
     colCount: number;
     rowCount: number;
-    getBParent: (colIndex: number, b: number) => number;
-    getAAncestors: (colIndex: number, a: number) => { list: number[]; mask: Uint8Array };
+    P: number[][];
 }
 
-const makeContext = (matrix: Expr): Context => {
-    const m = standardizeMatrix(matrix);
+function make_context(matrix: Expr): Context {
+    const m = standardize(matrix);
     const colCount = m.length;
     const rowCount = colCount === 0 ? 0 : m[0].length;
-    const parentCache: number[][] = Array.from({ length: rowCount + 1 }, () => Array(colCount).fill(-2));
-    const ancestorCache: ({
-        list: number[];
-        mask: Uint8Array;
-    } | null)[][] = Array.from({ length: rowCount + 1 }, () => Array(colCount).fill(null));
+    const P = parents(m);
+    return { m, colCount, rowCount, P };
+}
 
-    const getZeroParent = (colIndex: number) => (colIndex > 0 ? colIndex - 1 : -1);
+function is_ancestor(ctx: Context, jCol: number, target: number, b: number): boolean {
+    let current: number | undefined = jCol;
+    while (current >= target) {
+        if (current === target) return true;
+        current = ctx.P[current][b];
+        if (current === undefined) break;
+    }
+    return false;
+}
 
-    const getAAncestors = (colIndex: number, a: number) => {
-        if (a < 0 || a > rowCount || colIndex < 0 || colIndex >= colCount)
-            return {
-                list: [],
-                mask: new Uint8Array(colCount),
-            };
-        const cached = ancestorCache[a][colIndex];
-        if (cached !== null) return cached;
-        const list: number[] = [];
-        const mask = new Uint8Array(colCount);
-        let current = colIndex;
-        let guard = 0;
-        while (current !== -1 && !mask[current] && guard++ <= colCount + 2) {
-            list.push(current);
-            mask[current] = 1;
-            current = a === 0 ? getZeroParent(current) : getBParent(current, a);
-        }
-        const result = { list, mask };
-        ancestorCache[a][colIndex] = result;
-        return result;
-    };
-
-    const getBParent = (colIndex: number, b: number) => {
-        if (b < 1 || b > rowCount || colIndex < 0 || colIndex >= colCount) return -1;
-        const cached = parentCache[b][colIndex];
-        if (cached !== -2) return cached;
-        const row = b - 1;
-        const value = m[colIndex][row];
-        const ancestors = getAAncestors(colIndex, b - 1).list;
-        let best = -1;
-        for (let i = 0; i < ancestors.length; i++) {
-            const candidate = ancestors[i];
-            if (candidate >= colIndex) continue;
-            if (m[candidate][row] < value) {
-                best = candidate;
-                break;
-            }
-        }
-        parentCache[b][colIndex] = best;
-        return best;
-    };
-
-    return { m, colCount, rowCount, getBParent, getAAncestors };
-};
-
-const lastColumnIsZero = (matrix: Expr): boolean => {
+function last_column_is_zero(matrix: Expr): boolean {
     if (matrix.length === 0) return true;
     const last = matrix[matrix.length - 1];
     for (let r = 0; r < last.length; r++) {
         if (last[r] !== 0) return false;
     }
     return true;
-};
+}
 
-const findLastNonZeroRowLabel = (matrix: Expr): number => {
+function find_LNZ_index(matrix: Expr): number {
     if (matrix.length === 0) return -1;
-    const last = matrix[matrix.length - 1];
-    for (let r = last.length - 1; r >= 0; r--) {
-        if (last[r] !== 0) return r + 1;
+    const last_col = matrix[matrix.length - 1];
+    for (let r = last_col.length - 1; r >= 0; r--) {
+        if (last_col[r] !== 0) return r;
     }
     return -1;
-};
+}
 
-const findBadRoot = (ctx: Context) => {
+function find_bad_root(ctx: Context) {
     const lastCol = ctx.colCount - 1;
-    const t = findLastNonZeroRowLabel(ctx.m);
+    const t = find_LNZ_index(ctx.m);
     if (t === -1) return null;
-    const rootCol = ctx.getBParent(lastCol, t);
-    if (rootCol === -1) return null;
-    return { rootCol, t };
-};
+    const rootCol: number | undefined = ctx.P[lastCol][t];
+    if (rootCol === undefined) return null;
+    return { r: rootCol, t };
+}
 
-const computeDelta = (ctx: Context, rootCol: number, t: number): number[] => {
+function compute_delta(ctx: Context, rootCol: number, t: number): number[] {
     const lastCol = ctx.colCount - 1;
     const delta = new Array(ctx.rowCount);
-    for (let r = 0; r < ctx.rowCount; r++) delta[r] = r >= t - 1 ? 0 : ctx.m[lastCol][r] - ctx.m[rootCol][r];
+    for (let r = 0; r < ctx.rowCount; r++) delta[r] = r >= t ? 0 : ctx.m[lastCol][r] - ctx.m[rootCol][r];
     return delta;
-};
+}
 
-const maxEntry = (matrix: Expr): number => {
-    let max = 0;
-    for (let c = 0; c < matrix.length; c++) {
-        for (let r = 0; r < matrix[c].length; r++) {
-            if (matrix[c][r] > max) max = matrix[c][r];
-        }
-    }
-    return max;
-};
+type MarkedMatrix = [boolean, number][][];
 
-const computeUPMSVerificationRoots = (ctx: Context, rootCol: number, t: number) => {
+function compare_marked_matrix(a: MarkedMatrix, b: MarkedMatrix) {
+    return lex_compare(a, b, lex_compare_by(tuple_lex_compare_by([boolean_compare, number_compare])));
+}
+
+function compute_UPMS_verification_roots(ctx: Context, rootCol: number, t: number, bm_threshold: number = 1): number[] {
     const m = ctx.m;
     const alpha = ctx.colCount - 1;
     const y = rootCol;
     const height = ctx.rowCount;
-    const maxTwice = maxEntry(m) * 2;
-    const vr = new Int8Array(ctx.colCount * height);
-    vr.fill(-1);
-    const vrIndex = (col: number, row: number) => col * height + row;
-    const inBadPart = (col: number, row: number) => col >= y && col < alpha && row < t - 1;
-    const getVR = (col: number, row: number) => (inBadPart(col, row) ? vr[vrIndex(col, row)] : -1);
-    const setVR = (col: number, row: number, value: number) => {
-        vr[vrIndex(col, row)] = value;
+    const P = ctx.P;
+
+    const vr = Array<number>(alpha).fill(0);
+
+    function get_VR(c: number, row: number): boolean {
+        return row < vr[c];
+    }
+
+    function get_base(c: number, k: number): number[] {
+        return Array.from({ length: k + 2 }, (_, r) => m[c][r] + (r <= k ? 1 : 0));
+    }
+
+    const transformed_X_value = (source: number, row: number, iCol: number, k: number): [boolean, number] => {
+        let value = m[source][row];
+        let mark = row < k && get_VR(source, row);
+        if (mark) value -= m[iCol][row];
+        return [mark, value];
     };
 
-    const baseValue = (col: number, k: number, r: number) => m[col][r] + (r < k ? 1 : 0);
-
-    const columnLessThanBase = (candidate: number, col: number, k: number) => {
-        const limit = k + 1;
-        for (let r = 0; r < limit; r++) {
-            const a = r < height ? m[candidate][r] : 0;
-            const b = baseValue(col, k, r);
-            if (a < b) return true;
-            if (a > b) return false;
-        }
-        return false;
-    };
-
-    const transformedXValue = (sourceCol: number, row: number, iCol: number, k: number) => {
-        let value = m[sourceCol][row];
-        if (row < k - 1 && getVR(sourceCol, row) === 1) value += maxTwice - m[iCol][row];
-        return value;
-    };
-
-    const transformedYValue = (sourceCol: number, row: number, jCol: number, k: number) => {
-        let value = m[sourceCol][row];
-        if (row < k - 1) {
-            const colIsJ = sourceCol === jCol;
-            const containsJ = ctx.getAAncestors(sourceCol, row + 1).mask[jCol] === 1;
-            if (colIsJ || containsJ) value += maxTwice - m[jCol][row];
-        }
-        return value;
-    };
-
-    const compareTransformedParts = (
-        xStart: number,
-        xEnd: number,
-        yStart: number,
-        jCol: number,
-        iCol: number,
-        k: number,
-    ) => {
-        const xLen = xEnd - xStart + 1,
-            yLen = alpha - yStart + 1;
-        const commonCols = Math.min(xLen, yLen);
-        for (let local = 0; local < commonCols; local++) {
-            const xCol = xStart + local,
-                yCol = yStart + local;
-            for (let row = 0; row < height; row++) {
-                const xv = transformedXValue(xCol, row, iCol, k),
-                    yv = transformedYValue(yCol, row, jCol, k);
-                if (xv < yv) return -1;
-                if (xv > yv) return 1;
+    const transformed_Y_value = (source: number, row: number, jCol: number, k: number): [boolean, number] => {
+        let value = m[source][row];
+        let mark = false;
+        if (row < k) {
+            const colIsJ = source === jCol;
+            const containsJ = is_ancestor(ctx, source, jCol, row);
+            if (colIsJ || containsJ) {
+                mark = true;
+                value -= m[jCol][row];
             }
         }
-        if (xLen < yLen) return -1;
-        if (xLen > yLen) return 1;
-        return 0;
+        return [mark, value];
     };
 
-    for (let row = 0; row < t - 1; row++) {
-        const k = row + 1;
+    function compute_transformed_X(c: number, k: number): MarkedMatrix | null {
+        let u: number | undefined = undefined;
+        const base = get_base(c, k);
+        for (let candidate = c + 1; candidate <= alpha; candidate++) {
+            if (lex_compare(m[candidate], base, number_compare) < 0) {
+                u = candidate;
+                break;
+            }
+        }
+        if (u === undefined) return null;
+        const result: MarkedMatrix = [];
+        for (let l = c; l < u; l++) {
+            result.push(Array.from({ length: height }, (_, row) => transformed_X_value(l, row, c, k)));
+        }
+        return result;
+    }
+
+    function compute_transformed_Y(k: number): MarkedMatrix {
+        let a: number | undefined = alpha;
+        while (a !== undefined && m[a][k] !== m[y][k] + 1) a = P[a][k];
+        if (a === undefined) a = alpha;
+        const result: MarkedMatrix = [];
+        for (let l = a; l <= alpha; l++) {
+            result.push(Array.from({ length: height }, (_, row) => transformed_Y_value(l, row, a, k)));
+        }
+        return result;
+    }
+
+    for (let row = 0; row < t; row++) {
         for (let col = y; col < alpha; col++) {
             if (col === y || row === 0) {
-                setVR(col, row, 1);
+                vr[col]++;
                 continue;
             }
-            const kAncestors = ctx.getAAncestors(col, k);
-            let ancestorHasVR0 = false;
-            for (let a = 0; a < kAncestors.list.length; a++) {
-                if (getVR(kAncestors.list[a], row) === 0) {
-                    ancestorHasVR0 = true;
-                    break;
-                }
-            }
-            const kParent = ctx.getBParent(col, k);
-            if (kAncestors.mask[y] !== 1 || ancestorHasVR0 || kParent === -1) {
-                setVR(col, row, 0);
+            if (vr[col] !== row) {
+                // vr[col] += 0;
                 continue;
             }
-            if (kParent !== y) {
-                setVR(col, row, 1);
+            const parent = P[col][row];
+            if (parent === undefined || parent < y || !get_VR(parent, row)) {
+                // vr[col] += 0;
                 continue;
             }
-            let earlierRowHasVR0 = false;
-            for (let wRow = 0; wRow < row; wRow++) {
-                if (getVR(col, wRow) === 0) {
-                    earlierRowHasVR0 = true;
-                    break;
-                }
-            }
-            if (earlierRowHasVR0) {
-                setVR(col, row, 0);
+            if (parent !== y || row < bm_threshold) {
+                vr[col]++;
                 continue;
             }
-            let higherParentEscapesBadRoot = false;
+            let higher_parent_escapes_bad_root = false;
             for (let vRow = row + 1; vRow < t - 1; vRow++) {
-                if (ctx.getBParent(col, vRow + 1) !== y) {
-                    higherParentEscapesBadRoot = true;
+                if (P[col][vRow] !== y) {
+                    higher_parent_escapes_bad_root = true;
                     break;
                 }
             }
-            if (higherParentEscapesBadRoot) {
-                setVR(col, row, 0);
+            if (higher_parent_escapes_bad_root) {
+                // vr[col] += 0;
                 continue;
             }
-            let u = -1;
-            for (let candidate = col + 1; candidate <= alpha; candidate++) {
-                if (columnLessThanBase(candidate, col, k)) {
-                    u = candidate;
-                    break;
-                }
-            }
-            if (u === -1) {
-                setVR(col, row, 1);
+            const transformed_X = compute_transformed_X(col, row);
+            if (transformed_X === null) {
+                vr[col]++;
                 continue;
             }
-            const Ayk = m[y][row];
-            const alphaAncestors = ctx.getAAncestors(alpha, k).list;
-            let j = -1;
-            for (let a = 0; a < alphaAncestors.length; a++) {
-                if (m[alphaAncestors[a]][row] === Ayk + 1) {
-                    j = alphaAncestors[a];
-                    break;
-                }
-            }
-            if (j === -1) j = alpha;
-            const cmp = compareTransformedParts(col, u - 1, j, j, col, k);
-            setVR(col, row, cmp < 0 ? 0 : 1);
+            const transformed_Y = compute_transformed_Y(row);
+            const cmp = compare_marked_matrix(transformed_X, transformed_Y);
+            if (cmp >= 0) vr[col]++;
         }
     }
-    return { data: vr, index: vrIndex, height };
-};
+    return vr;
+}
 
-const generateBh = (ctx: Context, B: Expr, delta: number[], t: number, h: number, rootCol: number, vr: any) => {
-    return B.map((col, localCol) => {
-        const originalCol = rootCol + localCol;
-        const next = new Array(ctx.rowCount);
-        for (let r = 0; r < ctx.rowCount; r++) {
-            const hasVR = r < t - 1 && vr.data[vr.index(originalCol, r)] === 1;
-            next[r] = col[r] + h * delta[r] * (hasVR ? 1 : 0);
-        }
-        return next;
-    });
-};
-
-const expandUPMS = (matrix: Expr, index: number): Expr => {
-    if (!isLegalUPMSMatrix(matrix)) return [];
-    const ctx = makeContext(matrix);
+function expand(matrix: Expr, index: number, bm_threshold: number = 1): Expr {
+    const ctx = make_context(matrix);
     const m = ctx.m;
     const n = Math.max(0, Math.floor(index));
     if (m.length === 0) return [];
-    if (lastColumnIsZero(m)) return standardizeMatrix(m.slice(0, -1).map(cloneColumn));
-    const badRoot = findBadRoot(ctx);
+    if (last_column_is_zero(m)) return m.slice(0, -1);
+    const badRoot = find_bad_root(ctx);
     if (badRoot === null) return [];
-    const { rootCol, t } = badRoot;
-    const G = m.slice(0, rootCol).map(cloneColumn);
-    const B = m.slice(rootCol, ctx.colCount - 1).map(cloneColumn);
-    const delta = computeDelta(ctx, rootCol, t);
-    const vr = computeUPMSVerificationRoots(ctx, rootCol, t);
-    const result = [...G, ...B.map(cloneColumn)];
-    for (let h = 1; h <= n; h++) {
-        const Bh = generateBh(ctx, B, delta, t, h, rootCol, vr);
-        for (let i = 0; i < Bh.length; i++) result.push(Bh[i]);
+    const { r, t } = badRoot;
+    const alpha = ctx.colCount - 1;
+    const delta = compute_delta(ctx, r, t);
+    const vr = compute_UPMS_verification_roots(ctx, r, t, bm_threshold);
+    const result: Expr = [...m.slice(0, alpha)];
+    for (let w = 1; w <= n; w++) {
+        for (let j = r; j < alpha; j++) {
+            let result_col = [...m[j]];
+            for (let k = 0; k < vr[j]; k++) result_col[k] += delta[k] * w;
+            result.push(result_col);
+        }
     }
-    return standardizeMatrix(result);
-};
-
-const upmsLimit = (expr: Expr): boolean => {
-    if (isPseudoInfinity(expr)) return true;
-    if (!isLegalUPMSMatrix(expr)) return false;
-    const ctx = makeContext(expr);
-    return ctx.m.length > 0 && !lastColumnIsZero(ctx.m) && findBadRoot(ctx) !== null;
-};
-
-const infinityFS = (index: number): Expr => {
-    return [Array.from({ length: index + 1 }, () => 0), Array.from({ length: index + 1 }, () => 1)];
-};
+    return normalize(result);
+}
 
 export const UPMS: NotationDefinition<Expr> = {
     id: 'upms',
@@ -401,10 +234,49 @@ export const UPMS: NotationDefinition<Expr> = {
             name_id: 'display.simple',
         },
     },
-    is_limit: upmsLimit,
-    compare: matrixCompare,
-    ...sequence_FS_variants(expandUPMS, isPseudoInfinity, infinityFS, upmsLimit, display),
-    credit_text_id: 'credit.alpha0',
+    is_limit,
+    compare,
+    ...sequence_FS_variants0(expand, is_infinity, infinity_FS, is_limit, display),
+    credit_text_id: 'credit.test-alpha0',
 
-    init: () => [[[Infinity]], []],
+    init: () => [INFINITY(), []],
+
+    debug: { expandUPMS: expand },
+};
+
+function partial_UPMS(n: number): NotationDefinition<Expr> {
+    return {
+        id: 'upms-partial-' + n,
+        name: 'BMS(' + n + ' rows) + UPMS',
+        simple_name: '(>' + n + ')-UPMS',
+        category_id: 'category-upms-partial',
+        display: { plain: display, from_display },
+        display_equiv: {
+            ['(>' + n + ')-UP0Y']: {
+                plain: display_as_0Y,
+                from_display: from_display_as_0Y,
+            },
+            simple: {
+                plain: display_simple,
+                from_display: from_display_simple,
+                name_id: 'display.simple',
+            },
+        },
+        is_limit,
+        compare,
+        ...sequence_FS_variants0(bind3(expand, n), is_infinity, infinity_FS, is_limit, display),
+        credit_text_id: 'credit.test-alpha0',
+
+        init: () => [INFINITY(), [[], Array<number>(n + 3).fill(1)], []],
+
+        debug: { expandUPMS: expand },
+    };
+}
+
+export const category_partial_UPMS: NotationCategoryDefinition = {
+    id: 'category-upms-partial',
+    name: 'BMS(n rows) + UPMS',
+    simple_name: '(>n)-UPMS',
+    parent_id: 'category-bm-like',
+    generator: { start: 2, initial: 3, create: partial_UPMS },
 };

@@ -5,7 +5,7 @@ import {
     from_display as from_display_BM,
     INFINITY,
     is_infinity,
-    matrix_is_limit,
+    is_limit,
 } from '@/notations/BM-like/BM.ts';
 
 import { NotationDefinition } from '@/notation-definition.ts';
@@ -104,7 +104,7 @@ export const BHM: NotationDefinition<Expr> = {
     simple_name: 'BHM',
     category_id: 'category-bm-like',
     display: { plain: display, from_display },
-    is_limit: matrix_is_limit,
+    is_limit: is_limit,
     compare: compare,
     FS: (m: Expr, index: number) => {
         if (is_infinity(m)) return [Array(index + 1).fill(0), Array(index + 1).fill(1)];

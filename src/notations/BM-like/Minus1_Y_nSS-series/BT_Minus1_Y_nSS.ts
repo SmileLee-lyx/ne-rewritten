@@ -1,5 +1,5 @@
 import { index_of_last, lex_compare, lex_compare_by, number_compare, tuple_lex_compare } from '@/utils.ts';
-import { from_display } from '@/notations/BM-like/T_Minus1_Y_nSS.ts';
+import { from_display } from '@/notations/BM-like/Minus1_Y_nSS-series/T_Minus1_Y_nSS.ts';
 import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
@@ -284,9 +284,10 @@ export const category_bm_bt_minus1_y_nss: NotationCategoryDefinition = {
     id: 'category-bm-bt-minus1-y-nss',
     name: 'Branching Transfinite -1Y-nSS',
     simple_name: 'BT(-1)Y-nSS',
-    parent_id: 'category-bm-like',
+    parent_id: 'category-minus1-y-nss-series',
     generator: { start: 0, initial: 3, create: (n) => BT_Minus1_Y_nSS(n) },
 };
+
 export function BT_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
         id: 'bt--1y-' + (n + 1) + 'ss',

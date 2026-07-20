@@ -1,4 +1,4 @@
-import { boolean_compare, index_of_last, lex_compare, lex_compare_by, number_compare } from '@/utils.ts';
+import { boolean_compare, index_of_last, lex_compare, number_compare } from '@/utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { Y_FS_variants } from '@/notations/notation_utils.ts';
 import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
@@ -14,21 +14,17 @@ export function is_infinity(a: Expr): boolean {
     return ('' + a).startsWith('Infinity');
 }
 
-export function is_limit(a: Expr): boolean {
-    return a.length > 0 && a[a.length - 1].length > 0;
-}
-
 export function compare(a: Expr, b: Expr): number {
     if (is_infinity(a) || is_infinity(b)) {
         return boolean_compare(is_infinity(a), is_infinity(b));
     }
-    return lex_compare(a, b, lex_compare_by(number_compare));
+    return lex_compare(a, b, (x, y) => lex_compare(normalize_col(x), normalize_col(y), number_compare));
 }
 
 function column_display(col: number[]) {
-    let N = index_of_last(col, (x) => x > 0) + 1;
-    if (N === 0) return '(0)';
-    return '(' + col.slice(0, N) + ')';
+    const n_col = normalize_col(col);
+    if (n_col.length === 0) return '(0)';
+    return '(' + n_col + ')';
 }
 
 export function display(a: Expr): string {
@@ -101,16 +97,16 @@ export function from_display(s: string, std: boolean = false): Expr {
     return std ? standardize(result) : normalize(result);
 }
 
-export function matrix_is_limit(a: Expr): boolean {
+export function is_limit(a: Expr): boolean {
     return is_infinity(a) || (a.length > 0 && a[a.length - 1][0] > 0);
 }
 
+function normalize_col(col: number[]): number[] {
+    return col.slice(0, index_of_last(col, (x) => x > 0) + 1);
+}
+
 export function normalize(m: Expr): Expr {
-    return m.map((col) => {
-        let end = col.length;
-        while (end > 0 && col[end - 1] === 0) end--;
-        return col.slice(0, end);
-    });
+    return m.map(normalize_col);
 }
 
 export function standardize(m: Expr): Expr {
@@ -119,7 +115,7 @@ export function standardize(m: Expr): Expr {
     return m.map((col) => [...col, ...Array.from({ length: H - col.length }, () => 0)]);
 }
 
-function parents(m: Expr): number[][] {
+export function parents(m: Expr): number[][] {
     const result: number[][] = [];
     for (let i = 0; i < m.length; i++) {
         result.push([]);
@@ -190,7 +186,7 @@ function expand(m: Expr, index: number): Expr {
     return result;
 }
 
-function infinity_FS(n: number): Expr {
+export function infinity_FS(n: number): Expr {
     return [[], Array.from({ length: n + 1 }, () => 1)];
 }
 
@@ -441,7 +437,7 @@ export const BM4: NotationDefinition<Expr> = {
             name_id: 'display.simple',
         },
     },
-    is_limit: matrix_is_limit,
+    is_limit: is_limit,
     compare,
     draw_diagram: draw_diagram_control_BM,
 
@@ -465,7 +461,7 @@ export const seq_0Y: NotationDefinition<Expr> = {
             from_display,
         },
     },
-    is_limit: matrix_is_limit,
+    is_limit: is_limit,
     compare,
     draw_diagram: draw_diagram_control_0Y,
 

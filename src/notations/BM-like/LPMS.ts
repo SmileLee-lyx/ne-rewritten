@@ -691,7 +691,7 @@ export const LPMS: NotationDefinition<Expr> = {
     is_limit: lpmsLimit,
     compare: matrixCompare,
     ...sequence_FS_variants0(lpmsFS, pseudoInfinity, lpmsInfinityFs, lpmsLimit, display),
-    credit_text_id: 'credit.alpha0',
+    credit_text_id: 'credit.test-alpha0',
     init: () => [[[Infinity] as any], []],
 
     debug: { lpmsFS },
@@ -717,6 +717,6 @@ export const LPTSS: NotationDefinition<Expr> = {
     is_limit: lpmsLimit,
     compare: matrixCompare,
     ...sequence_FS_variants0(lpmsFS, pseudoInfinity, lptssInfinityFs, lpmsLimit, display),
-    credit_text_id: 'credit.alpha0',
+    credit_text_id: 'credit.test-alpha0',
     init: () => [[[Infinity] as any], []],
 };

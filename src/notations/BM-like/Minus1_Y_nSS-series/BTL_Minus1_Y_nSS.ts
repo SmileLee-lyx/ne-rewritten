@@ -560,7 +560,7 @@ export const category_bm_btl_minus1_y_nss: NotationCategoryDefinition = {
     id: 'category-bm-btl-minus1-y-nss',
     name: "Asheep's Transfinite nSS",
     simple_name: 'ATnSS',
-    parent_id: 'category-bm-like',
+    parent_id: 'category-minus1-y-nss-series',
     generator: { start: 1, initial: 3, create: (n) => BTL_Minus1_Y_nSS(n) },
 };
 export function BTL_Minus1_Y_nSS(n: number): NotationDefinition<ExprCompact> {

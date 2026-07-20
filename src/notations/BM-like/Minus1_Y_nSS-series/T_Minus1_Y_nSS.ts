@@ -309,7 +309,7 @@ export const category_bm_t_minus1_y_nss: NotationCategoryDefinition = {
     id: 'category-bm-t-minus1-y-nss',
     name: 'Transfinite -1Y-nSS',
     simple_name: 'T(-1)Y-nSS',
-    parent_id: 'category-bm-like',
+    parent_id: 'category-minus1-y-nss-series',
     generator: { start: 0, initial: 3, create: (n) => T_Minus1_Y_nSS(n) },
 };
 
