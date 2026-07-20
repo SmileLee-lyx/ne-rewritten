@@ -330,6 +330,7 @@ function cOCF_fs(x: any, n: any): any {
     let m = cOCF_paren(x, x.length - 1);
     let d = x.slice(m - 1);
     if (d == 'p(0)') {
+        if (m === 1) return '0';
         return x.slice(0, m - 2);
     }
     x = cOCF_trim(x);

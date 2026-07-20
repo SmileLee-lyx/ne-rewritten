@@ -148,7 +148,7 @@ type NotationDisplaySpec<T> =
 `FS_short` 表示 lnz-1 模式, 
 使用更精细的基本列来减少展开到某一项需要取基本列的次数.
 例如, BMS 的 lnz-1 模式中, 第 $0$ 项为删去末列,
-第 $1$ 项为某列 lnz-1, 第 $2$ 项起为通常的短展开, 
+第 $1$ 项为末列 lnz-1, 第 $2$ 项起为通常的短展开, 
 其中若与第 $1$ 项重复则删去一个重复项.
 
 可以不定义 `FS_short` 字段, 这时在 lnz-1 模式下会默认使用 `FS` 字段.
@@ -159,10 +159,10 @@ type NotationDisplaySpec<T> =
     debug: Record<string, any>
 ```
 
-`debug` 字段就是用于 debug 的, 向控制台暴露内部方法, 如 compute_bad_root 方法等.
-在输入框按 Ctrl+D 可以向控制台输出当前记号与表达式, 
-还会把记号与表达式挂载到全局 notation 和 expr 变量上,
-这时可以用 notation.debug.xxx 来获取暴露的函数并调试执行.
+`debug` 字段就是用于 debug 的, 向控制台暴露内部方法, 如 `compute_bad_root` 方法等.
+在输入框按 `Ctrl+D` 可以向控制台输出当前记号与表达式, 
+还会把记号与表达式挂载到全局 `notation` 和 `expr` 变量上,
+这时可以用 `notation.debug.xxx` 来获取暴露的函数并调试执行.
 
 ## 定义记号类别
 
@@ -213,6 +213,9 @@ interface NotationCategoryDefinition {
 类别可以具有一个生成器, 用于生成类似 `nMN` 这样的记号族.
 生成器根据序号 $n$ 生成对应的记号.
 
+有生成器的类别, 生成的记号所属的类别必须为该类别;
+该类别不应当有生成器生成的记号以外的记号, 也不应当有子类别.
+
 ```ts
     generator?: NotationCategoryGenerator;
 ```
@@ -246,9 +249,6 @@ interface NotationCategoryGenerator {
 `create` 为根据序号 $n$ 生成记号定义的函数.
 该类别会在导航栏中以可交互的形式展示,
 允许用户增减序号来切换生成的记号.
-
-有生成器的类别, 生成的记号所属的类别必须为该类别;
-该类别不应当有生成器生成的记号以外的记号, 也不应当有子类别.
 
 ## 常见问题汇总
 
