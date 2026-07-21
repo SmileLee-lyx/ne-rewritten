@@ -21,7 +21,7 @@ export function compare(a: Expr, b: Expr): number {
     return lex_compare(a, b, (x, y) => lex_compare(normalize_col(x), normalize_col(y), number_compare));
 }
 
-function column_display(col: number[]) {
+export function column_display(col: number[]) {
     const n_col = normalize_col(col);
     if (n_col.length === 0) return '(0)';
     return '(' + n_col + ')';
@@ -101,7 +101,7 @@ export function is_limit(a: Expr): boolean {
     return is_infinity(a) || (a.length > 0 && a[a.length - 1][0] > 0);
 }
 
-function normalize_col(col: number[]): number[] {
+export function normalize_col(col: number[]): number[] {
     return col.slice(0, index_of_last(col, (x) => x > 0) + 1);
 }
 

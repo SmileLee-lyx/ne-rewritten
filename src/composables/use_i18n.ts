@@ -101,6 +101,7 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.hypcos_mn': '由 Hypcos 定义; 展开器来自原 NE 项目.',
         'credit.n_mn': '由 笑姐姐 基于 Hypcos 的 MN 系列作出定义, 并给出展开器.',
         'credit.test-alpha0': '由 test_alpha0 定义, 并给出展开器.',
+        'credit.test-alpha0-ocn': '由 test_alpha0 定义, 并给出展开器. 同时提供 OCN 渲染.',
         'credit.ton': '由 Taranosvky 定义; 展开器来自原 NE 项目.',
         'credit.asan': '由 Aarex 定义; 展开器来自原 NE 项目.',
         'credit.community_y': '由社区定义.',
@@ -290,6 +291,8 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.n_mn':
             "Defined by 笑姐姐 (Smile Lee) based on Hypcos's MN series; expander also by 笑姐姐 (Smile Lee).",
         'credit.test-alpha0': 'Defined by test_alpha0, with expander by the same author.',
+        'credit.test-alpha0-ocn':
+            'Defined by test_alpha0, with expander by the same author. Also provides OCN rendering.',
         'credit.ton': 'Defined by Taranosvky; expander from the original NE project.',
         'credit.asan': 'Defined by Aarex; expander from the original NE project.',
         'credit.community_y': 'Defined by the community.',

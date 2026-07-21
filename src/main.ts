@@ -83,6 +83,7 @@ import { n_shifted_psi } from '@/notations/OCN/n_shifted_psi.ts';
 import { category_bm_bt_star_minus1_y_nss1 } from "@/notations/BM-like/Minus1_Y_nSS-series/BT_star_Minus1_Y_nSS'.ts";
 import { BTBM } from '@/notations/BM-like/BTBM.ts';
 import { WSMv1_4_1 } from '@/notations/BM-like/WSM.ts';
+import { GMS_categories, GMS_notations } from '@/notations/BM-like/GMS.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -175,6 +176,11 @@ init_generator(category_bm_bt_star_minus1_y_nss1);
 register_category(category_bm_btl_minus1_y_nss);
 init_generator(category_bm_btl_minus1_y_nss);
 register_notation(BTBM);
+for (const cat of GMS_categories) {
+    register_category(cat);
+    if (cat.generator) init_generator(cat);
+}
+for (const n of GMS_notations) register_notation(n);
 register_category(category_mn);
 register_category(category_n_mn);
 init_generator(category_n_mn);
