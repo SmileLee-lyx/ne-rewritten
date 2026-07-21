@@ -1,7 +1,7 @@
 import type { NotationCategoryDefinition } from '@/core/notation_category.ts';
 import type { NotationDefinition, NotationDisplay } from '@/notation-definition.ts';
 import { bind1 } from '@/utils.ts';
-import { column_display, normalize_col } from '@/notations/BM-like/BM.ts';
+import { column_display, from_display, normalize_col } from '@/notations/BM-like/BM.ts';
 
 type Expr = number[][];
 type LimitBuilder = (index: number) => Expr;
@@ -1398,7 +1398,10 @@ function makeNPNotation(system: string, n: number): NotationDefinition<Expr> {
         name: system + ' ' + n + '-P',
         simple_name: n + '-P',
         category_id: gmsParentId + '-' + system + '-n-P',
-        display: bmsDisplay as NotationDisplay<Expr>,
+        display: {
+            plain: bmsDisplay,
+            from_display,
+        },
         is_limit: bmsIsLimit,
         compare: bmsCompare,
         FS: bmsMakeFS(system, limitBuilder, false, bmsCompare),
@@ -1435,7 +1438,8 @@ function makeNPNotation(system: string, n: number): NotationDefinition<Expr> {
 export const GMS_categories: NotationCategoryDefinition[] = [
     {
         id: gmsParentId,
-        name: 'GMS',
+        name: 'General Matrix System',
+        simple_name: 'GMS',
         parent_id: 'category-bm-like',
     },
     ...systems.flatMap((system) => [
@@ -1469,7 +1473,10 @@ for (const system of systems) {
             name: system + ' ' + projectionName,
             simple_name: projectionName,
             category_id: gmsParentId + '-' + system,
-            display: projectionName === 'Weirdly Full' ? bmsDisplayWeirdlyFull : bmsDisplay,
+            display: {
+                plain: projectionName === 'Weirdly Full' ? bmsDisplayWeirdlyFull : bmsDisplay,
+                from_display,
+            },
             is_limit: bmsIsLimit,
             compare: compareFn,
             FS: bmsMakeFS(
