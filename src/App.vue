@@ -47,7 +47,7 @@ const { trees, notation, root, save_indicator } = save_load;
 watch(
     () => settings.font_family,
     (v) => {
-        document.body.style.fontFamily = v + ', sans-serif';
+        document.body.style.fontFamily = v === 'DEFAULT' ? '' : v + ', sans-serif';
     },
     { immediate: true },
 );
