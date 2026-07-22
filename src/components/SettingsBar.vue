@@ -19,7 +19,7 @@ const { hide, show: show_diagram, dispatch_action } = use_diagram();
 
 const settings_collapsed = ref(true);
 const find_input = ref<HTMLInputElement>();
-const font_options = ['DEFAULT', 'Comic Sans MS', 'Consolas', 'Microsoft YaHei UI'];
+const font_options = ['Comic Sans MS', 'Consolas', 'Microsoft YaHei UI'];
 const DISPLAY_MODES = ['plain', 'html', 'latex'] as const;
 
 // 用户记号恢复：页面加载时不自动加载，等用户确认后再执行
@@ -332,7 +332,7 @@ function on_find_keydown(e: KeyboardEvent) {
                     {{ t('font.label') }}
                     <select v-model="settings.font_family" @mousedown.stop>
                         <option v-for="f in font_options" :key="f" :value="f">
-                            {{ f === 'DEFAULT' ? t('font.system-default') : f }}
+                            {{ f }}
                         </option>
                     </select>
                 </label>
