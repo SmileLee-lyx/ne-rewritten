@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { inject, onMounted, onUnmounted, provide, reactive, watch } from 'vue';
+import { computed, inject, onMounted, onUnmounted, provide, reactive, watch } from 'vue';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { get_notation } from '@/core/registry.ts';
-import { resolve_name } from '@/notation-definition.ts';
+import { resolve_display, resolve_name } from '@/notation-definition.ts';
 import type { TreeNode } from '@/core/tree.ts';
 import { focus_node, get_last_focus } from '@/composables/use_focus_tracker.ts';
 import NotationTree from '@/components/NotationTree.vue';
@@ -61,6 +61,18 @@ const ui = use_ui_states();
 const save_load = use_save_load(reactive(new Map()));
 provide(SAVE_LOAD_KEY, save_load);
 const { trees, notation, root, save_indicator } = save_load;
+
+// 当前记号 (或其激活的等价表示) 不支持 from_display (反解析) 时, 在说明上方显示红色提示。
+// 有等价表示时反解析按等价表示语法进行, 因此检查等价表示的 from_display。
+const no_from_display_warning = computed(() => {
+    const n = notation.value;
+    if (!n) return null;
+    const equiv_id = settings.equiv_active[n.id];
+    if (equiv_id && n.display_equiv?.[equiv_id]) {
+        return resolve_display(n.display_equiv[equiv_id]).from_display ? null : t('description.no-from-display-equiv');
+    }
+    return resolve_display(n.display).from_display ? null : t('description.no-from-display');
+});
 
 const tip = use_tip(settings);
 
@@ -207,6 +219,10 @@ function debug_compare_order(notation_id?: string) {
         <NotationNavPlain v-else />
 
         <SettingsBar />
+
+        <div v-if="no_from_display_warning" class="description-warning">
+            {{ no_from_display_warning }}
+        </div>
 
         <template v-if="notation?.description">
             <div
@@ -451,6 +467,15 @@ function debug_compare_order(notation_id?: string) {
     max-width: 60em;
     padding: 0 1em;
     color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.description-warning {
+    text-align: center;
+    margin: 0.5em auto 0;
+    max-width: 60em;
+    padding: 0 1em;
+    color: var(--color-danger);
     font-size: 13px;
 }
 

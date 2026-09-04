@@ -281,19 +281,25 @@ function infinity_FS(n: number): Expr {
     );
 }
 
-export type DiagramData = { offset: number; offset_x: number; max_display: number };
+export interface DiagramData {
+    offset: number;
+    offset_x: number;
+    max_display: number;
+    scaling: number;
+}
 
 export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
-    default_data: { offset: 0, offset_x: 0, max_display: 40 },
+    default_data: { offset: 0, offset_x: 0, max_display: 40, scaling: 1.0 },
     settings: [
         { type: 'number', name: { id: 'diagram.den.offset' }, field_name: 'offset', min: 0 },
         { type: 'number', name: { id: 'diagram.den.offset-x' }, field_name: 'offset_x', min: 0 },
         { type: 'number', name: { id: 'diagram.den.max-display' }, field_name: 'max_display', min: 10 },
+        { type: 'number', name: { id: 'diagram.den.scaling' }, field_name: 'scaling', max: 1, min: 0.1 },
         { type: 'info', name: { id: 'diagram.den.scroll-hint' } },
     ],
     draw_diagram: (expr: Expr, data: DiagramData): Diagram | undefined => {
         if (is_infinity(expr) || expr.length === 0) return undefined;
-        const A = 16;
+        const A = 16 * data.scaling;
         const max_display = data.max_display;
         const total = expr.length;
         const show_all = total <= max_display;
@@ -351,7 +357,7 @@ export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
                     text: '' + step,
                     x: rightmost * A + A,
                     y: vi * A + A / 2,
-                    size: 10,
+                    size: 0.625 * A,
                     color: black,
                 });
             }

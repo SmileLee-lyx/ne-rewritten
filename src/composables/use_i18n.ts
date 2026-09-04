@@ -140,6 +140,8 @@ const messages: Record<Language, Record<string, string>> = {
         'diagram.settings': '图表设置',
         'description.show-default': '默认显示说明',
         'description.show': '显示说明',
+        'description.no-from-display': '该记号暂不支持反解析或导入, 如有需要请联系作者',
+        'description.no-from-display-equiv': '该等价表示暂不支持反解析或导入, 如有需要请联系作者',
         'description.btbm.1': '标记列标 BTBMS',
         'description.btbm.2': "核心为高度定义, 参见群内 '标记列标 BTBM.md'. 此版本简要特征: ",
         'description.btbm.3': '1^(2,1) 与 2^(3,1) 视为高度相同;',
@@ -348,6 +350,10 @@ const messages: Record<Language, Record<string, string>> = {
         'diagram.settings': 'Diagram settings',
         'description.show-default': 'Show description by default',
         'description.show': 'Show description',
+        'description.no-from-display':
+            'This notation does not yet support reverse-parsing or import. If needed, please contact the author.',
+        'description.no-from-display-equiv':
+            'This equivalent notation does not yet support reverse-parsing or import. If needed, please contact the author.',
         'description.btbm.1': 'Indexed BTBMS',
         'description.btbm.2':
             "The core is height definitions; see '标记列标 BTBM.md' in the QQ group. Brief features of this version: ",
