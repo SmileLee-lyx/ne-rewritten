@@ -1,4 +1,4 @@
-import { deepcopy, index_of_first, index_of_last, lex_compare, number_compare } from '@/utils.ts';
+import { boolean_compare, deepcopy, index_of_first, index_of_last, lex_compare, number_compare } from '@/utils.ts';
 import type { ColorSpec, Diagram } from '@/core/diagram_types.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
@@ -21,9 +21,7 @@ function seq_seq_compare(m1: number[][], m2: number[][]): number {
 }
 
 function compare(expr1: Expr, expr2: Expr): number {
-    if ('' + expr1 === 'Infinity' && '' + expr2 === 'Infinity') return 0;
-    if ('' + expr1 === 'Infinity') return 1;
-    if ('' + expr2 === 'Infinity') return -1;
+    if (is_infinity(expr1) || is_infinity(expr2)) return boolean_compare(is_infinity(expr1), is_infinity(expr2));
     return seq_seq_compare(toShort(expr1), toShort(expr2));
 }
 
@@ -48,35 +46,51 @@ function display(expr: Expr) {
 function from_display(str: string): Expr {
     if (str === 'Limit') return INFINITY;
     const result: Expr = [];
-    const fullPattern = /^(\([^)]+\)\d+)*$/;
-    if (!fullPattern.test(str)) throw new Error('illegal input string: ' + str);
-    const groupRegex = /\(([^)]+)\)(\d+)/g;
-    let match: RegExpExecArray | null;
-    let lastIndex = 0;
-    while ((match = groupRegex.exec(str)) !== null) {
-        if (match.index !== lastIndex) throw new Error('illegal input string: ' + str);
-        const inner = match[1],
-            stepLengthStr = match[2];
-        if (!/^\d+$/.test(stepLengthStr)) throw new Error('illegal input string: ' + str);
-        const stepLength = parseInt(stepLengthStr, 10);
-        if (inner.length === 0) throw new Error('illegal input string: ' + str);
-        const parts = inner.split(',');
-        const group: Entry[] = [];
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (part.length === 0) throw new Error('illegal input string: ' + str);
-            const hasStar = part.startsWith('*');
-            let numStr = hasStar ? part.slice(1) : part;
-            if (hasStar && numStr.length === 0) throw new Error('illegal input string: ' + str);
-            if (!/^\d+$/.test(numStr)) throw new Error('illegal input string: ' + str);
-            const num = parseInt(numStr, 10);
-            if (hasStar) group.push([num, true]);
-            else group.push([num]);
-        }
-        result.push([stepLength, group]);
-        lastIndex = match.index + match[0].length;
+    let i = 0;
+    const s = str;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
     }
-    if (lastIndex !== str.length) throw new Error('illegal input string: ' + str);
+
+    function parse_digits(): number {
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_entry(): Entry {
+        let marked = false;
+        if (s[i] === '*') {
+            marked = true;
+            i++;
+        }
+        return marked ? [parse_digits(), true] : [parse_digits()];
+    }
+
+    function parse_row(): Row {
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+        const entries: Entry[] = [];
+        if (i >= s.length || s[i] === ')') error();
+        while (true) {
+            entries.push(parse_entry());
+            if (i < s.length && s[i] === ',') {
+                i++;
+                continue;
+            }
+            break;
+        }
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+        return [parse_digits(), entries];
+    }
+
+    while (i < s.length) {
+        if (s[i] !== '(') error();
+        result.push(parse_row());
+    }
     return result;
 }
 

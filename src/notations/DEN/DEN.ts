@@ -1,4 +1,4 @@
-import { lex_compare, number_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, number_compare } from '@/utils.ts';
 import { draw_diagram_control as den2_diagram_control, type Expr as DEN2_Expr, type DiagramData } from './DEN2.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 
@@ -20,12 +20,22 @@ function seqseq_compare(m1: Row[], m2: Row[]): number {
     return seqseq_compare(m1.slice(1), m2.slice(1));
 }
 
+/** 记号极限特殊值 (display 为 'Limit'): 形如 [[Infinity]]。 */
+function INFINITY(): Expr {
+    return [[Infinity]];
+}
+
+function is_infinity(e: Expr): boolean {
+    return '' + e === 'Infinity';
+}
+
 function compare(expr1: Expr, expr2: Expr): number {
+    if (is_infinity(expr1) || is_infinity(expr2)) return boolean_compare(is_infinity(expr1), is_infinity(expr2));
     return seqseq_compare(toShort(expr1), toShort(expr2));
 }
 
 function display(expr: Expr): string {
-    return '' + expr === 'Infinity'
+    return is_infinity(expr)
         ? 'Limit'
         : expr
               .slice(1)
@@ -33,6 +43,65 @@ function display(expr: Expr): string {
               .join('') +
               ';' +
               expr[0].join(',');
+}
+
+function from_display(str: string): Expr {
+    if (str === 'Limit') return INFINITY();
+    const result: Expr = [[]];
+    let i = 0;
+    const s = str;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
+    }
+
+    function parse_digits(): number {
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    // 主体一行: '(' 值列表 ')' step (对应 display 中 expr.slice(1) 的一行)
+    function parse_row(): Row {
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+        const values: number[] = [];
+        if (i < s.length && s[i] !== ')') {
+            while (true) {
+                values.push(parse_digits());
+                if (i < s.length && s[i] === ',') {
+                    i++;
+                    continue;
+                }
+                break;
+            }
+        }
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+        return [parse_digits()].concat(values);
+    }
+
+    // ';' 之前的为主体行, 之后的为 expr[0] (父标号列表, 可为空)
+    while (i < s.length && s[i] !== ';') {
+        if (s[i] !== '(') error();
+        result.push(parse_row());
+    }
+    if (i >= s.length || s[i] !== ';') error();
+    i++;
+    // expr[0]: 父标号列表, 可为空; 不允许尾逗号
+    if (i < s.length) {
+        while (true) {
+            result[0].push(parse_digits());
+            if (i < s.length && s[i] === ',') {
+                i++;
+                continue;
+            }
+            break;
+        }
+    }
+    if (i !== s.length) error();
+    return result;
 }
 
 function pleasantUntil(rows: Row[], t: Row): number {
@@ -54,7 +123,7 @@ function pleasantUntil(rows: Row[], t: Row): number {
 }
 
 function isLimit(expr: Expr): boolean {
-    if ('' + expr === 'Infinity') return true;
+    if (is_infinity(expr)) return true;
     const active = expr[expr.length - 1];
     if (!active[1 + active[0]]) return false;
     return pleasantUntil(expr.slice(active[1 + active[0]], -1), active) === -1;
@@ -260,17 +329,17 @@ export const DEN: NotationDefinition<Expr> = {
     name: 'Defective embedding notation',
     simple_name: 'DEN',
     category_id: 'category-den',
-    display,
+    display: { plain: display, from_display },
     is_limit: isLimit,
     compare,
     draw_diagram: diagram_control,
     FS: (m, FSterm) => {
-        if ('' + m === 'Infinity') return Limit(FSterm);
+        if (is_infinity(m)) return Limit(FSterm);
         if (m.length <= 1) return [[]];
         return expand(m, FSterm, false);
     },
     FS_alter: (m, FSterm) => {
-        if ('' + m === 'Infinity') return Limit(FSterm);
+        if (is_infinity(m)) return Limit(FSterm);
         if (m.length <= 1) return [[]];
         return expand(m, FSterm, true);
     },

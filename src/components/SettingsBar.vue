@@ -6,7 +6,7 @@ import { SAVE_LOAD_KEY } from '@/composables/use_save_load.ts';
 import { use_ui_states } from '@/composables/use_ui_states.ts';
 import { use_diagram } from '@/composables/use_diagram.ts';
 import { expand_all_pending, import_analysis_eager } from '@/core/analysis.ts';
-import { resolve_display } from '@/notation-definition.ts';
+import { resolve_display, resolve_display_name } from '@/notation-definition.ts';
 import { COMPAT_URL, IS_COMPAT } from '@/core/deployment.ts';
 import { focus_node_input } from '@/composables/use_focus_tracker.ts';
 import { reload_all } from '@/core/user_defined_notation.ts';
@@ -57,8 +57,7 @@ const equiv_options = computed<EquivOption[]>(() => {
     if (!n?.display_equiv) return [];
     return Object.keys(n.display_equiv).map((id) => {
         const spec = n.display_equiv![id];
-        const name_id = typeof spec !== 'function' && spec.name_id ? spec.name_id : undefined;
-        return { id, label: name_id ? t(name_id) : id };
+        return { id, label: resolve_display_name(spec, t) ?? id };
     });
 });
 

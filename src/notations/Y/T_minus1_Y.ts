@@ -56,12 +56,66 @@ function display(a: Expr, top_level: boolean = true): string {
     return '(' + display(a, true) + ')';
 }
 
+function from_display(str: string): Expr {
+    if (str === 'Limit') return INFINITY();
+    let i = 0;
+    const s = str;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    // 逗号分隔的子项列表: 顶层表达式与括号内容共用同一语法; ')' 处结束, 由调用方消费
+    function parse_list(): Expr {
+        const result: Expr = [];
+        skip_spaces();
+        if (i >= s.length || s[i] === ')') return result;
+        while (true) {
+            result.push(parse_child());
+            skip_spaces();
+            if (i >= s.length || s[i] !== ',') break;
+            i++;
+            skip_spaces();
+            if (i >= s.length || s[i] === ')') error();
+        }
+        return result;
+    }
+
+    function parse_child(): Expr {
+        skip_spaces();
+        if (i >= s.length) error();
+        if (s[i] === '(') {
+            i++;
+            const inner = parse_list();
+            skip_spaces();
+            if (i >= s.length || s[i] !== ')') error();
+            i++;
+            return inner;
+        }
+        // 整数 k: 由 k 个空数组构成的子项 (display 中显示为计数)
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        const k = parseInt(s.substring(start, i), 10);
+        return Array.from({ length: k }, () => []);
+    }
+
+    const result = parse_list();
+    skip_spaces();
+    if (i !== s.length) error();
+    return result;
+}
+
 export const T_Minus1_Y: NotationDefinition<Expr> = {
     id: 't--1y',
     name: 'Transfinite -1Y',
     simple_name: 'T(-1)Y',
     category_id: 'category-y',
-    display: { plain: display },
+    display: { plain: display, from_display },
     compare,
     is_limit,
     FS,

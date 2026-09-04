@@ -96,6 +96,19 @@ export function resolve_display<T>(spec: NotationDisplaySpec<T>): ResolvedDispla
     };
 }
 
+/**
+ * 解析 display spec (含 display_equiv 条目) 的表示法名称。
+ * 优先使用推荐的 `name` 字段 (TextSpec: 字面量字符串, 或 `{ id }` i18n 键);
+ * 遗留的 `name_id` 字段仅作兼容别名, 等价于 `name: { id: name_id }`。
+ * 未定义名称时返回 undefined, 由调用方决定回退 (如直接显示等价记号字段名)。
+ */
+export function resolve_display_name<T>(
+    spec: NotationDisplaySpec<T>,
+    translate?: (id: string) => string,
+): string | undefined {
+    return resolve_name(resolve_display(spec).name, translate);
+}
+
 export type DiagramAction = {
     type: 'scroll';
     direction: 'up' | 'down' | 'left' | 'right';

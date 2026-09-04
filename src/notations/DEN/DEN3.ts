@@ -1,4 +1,4 @@
-import { lex_compare, number_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, number_compare } from '@/utils.ts';
 import { draw_diagram_control as den2_diagram_control, type Expr as DEN2_Expr, type DiagramData } from './DEN2.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 
@@ -21,9 +21,21 @@ var seqseq_compare = (m1: any, m2: any): number => {
     if (cmp) return cmp;
     return seqseq_compare(m1.slice(1), m2.slice(1));
 };
-var compare = (expr1: any, expr2: any) => seqseq_compare(toShort(expr1), toShort(expr2));
+/** 记号极限特殊值 (display 为 'Limit'): 形如 [Infinity]。 */
+function INFINITY(): any {
+    return [Infinity];
+}
+
+function is_infinity(e: any): boolean {
+    return '' + e === 'Infinity';
+}
+
+var compare = (expr1: any, expr2: any): number => {
+    if (is_infinity(expr1) || is_infinity(expr2)) return boolean_compare(is_infinity(expr1), is_infinity(expr2));
+    return seqseq_compare(toShort(expr1), toShort(expr2));
+};
 var display = (expr: any) =>
-    '' + expr === 'Infinity'
+    is_infinity(expr)
         ? 'Limit'
         : expr
               .map(
@@ -37,6 +49,60 @@ var display = (expr: any) =>
                       row[0],
               )
               .join('');
+
+function from_display(str: string): any {
+    if (str === 'Limit') return INFINITY();
+    if (str === '') return [];
+    const result: any[] = [];
+    let i = 0;
+    const s = str;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
+    }
+
+    function parse_digits(): number {
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_entry(): any {
+        let marked = false;
+        if (s[i] === '*') {
+            marked = true;
+            i++;
+        }
+        return marked ? [parse_digits(), true] : [parse_digits()];
+    }
+
+    // 一行: '(' 条目列表 ')' step; 每行的 row[0] 是 step, row[1..] 是 entry
+    function parse_row(): any {
+        if (i >= s.length || s[i] !== '(') error();
+        i++;
+        const entries: any[] = [];
+        if (i < s.length && s[i] !== ')') {
+            while (true) {
+                entries.push(parse_entry());
+                if (i < s.length && s[i] === ',') {
+                    i++;
+                    continue;
+                }
+                break;
+            }
+        }
+        if (i >= s.length || s[i] !== ')') error();
+        i++;
+        return [parse_digits()].concat(entries);
+    }
+
+    while (i < s.length) {
+        if (s[i] !== '(') error();
+        result.push(parse_row());
+    }
+    return result;
+}
 var values = (row: any) => [row[0]].concat(row.slice(1).map((x: any) => x[0]));
 var isNonzero = (expr: any) => expr.length > 0;
 var pleasantUntil = (rows: any, t: any): any => {
@@ -60,7 +126,7 @@ var pleasantUntil = (rows: any, t: any): any => {
     return -1;
 };
 var isLimit = (expr: any): any => {
-    if ('' + expr === 'Infinity') return true;
+    if (is_infinity(expr)) return true;
     if (expr.length === 0) return false;
     var active = expr[expr.length - 1];
     if (!active[1 + active[0]]?.[0]) return false;
@@ -256,17 +322,17 @@ export const DEN3: NotationDefinition<any> = {
     id: 'den3',
     name: 'DEN3',
     category_id: 'category-den',
-    display,
+    display: { plain: display, from_display },
     is_limit: isLimit,
     compare,
     draw_diagram: diagram_control,
     FS: (m: any, FSterm: any) => {
-        if ('' + m === 'Infinity') return Limit(FSterm);
+        if (is_infinity(m)) return Limit(FSterm);
         if (!m.length) return [];
         return expand(m, FSterm, false);
     },
     FS_alter: (m: any, FSterm: any) => {
-        if ('' + m === 'Infinity') return Limit(FSterm);
+        if (is_infinity(m)) return Limit(FSterm);
         if (!m.length) return [];
         return expand(m, FSterm, true);
     },

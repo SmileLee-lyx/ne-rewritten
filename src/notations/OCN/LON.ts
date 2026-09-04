@@ -155,12 +155,14 @@ export const LON: NotationDefinition<Expr> = {
     display_equiv: {
         plain: {
             plain: (e) => LMN_display(e, 'plain'),
-            name_id: 'display.simple',
+            from_display,
+            name: { id: 'display.simple' },
         },
         sup: {
             plain: (e) => LMN_display(e, 'plain'),
             html: (e) => LMN_display(e, 'html-plain'),
-            name_id: 'display.pocn-sup',
+            from_display,
+            name: { id: 'display.pocn-sup' },
         },
     },
     is_limit: LMN_is_limit,
