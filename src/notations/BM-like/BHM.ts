@@ -109,7 +109,7 @@ export const BHM: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
-            name_id: 'display.simple',
+            name: { id: 'display.simple' },
         },
     },
     is_limit: is_limit,
@@ -144,7 +144,7 @@ export function BM_BHM(n: number): NotationDefinition<Expr> {
             simple: {
                 plain: display_simple,
                 from_display: from_display_simple,
-                name_id: 'display.simple',
+                name: { id: 'display.simple' },
             },
         },
         is_limit: is_limit,

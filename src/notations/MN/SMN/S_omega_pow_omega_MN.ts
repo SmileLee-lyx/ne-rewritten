@@ -696,17 +696,17 @@ export const S_omega_pow_omega_MN: NotationDefinition<Mountain> = {
     name: "Smile's ω^ω MN",
     simple_name: 'Sω^ωMN',
     category_id: 'category-smile-mn',
-    display: { plain: display, from_display: from_display, name_id: 'display.index' },
+    display: { plain: display, from_display: from_display, name: { id: 'display.index' } },
     display_equiv: {
         layer: {
             plain: (m) => display(convert_to_layer(m)),
             from_display: (str) => convert_from_layer(from_display(str)),
-            name_id: 'display.layer',
+            name: { id: 'display.layer' },
         },
         marked: {
             plain: (m) => mountain_display_marked(m, 'label'),
             html: (m) => mountain_display_marked(m, 'sub'),
-            name_id: 'display.index-marked',
+            name: { id: 'display.index-marked' },
         },
     },
     ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),

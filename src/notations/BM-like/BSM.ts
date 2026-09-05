@@ -121,7 +121,7 @@ export const BSM: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
-            name_id: 'display.simple',
+            name: { id: 'display.simple' },
         },
     },
     is_limit: is_limit,

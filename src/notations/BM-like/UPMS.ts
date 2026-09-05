@@ -230,7 +230,7 @@ export const UPMS: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
-            name_id: 'display.simple',
+            name: { id: 'display.simple' },
         },
     },
     is_limit,
@@ -258,7 +258,7 @@ function partial_UPMS(n: number): NotationDefinition<Expr> {
             simple: {
                 plain: display_simple,
                 from_display: from_display_simple,
-                name_id: 'display.simple',
+                name: { id: 'display.simple' },
             },
         },
         is_limit,

@@ -445,12 +445,12 @@ export const BM4: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
-            name_id: 'display.simple',
+            name: { id: 'display.simple' },
         },
         'tri BMS': {
             plain: (e) => display(BM_to_triangular(e)),
             from_display: (str) => triangular_to_BM(from_display(str)),
-            name_id: 'display.triangular-bms',
+            name: { id: 'display.triangular-bms' },
         },
         '1Y': {
             plain: (e) => display_as_0Y(BM_to_triangular(e)),
@@ -459,7 +459,7 @@ export const BM4: NotationDefinition<Expr> = {
         'tri simple': {
             plain: (e) => display_simple(BM_to_triangular(e)),
             from_display: (str) => triangular_to_BM(from_display_simple(str)),
-            name_id: 'display.triangular-bms-simple',
+            name: { id: 'display.triangular-bms-simple' },
         },
     },
     is_limit: is_limit,
@@ -488,12 +488,12 @@ export const TriangularBM4: NotationDefinition<Expr> = {
         simple: {
             plain: display_simple,
             from_display: from_display_simple,
-            name_id: 'display.simple',
+            name: { id: 'display.simple' },
         },
         'nt BMS': {
             plain: (e) => display(triangular_to_BM(e)),
             from_display: (str) => BM_to_triangular(from_display(str)),
-            name_id: 'display.non-triangular-bms',
+            name: { id: 'display.non-triangular-bms' },
         },
         '0Y': {
             plain: (e) => display_as_0Y(triangular_to_BM(e)),
@@ -502,7 +502,7 @@ export const TriangularBM4: NotationDefinition<Expr> = {
         'nt simple': {
             plain: (e) => display_simple(triangular_to_BM(e)),
             from_display: (str) => BM_to_triangular(from_display_simple(str)),
-            name_id: 'display.non-triangular-bms-simple',
+            name: { id: 'display.non-triangular-bms-simple' },
         },
     },
     is_limit: is_limit,

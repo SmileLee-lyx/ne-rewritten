@@ -463,7 +463,7 @@ export const DEN2: NotationDefinition<Expr> = {
         'op seq': {
             plain: display_op_seq,
             from_display: from_display_op_seq,
-            name_id: 'display.op-seq',
+            name: { id: 'display.op-seq' },
         },
     },
     is_limit,

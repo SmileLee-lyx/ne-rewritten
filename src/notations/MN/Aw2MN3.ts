@@ -179,12 +179,12 @@ function expand_weak(A0: Expr, index: number, shorter: boolean = false): Expr {
 export const A_omega2_MN3: NotationDefinition<Expr> = {
     id: 'a-omega2-mn-3',
     name: 'Aω2MN3',
-    display: { plain: mountain_display, from_display, name_id: 'display.index' },
+    display: { plain: mountain_display, from_display, name: { id: 'display.index' } },
     display_equiv: {
         marked: {
             plain: (m) => mountain_display_marked(m, 'label'),
             html: (m) => mountain_display_marked(m, 'sub'),
-            name_id: 'display.index-marked',
+            name: { id: 'display.index-marked' },
         },
     },
     simple_name: 'Aω2MN3',
@@ -201,16 +201,16 @@ export const wA_omega2_MN3: NotationDefinition<Expr> = {
     id: 'weak-a-omega2-mn-3',
     name: 'weak Aω2MN3',
     category_id: 'category-hypcos-w2mn',
-    display: { plain: mountain_display, from_display, name_id: 'display.index' },
+    display: { plain: mountain_display, from_display, name: { id: 'display.index' } },
     display_equiv: {
         layer: {
             plain: (m) => mountain_display(convert_to_layer(m)),
-            name_id: 'display.layer',
+            name: { id: 'display.layer' },
         },
         marked: {
             plain: (m) => mountain_display_marked(m, 'label'),
             html: (m) => mountain_display_marked(m, 'sub'),
-            name_id: 'display.index-marked',
+            name: { id: 'display.index-marked' },
         },
     },
     simple_name: 'wAω2MN3',
