@@ -186,7 +186,7 @@ function FS(expr: Expr, index: number): Expr {
 
 export const BTBM_weak: NotationDefinition<Expr> = {
     id: 'btbm-weak',
-    name: 'weak Branching Transfinite BMS (v2)',
+    name: "weak Bubby3's Transfinite BMS (v2)",
     simple_name: 'weak BTBMS',
     category_id: 'category-bm-like',
     description: [

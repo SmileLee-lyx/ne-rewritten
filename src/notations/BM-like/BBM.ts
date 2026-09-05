@@ -115,6 +115,10 @@ export function next_layer<T extends object>(expr: ExprData<T>): ExprData<T> {
     return expr[right][top].height;
 }
 
+function is_one(expr: Expr): boolean {
+    return expr.length === 1 && expr[0].length === 0;
+}
+
 export function skip_layers<T extends object>(expr: ExprData<T>, l: number): ExprData<T> {
     for (let i = 0; i < l; i++) expr = next_layer(expr);
     return expr;
@@ -179,42 +183,6 @@ function ascend_replace(expr: Expr, r: number, diff: number, t_layer: number | u
     return result;
 }
 
-export function is_special(expr: Expr, t_layer: number): boolean {
-    if (t_layer === 0) return false;
-    let current = expr;
-    let current_left = 0;
-    for (let i = 0; i < t_layer; i++) {
-        current_left += current.length;
-        current = next_layer(current);
-    }
-    if (current[current.length - 1].length !== 1) return false;
-    const entry = current[current.length - 1][0];
-    return entry.height.length === 0 && entry.value === current_left - 1;
-}
-
-export function expand_special(expr: Expr, t_layer: number, index: number): Expr {
-    let result = expr.slice(0, -1);
-    let col = expr[expr.length - 1];
-    let result_col = col.slice(0, -1);
-    let entry = col[col.length - 1];
-    if (t_layer > 1) {
-        let new_entry = {
-            value: entry.value,
-            height: expand_special(entry.height, t_layer - 1, index),
-        };
-        result_col.push(new_entry);
-    } else {
-        let new_entry = {
-            value: entry.value,
-            height: entry.height.slice(0, -1),
-        };
-        if (result_col.length === 0) result_col.push(new_entry);
-        result_col.push(...Array<Entry>(index).fill(new_entry));
-    }
-    result.push(result_col);
-    return result;
-}
-
 export function root_appending_start(col_root: Column, r: number, col_tail: Column, t: number): number {
     let heights_root = col_root.map(({ height }) => to_height(height, r));
     let heights_tail = col_tail.slice(0, -1).map(({ height }) => to_height(height, t));
@@ -232,15 +200,20 @@ export function is_limit(expr: Expr): boolean {
     return is_infinity(expr) || (expr.length > 0 && expr[expr.length - 1].length > 0);
 }
 
+function normalize_entry(entry: Entry): Entry {
+    if (is_one(entry.height)) return { value: entry.value, height: [] };
+    return { value: entry.value, height: normalize(entry.height) };
+}
+
+function normalize(e: Expr): Expr {
+    return e.map((col) => col.map(normalize_entry));
+}
+
 function FS(expr: Expr, index: number): Expr {
     if (is_infinity(expr)) return infinity_FS(index);
     if (expr.length === 0) return expr;
     const t_layer = tail_layer(expr);
     if (t_layer < 0) return expr.slice(0, -1);
-
-    if (is_special(expr, t_layer)) {
-        return expand_special(expr, t_layer, index);
-    }
 
     const t = tail(expr, t_layer);
     const r = root(expr, t_layer);
@@ -255,10 +228,18 @@ function FS(expr: Expr, index: number): Expr {
 
     let new_tail: Expr = [];
 
+    const tail_top = col_tail[col_tail.length - 1];
+    let truncated_tail: Column;
+    if (tail_top.height.length <= 1) {
+        truncated_tail = col_tail.slice(0, -1);
+    } else {
+        truncated_tail = [...col_tail.slice(0, -1), { value: tail_top.value, height: tail_top.height.slice(0, -1) }];
+    }
+
     for (let j = index; j >= 1; j--) {
         if (ri !== expr_root.length - 1) {
             let new_tail_1 = ascend_replace(expr_root.slice(ri + 1), r, j * (t - r), t_layer - r_layer, new_tail);
-            let new_col = ascend_replace([col_tail.slice(0, -1)], r, (j - 1) * (t - r), undefined, [])[0];
+            let new_col = ascend_replace([truncated_tail], r, (j - 1) * (t - r), undefined, [])[0];
             for (let k = appending; k < col_root.length; k++) {
                 new_col.push({
                     value: col_root[k].value,
@@ -268,7 +249,7 @@ function FS(expr: Expr, index: number): Expr {
             new_tail = [new_col, ...new_tail_1];
         } else {
             if (appending === col_root.length) throw new Error('Illegal state');
-            let new_col = ascend_replace([col_tail.slice(0, -1)], r, (j - 1) * (t - r), undefined, [])[0];
+            let new_col = ascend_replace([truncated_tail], r, (j - 1) * (t - r), undefined, [])[0];
             for (let k = appending; k < col_root.length; k++) {
                 new_col.push({
                     value: col_root[k].value,
@@ -285,7 +266,7 @@ function FS(expr: Expr, index: number): Expr {
         }
     }
 
-    return ascend_replace(expr, 0, 0, t_layer, new_tail);
+    return normalize(ascend_replace(expr, 0, 0, t_layer, new_tail));
 }
 
 type DisplayType = 'plain' | 'html' | 'latex';
@@ -617,17 +598,17 @@ export function convert_from_layer(e: Expr, parsed_stack: LayerColumn[] = []): E
     return result;
 }
 
-export const BTBM: NotationDefinition<Expr> = {
-    id: 'btbm',
-    name: "Bubby3's Transfinite BMS",
-    simple_name: 'BTBMS',
-    description: [
-        { id: 'description.btbm.1' },
-        { id: 'description.btbm.2' },
-        { id: 'description.btbm.3' },
-        { id: 'description.btbm.4' },
-        { id: 'description.btbm.5' },
-    ],
+export const BBM: NotationDefinition<Expr> = {
+    id: 'bbm',
+    name: 'Branching BMS',
+    simple_name: 'BBMS',
+    // description: [
+    //     { id: 'description.btbm.1' },
+    //     { id: 'description.btbm.2' },
+    //     { id: 'description.btbm.3' },
+    //     { id: 'description.btbm.4' },
+    //     { id: 'description.btbm.5' },
+    // ],
     category_id: 'category-bm-like',
     display: {
         plain: bind2(display, 'plain'),
