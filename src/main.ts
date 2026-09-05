@@ -92,7 +92,6 @@ import { weak_omega_Y } from '@/notations/Y/weak-omega-Y.ts';
 import { TUPMS } from '@/notations/BM-like/TUPMS.ts';
 import { category_upmn } from '@/notations/MN/UPMN/categories.ts';
 import { UP2MN_v1a } from '@/notations/MN/UPMN/UP2MN-v1a.ts';
-import { BBM } from '@/notations/BM-like/BBM.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -196,7 +195,6 @@ register_category(category_bm_btl_minus1_y_nss);
 init_generator(category_bm_btl_minus1_y_nss);
 register_notation(BTBM);
 register_notation(BTBM_weak);
-register_notation(BBM);
 for (const cat of GMS_categories) {
     register_category(cat);
     if (cat.generator) init_generator(cat);
