@@ -138,6 +138,330 @@ function display_separate(e: Expr, type: DisplayType): string {
     return impl(e);
 }
 
+// ============ from_display: accepts both display (plain) and display_separate styles ============
+
+type IndexSpec = { kind: 'nat'; n: number } | { kind: 'scalar'; e: Expr } | { kind: 'list'; l: VeblenList };
+
+interface VItem {
+    v: Expr;
+    idx: IndexSpec | null;
+}
+
+function omega_of(): Expr {
+    return [2, [], one()];
+}
+
+function from_display(str: string): Expr {
+    return new VParser(str).parse_top();
+}
+
+/** 独立的递归下降解析器实例 (便于对子串(如复合索引)复用同一套函数) */
+class VParser {
+    private t: string;
+    private i: number;
+
+    constructor(text: string) {
+        this.t = text;
+        this.i = 0;
+    }
+
+    private error(): never {
+        throw new Error('Illegal input string: ' + this.t);
+    }
+
+    private skip(): void {
+        while (this.i < this.t.length && this.t[this.i] === ' ') this.i++;
+    }
+
+    private digits(): number {
+        this.skip();
+        const s = this.i;
+        while (this.i < this.t.length && this.t[this.i] >= '0' && this.t[this.i] <= '9') this.i++;
+        if (s === this.i) this.error();
+        return parseInt(this.t.substring(s, this.i), 10);
+    }
+
+    // 读取当前 '(' 起、与之配对的 ')' (含) 之前的内容, 消费到 ')' 之后
+    private read_parens(): string {
+        this.skip();
+        if (this.i >= this.t.length || this.t[this.i] !== '(') this.error();
+        let depth = 0;
+        let j = this.i;
+        for (; j < this.t.length; j++) {
+            const c = this.t[j];
+            if (c === '(') depth++;
+            else if (c === ')') {
+                depth--;
+                if (depth === 0) break;
+            }
+        }
+        if (j >= this.t.length) this.error();
+        const inner = this.t.substring(this.i + 1, j);
+        this.i = j + 1;
+        return inner;
+    }
+
+    // 序数: '+' 链; 结果用代码一致的扁平素项列表表示 ([1, atoms])
+    private ordinal(): Expr {
+        const atoms: Expr[] = [];
+        while (true) {
+            this.skip();
+            atoms.push(...this.prime_atoms());
+            this.skip();
+            if (this.i < this.t.length && this.t[this.i] === '+') {
+                this.i++;
+                continue;
+            }
+            break;
+        }
+        if (atoms.length === 1) return atoms[0];
+        return [1, atoms];
+    }
+
+    // 素项(0/n/ω/φ(…))加可选系数后缀: 'ω2' = ω+ω, 'φ(2)3' = φ(2) 重复 3 次
+    // 返回扁平素项序列 (n 为 n 个 1; 系数为 m 个该素项)
+    private prime_atoms(): Expr[] {
+        this.skip();
+        if (this.i >= this.t.length) this.error();
+        const c = this.t[this.i];
+        if (c >= '0' && c <= '9') {
+            const n = this.digits();
+            if (n === 0) return [zero()];
+            return Array<Expr>(n).fill(one());
+        }
+        let prime: Expr;
+        if (c === 'ω' || c === 'w') {
+            // 'w' 视作 'ω'
+            this.i++;
+            prime = omega_of();
+        } else if (c === 'φ' || c === 'f') {
+            // 'f' 视作 'φ'
+            this.i++;
+            this.skip();
+            if (this.i >= this.t.length || this.t[this.i] !== '(') this.error();
+            this.i++;
+            prime = this.phi_body();
+        } else {
+            this.error();
+        }
+        let mult = 1;
+        if (this.i < this.t.length && this.t[this.i] >= '0' && this.t[this.i] <= '9') {
+            const s = this.i;
+            while (this.i < this.t.length && this.t[this.i] >= '0' && this.t[this.i] <= '9') this.i++;
+            mult = parseInt(this.t.substring(s, this.i), 10);
+        }
+        return Array<Expr>(mult).fill(prime);
+    }
+
+    // '@' 之后的索引
+    private index_spec(): IndexSpec {
+        this.skip();
+        if (this.i >= this.t.length) this.error();
+        if (this.t[this.i] === '(') {
+            const inner = this.read_parens();
+            return { kind: 'list', l: new VParser(inner).index_list() };
+        }
+        if (this.t[this.i] >= '0' && this.t[this.i] <= '9') return { kind: 'nat', n: this.digits() };
+        return { kind: 'scalar', e: this.ordinal() };
+    }
+
+    // 索引列表文本: 项可以是 "值" 或 "值@索引"(索引递归), 无独立 tail;
+    // 语义等同 separate 模式: 无标号项按从右偏移 0,1,… 编号
+    index_list(): VeblenList {
+        const items: VItem[] = [];
+        while (true) {
+            this.skip();
+            if (this.i >= this.t.length) break;
+            const v = this.ordinal();
+            this.skip();
+            let idx: IndexSpec | null = null;
+            if (this.i < this.t.length && this.t[this.i] === '@') {
+                this.i++;
+                idx = this.index_spec();
+            }
+            items.push({ v, idx });
+            this.skip();
+            if (this.i < this.t.length && this.t[this.i] === ',') {
+                this.i++;
+                continue;
+            }
+            if (this.i >= this.t.length) break;
+            this.error();
+        }
+        const n = items.length;
+        const l: VeblenList = [];
+        for (let k = 0; k < n; k++) {
+            const it = items[k];
+            if (it.idx === null) {
+                const off = n - 1 - k;
+                if (is_zero(it.v)) continue;
+                l.push([list_from_nat(off), it.v]);
+            } else if (it.idx.kind === 'nat') {
+                if (is_zero(it.v)) continue;
+                l.push([list_from_nat(it.idx.n), it.v]);
+            } else if (it.idx.kind === 'scalar') {
+                l.push([this.scalar_prefix(it.idx.e, false), it.v]);
+            } else {
+                l.push([it.idx.l, it.v]);
+            }
+        }
+        return l;
+    }
+
+    // 若 e 是纯自然数(0 或若干 '1' 之和)返回其值, 否则 -1
+    private natural_value(e: Expr): number {
+        if (is_zero(e)) return 0;
+        if (is_one(e)) return 1;
+        if (e[0] === 1 && e[1].every(is_one)) return e[1].length;
+        return -1;
+    }
+
+    // 标量索引 → 前缀: 纯自然数按自然槽位编码(plain 偏移 -1; sep/索引列表不偏移), 否则复杂标量 [([], e)]
+    private scalar_prefix(e: Expr, plain: boolean): VeblenList {
+        const n = this.natural_value(e);
+        if (n >= 0) {
+            if (n === 0) {
+                if (plain) this.error();
+                return list_from_nat(0);
+            }
+            return list_from_nat(plain ? n - 1 : n);
+        }
+        const pref: VeblenList = [[[], e]];
+        return pref;
+    }
+
+    // 组装条目 (去掉零值的自然槽, 天然槽省略; 保持文本顺序)
+    private assemble(entriesSrc: { prefix: VeblenList; v: Expr }[], tail: Expr): Expr {
+        const l: VeblenList = [];
+        for (const e of entriesSrc) {
+            if (is_zero(e.v) && e.prefix.length === 0) continue;
+            l.push([e.prefix, e.v]);
+        }
+        return [2, l, tail];
+    }
+
+    // φ( 内部 (已消费 '(')
+    private phi_body(): Expr {
+        const items: VItem[] = [];
+        let tail: Expr | null = null;
+        while (true) {
+            this.skip();
+            if (this.i >= this.t.length) this.error();
+            if (this.t[this.i] === ')') {
+                this.i++;
+                break;
+            }
+            const v = this.ordinal();
+            this.skip();
+            let idx: IndexSpec | null = null;
+            if (this.i < this.t.length && this.t[this.i] === '@') {
+                this.i++;
+                idx = this.index_spec();
+            }
+            items.push({ v, idx });
+            this.skip();
+            if (this.i < this.t.length && this.t[this.i] === ',') {
+                this.i++;
+                continue;
+            }
+            if (this.i < this.t.length && this.t[this.i] === ';') {
+                this.i++;
+                tail = this.ordinal();
+                this.skip();
+                if (this.i >= this.t.length || this.t[this.i] !== ')') this.error();
+                this.i++;
+                break;
+            }
+            if (this.i < this.t.length && this.t[this.i] === ')') {
+                this.i++;
+                break;
+            }
+            this.error();
+        }
+        return this.build_phi(items, tail);
+    }
+
+    private build_phi(items: VItem[], semiTail: Expr | null): Expr {
+        const src: { prefix: VeblenList; v: Expr }[] = [];
+        if (semiTail !== null) {
+            // separate 形式: ';' 后为 tail; 各项按自然索引(右起)或无标号项偏移
+            const n = items.length;
+            for (let k = 0; k < n; k++) {
+                const it = items[k];
+                if (it.idx === null) {
+                    const off = n - 1 - k; // 右起 0
+                    src.push({ prefix: list_from_nat(off), v: it.v });
+                } else if (it.idx.kind === 'nat') {
+                    src.push({ prefix: list_from_nat(it.idx.n), v: it.v });
+                } else if (it.idx.kind === 'scalar') {
+                    src.push({ prefix: this.scalar_prefix(it.idx.e, false), v: it.v });
+                } else {
+                    src.push({ prefix: it.idx.l, v: it.v });
+                }
+            }
+            return this.assemble(src, semiTail);
+        }
+
+        // 普通形式: 末项为 tail (无标号, 或 '@0'); 无末项时 tail = 0
+        let body: VItem[] = items;
+        let tail: Expr;
+        if (items.length === 0) {
+            tail = zero();
+        } else {
+            const last = items[items.length - 1];
+            const lastIsTail =
+                last.idx === null ||
+                (last.idx.kind === 'nat' && last.idx.n === 0) ||
+                (last.idx.kind === 'list' && last.idx.l.length === 0);
+            if (lastIsTail) {
+                tail = last.v;
+                body = items.slice(0, -1);
+            } else {
+                tail = zero();
+            }
+        }
+        // 无标号项只允许出现在尾部
+        let bareSeen = false;
+        for (const it of body) {
+            if (it.idx === null) bareSeen = true;
+            else if (bareSeen) this.error();
+        }
+        const m = body.length;
+        for (let k = 0; k < m; k++) {
+            const it = body[k];
+            if (it.idx === null) {
+                // 普通自然槽: 距最右 tail 的偏移 offset+1 = 槽号, 前缀 nat(槽-1)
+                const off = m - 1 - k + 1; // >= 1
+                src.push({ prefix: list_from_nat(off - 1), v: it.v });
+            } else if (it.idx.kind === 'nat') {
+                if (it.idx.n === 0) this.error();
+                src.push({ prefix: list_from_nat(it.idx.n - 1), v: it.v });
+            } else if (it.idx.kind === 'scalar') {
+                src.push({ prefix: this.scalar_prefix(it.idx.e, true), v: it.v });
+            } else {
+                src.push({ prefix: it.idx.l, v: it.v });
+            }
+        }
+        return this.assemble(src, tail);
+    }
+
+    // 顶层: Limit | 序号 (可为 '+' 和/merge 系数)
+    parse_top(): Expr {
+        this.skip();
+        if (this.t.slice(this.i, this.i + 5) === 'Limit') {
+            this.i += 5;
+            this.skip();
+            if (this.i !== this.t.length) this.error();
+            return INFINITY;
+        }
+        if (this.i >= this.t.length) this.error();
+        const result = this.ordinal();
+        this.skip();
+        if (this.i !== this.t.length) this.error();
+        return result;
+    }
+}
+
 function zero(): Expr {
     return [0];
 }
@@ -367,12 +691,14 @@ export const VeblenPhi: NotationDefinition<Expr> = {
         plain: bind2(display, 'plain'),
         html: bind2(display, 'html'),
         latex: bind2(display, 'latex'),
+        from_display,
     },
     display_equiv: {
         separate: {
             plain: bind2(display_separate, 'plain'),
             html: bind2(display_separate, 'html'),
             latex: bind2(display_separate, 'latex'),
+            from_display,
             name: { id: 'display.veblen-separate' },
         },
     },

@@ -57,7 +57,6 @@ function display(a: Expr, top_level: boolean = true): string {
 }
 
 function from_display(str: string): Expr {
-    if (str === 'Limit') return INFINITY();
     let i = 0;
     const s = str;
 
@@ -104,6 +103,14 @@ function from_display(str: string): Expr {
         return Array.from({ length: k }, () => []);
     }
 
+    // 'Limit' 只允许作为整串输入 (带或不带前后空格)
+    skip_spaces();
+    if (s.slice(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY();
+    }
     const result = parse_list();
     skip_spaces();
     if (i !== s.length) error();

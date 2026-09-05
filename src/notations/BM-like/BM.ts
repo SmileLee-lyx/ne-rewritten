@@ -34,8 +34,8 @@ export function display(a: Expr): string {
 }
 
 export function from_display(s: string, std: boolean = false): Expr {
-    if (s === 'Limit') return INFINITY();
     s = s.trim();
+    if (s === 'Limit') return INFINITY();
     if (s === '') return [];
 
     function error(): never {

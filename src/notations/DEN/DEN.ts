@@ -46,13 +46,16 @@ function display(expr: Expr): string {
 }
 
 function from_display(str: string): Expr {
-    if (str === 'Limit') return INFINITY();
     const result: Expr = [[]];
     let i = 0;
     const s = str;
 
     function error(): never {
         throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
     }
 
     function parse_digits(): number {
@@ -64,14 +67,18 @@ function from_display(str: string): Expr {
 
     // 主体一行: '(' 值列表 ')' step (对应 display 中 expr.slice(1) 的一行)
     function parse_row(): Row {
+        skip_spaces();
         if (i >= s.length || s[i] !== '(') error();
         i++;
+        skip_spaces();
         const values: number[] = [];
         if (i < s.length && s[i] !== ')') {
             while (true) {
                 values.push(parse_digits());
+                skip_spaces();
                 if (i < s.length && s[i] === ',') {
                     i++;
+                    skip_spaces();
                     continue;
                 }
                 break;
@@ -79,22 +86,37 @@ function from_display(str: string): Expr {
         }
         if (i >= s.length || s[i] !== ')') error();
         i++;
+        skip_spaces();
         return [parse_digits()].concat(values);
     }
 
+    // 'Limit' 只允许作为整串输入 (带或不带前后空格)
+    skip_spaces();
+    if (s.slice(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY();
+    }
     // ';' 之前的为主体行, 之后的为 expr[0] (父标号列表, 可为空)
-    while (i < s.length && s[i] !== ';') {
+    while (i < s.length) {
+        skip_spaces();
+        if (i >= s.length || s[i] === ';') break;
         if (s[i] !== '(') error();
         result.push(parse_row());
     }
+    skip_spaces();
     if (i >= s.length || s[i] !== ';') error();
     i++;
+    skip_spaces();
     // expr[0]: 父标号列表, 可为空; 不允许尾逗号
     if (i < s.length) {
         while (true) {
             result[0].push(parse_digits());
+            skip_spaces();
             if (i < s.length && s[i] === ',') {
                 i++;
+                skip_spaces();
                 continue;
             }
             break;

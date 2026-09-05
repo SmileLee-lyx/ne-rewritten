@@ -51,14 +51,16 @@ var display = (expr: any) =>
               .join('');
 
 function from_display(str: string): any {
-    if (str === 'Limit') return INFINITY();
-    if (str === '') return [];
     const result: any[] = [];
     let i = 0;
     const s = str;
 
     function error(): never {
         throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
     }
 
     function parse_digits(): number {
@@ -69,22 +71,27 @@ function from_display(str: string): any {
     }
 
     function parse_entry(): any {
+        skip_spaces();
         let marked = false;
-        if (s[i] === '*') {
+        if (i < s.length && s[i] === '*') {
             marked = true;
             i++;
+            skip_spaces();
         }
         return marked ? [parse_digits(), true] : [parse_digits()];
     }
 
     // 一行: '(' 条目列表 ')' step; 每行的 row[0] 是 step, row[1..] 是 entry
     function parse_row(): any {
+        skip_spaces();
         if (i >= s.length || s[i] !== '(') error();
         i++;
+        skip_spaces();
         const entries: any[] = [];
         if (i < s.length && s[i] !== ')') {
             while (true) {
                 entries.push(parse_entry());
+                skip_spaces();
                 if (i < s.length && s[i] === ',') {
                     i++;
                     continue;
@@ -94,10 +101,21 @@ function from_display(str: string): any {
         }
         if (i >= s.length || s[i] !== ')') error();
         i++;
+        skip_spaces();
         return [parse_digits()].concat(entries);
     }
 
+    // 'Limit' 只允许作为整串输入 (带或不带前后空格)
+    skip_spaces();
+    if (s.slice(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY();
+    }
     while (i < s.length) {
+        skip_spaces();
+        if (i >= s.length) break;
         if (s[i] !== '(') error();
         result.push(parse_row());
     }

@@ -44,13 +44,16 @@ function display(expr: Expr) {
 }
 
 function from_display(str: string): Expr {
-    if (str === 'Limit') return INFINITY;
     const result: Expr = [];
     let i = 0;
     const s = str;
 
     function error(): never {
         throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
     }
 
     function parse_digits(): number {
@@ -61,21 +64,26 @@ function from_display(str: string): Expr {
     }
 
     function parse_entry(): Entry {
+        skip_spaces();
         let marked = false;
-        if (s[i] === '*') {
+        if (i < s.length && s[i] === '*') {
             marked = true;
             i++;
+            skip_spaces();
         }
         return marked ? [parse_digits(), true] : [parse_digits()];
     }
 
     function parse_row(): Row {
+        skip_spaces();
         if (i >= s.length || s[i] !== '(') error();
         i++;
+        skip_spaces();
         const entries: Entry[] = [];
-        if (i >= s.length || s[i] === ')') error();
+        if (i >= s.length || s[i] === ')') error(); // 括号内不允许为空
         while (true) {
             entries.push(parse_entry());
+            skip_spaces();
             if (i < s.length && s[i] === ',') {
                 i++;
                 continue;
@@ -84,10 +92,21 @@ function from_display(str: string): Expr {
         }
         if (i >= s.length || s[i] !== ')') error();
         i++;
+        skip_spaces();
         return [parse_digits(), entries];
     }
 
+    // 'Limit' 只允许作为整串输入 (带或不带前后空格)
+    skip_spaces();
+    if (s.slice(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY;
+    }
     while (i < s.length) {
+        skip_spaces();
+        if (i >= s.length) break;
         if (s[i] !== '(') error();
         result.push(parse_row());
     }
