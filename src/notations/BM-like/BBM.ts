@@ -618,13 +618,13 @@ export const BBM: NotationDefinition<Expr> = {
         name: { id: 'display.index' },
     },
     display_equiv: {
-        layer: {
-            plain: (e) => display(convert_to_layer(e), 'plain'),
-            html: (e) => display(convert_to_layer(e), 'html'),
-            latex: (e) => display(convert_to_layer(e), 'latex'),
-            from_display: (str) => convert_from_layer(from_display(str)),
-            name: { id: 'display.layer' },
-        },
+        // layer: {
+        //     plain: (e) => display(convert_to_layer(e), 'plain'),
+        //     html: (e) => display(convert_to_layer(e), 'html'),
+        //     latex: (e) => display(convert_to_layer(e), 'latex'),
+        //     from_display: (str) => convert_from_layer(from_display(str)),
+        //     name: { id: 'display.layer' },
+        // },
         marked: {
             plain: (e) => display_marked(e, 'plain'),
             html: (e) => display_marked(e, 'html'),
