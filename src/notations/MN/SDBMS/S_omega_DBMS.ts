@@ -386,7 +386,7 @@ function compare_dbms_vertical(v1: Vertical_DBMS, v2: Vertical_DBMS): number {
 }
 
 function dbms_vertical_increase(v: Vertical_DBMS, s: number): Vertical_DBMS {
-    if (v.length <= s) return [...Array<number>(s), 1];
+    if (v.length <= s) return [...Array<number>(s).fill(0), 1];
     const result = v.slice();
     result[s]++;
     result.fill(0, 0, s);
