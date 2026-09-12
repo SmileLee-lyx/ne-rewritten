@@ -74,6 +74,8 @@ import { UPS1_1r5 } from '@/notations/OCN/UPS1_1r5.ts';
 import { VeblenPhi } from '@/notations/Misc/Veblen.ts';
 import { category_hypcos_w2mn, category_mn } from '@/notations/MN/categories.ts';
 import { category_smile_mn } from '@/notations/MN/SMN/categories.ts';
+import { category_sdbms } from '@/notations/MN/SDBMS/categories.ts';
+import { S1DBMS } from '@/notations/MN/SDBMS/S1DBMS.ts';
 import { category_ton } from '@/notations/TON/categories.ts';
 import { category_asan } from '@/notations/aSAN/categories.ts';
 import { category_den } from '@/notations/DEN/categories.ts';
@@ -101,6 +103,7 @@ import { UP2MN_v1b } from '@/notations/MN/UPMN/UP2MN-v1b.ts';
 import { UP2MN_v1b_plus } from '@/notations/MN/UPMN/UP2MN-v1b-plus.ts';
 import { UP2DBMS_v1b_plus } from '@/notations/MN/UPMN/UP2DBMS-v1b-plus.ts';
 import { UP2DBMS_v1 } from '@/notations/MN/UPMN/UP2DBMS-v1.ts';
+import { S_omega_DBMS } from '@/notations/MN/SDBMS/S_omega_DBMS.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -221,6 +224,9 @@ register_category(category_smile_mn);
 register_notation(SA_omega2_MN);
 register_notation(S_omega2_MN);
 register_notation(S_omega_pow_omega_MN);
+register_category(category_sdbms);
+register_notation(S1DBMS);
+register_notation(S_omega_DBMS);
 register_category(category_upmn);
 register_notation(UP1MN);
 register_notation(UP2MN_v1b_plus);
