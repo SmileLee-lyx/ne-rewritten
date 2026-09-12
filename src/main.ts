@@ -105,6 +105,7 @@ import { UP2DBMS_v1b_plus } from '@/notations/MN/UPMN/UP2DBMS-v1b-plus.ts';
 import { UP2DBMS_v1 } from '@/notations/MN/UPMN/UP2DBMS-v1.ts';
 import { S_omega_DBMS } from '@/notations/MN/SDBMS/S_omega_DBMS.ts';
 import { UP1DBMS } from '@/notations/MN/UPMN/UP1DBMS.ts';
+import { UP2DBMS_v2 } from '@/notations/MN/UPMN/UP2DBMS-v2.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -232,6 +233,7 @@ register_category(category_upmn);
 register_notation(UP1MN);
 register_notation(UP2MN_v1b_plus);
 register_notation(UP2DBMS_v1);
+register_notation(UP2DBMS_v2);
 register_category(category_upmn_test);
 register_notation(UP2MN_v1a);
 register_notation(UP2MN_v1b);

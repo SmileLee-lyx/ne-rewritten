@@ -1,4 +1,11 @@
-import { anti_lex_compare, deepcopy, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
+import {
+    anti_lex_compare,
+    boolean_compare,
+    deepcopy,
+    lex_compare,
+    number_compare,
+    tuple_lex_compare,
+} from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 
@@ -14,7 +21,11 @@ function is_infinity(expr: Expr): boolean {
 }
 
 function infinity_FS(index: number): Expr {
-    return [[], [[0, Array<number>(index + 1).fill(0)]]];
+    const result: Expr = [[]];
+    for (let i = 1; i <= index; i++) {
+        result.push([[i - 1, [i - 1, i - 1]]]);
+    }
+    return result;
 }
 
 function is_limit(expr: Expr): boolean {
@@ -220,20 +231,38 @@ function merge_column(...cols: Column[]): Column {
     return merge_column(merge_column(cols[0], cols[1]), ...cols.slice(2));
 }
 
-function copy_value(value: number, r: number, offset: number): number {
-    return value >= r ? value + offset : value;
+function copy_value(value: number, r: number, offset: number, up: boolean): number {
+    return value > r || (value === r && up) ? value + offset : value;
 }
 
-function copy_height(h: Height, r: number, offset: number): Height {
-    return h.map((s) => copy_value(s, r, offset));
+function copy_height(h: Height, r: number, offset: number, up: boolean): Height {
+    return h.map((s) => copy_value(s, r, offset, up));
 }
 
-function copy_entry(entry: Entry, r: number, offset: number): Entry {
-    return [copy_value(entry[0], r, offset), copy_height(entry[1], r, offset)];
+function copy_entry(entry: Entry, r: number, offset: number, up: boolean): Entry {
+    return [copy_value(entry[0], r, offset, up), copy_height(entry[1], r, offset, up)];
 }
 
-function copy_column(col: Column, r: number, offset: number): Column {
-    return col.map((entry) => copy_entry(entry, r, offset));
+function copy_column(col: Column, r: number, offset: number, up: boolean): Column {
+    const result: Column = [];
+    for (let j = 0; j < col.length; j++) {
+        const entry = col[j];
+        const prev_height = j === 0 ? [] : col[j - 1][1];
+
+        // special treat entry with value r to preserve BMS upgrading
+        if (entry[0] === r && !up) {
+            if (entry[1].length <= 1 || (prev_height.length >= 2 && entry[1][1] === prev_height[1])) {
+                result.push([r + offset, copy_height(entry[1], r, offset, false)]);
+            } else {
+                const finite_height = prev_height.length <= 1 ? [r] : [r, prev_height[1]];
+                // upgrade finite part of this column
+                result.push([r + offset, finite_height], copy_entry(entry, r, offset, false));
+            }
+        } else {
+            result.push(copy_entry(entry, r, offset, up));
+        }
+    }
+    return result;
 }
 
 function find_index_below_height(col: Column, h: Height): number {
@@ -245,6 +274,125 @@ function find_index_below_height(col: Column, h: Height): number {
         else r = m - 1;
     }
     return l;
+}
+
+type RelColumn = RelEntry[];
+type RelValue = [boolean, number];
+type RelHeight = RelValue[];
+type RelEntry = [RelValue, RelHeight];
+
+function compare_rel_column(a: RelColumn, b: RelColumn): number {
+    return lex_compare(a, b, compare_rel_entry);
+}
+
+function compare_rel_entry(a: RelEntry, b: RelEntry): number {
+    return tuple_lex_compare(a, b, [compare_rel_value, compare_rel_height]);
+}
+
+function compare_rel_height(a: RelHeight, b: RelHeight): number {
+    return lex_compare(a, b, compare_rel_value);
+}
+
+function compare_rel_value(a: RelValue, b: RelValue): number {
+    return tuple_lex_compare(a, b, [boolean_compare, number_compare]);
+}
+
+function to_rel_value(v: number, r: number): [boolean, number] {
+    return v >= r ? [true, v - r] : [false, v];
+}
+
+function to_rel_height(h: Height, r: number): RelHeight {
+    return h.map((s) => to_rel_value(s, r));
+}
+
+function to_rel_entry(entry: Entry, r: number): RelEntry {
+    return [to_rel_value(entry[0], r), to_rel_height(entry[1], r)];
+}
+
+function to_rel_column(col: Column, r: number): RelColumn {
+    return col.map((entry) => to_rel_entry(entry, r));
+}
+
+function height_after(col: Column, r: number): Height {
+    const j = col.findLastIndex((entry) => entry[0] >= r);
+    if (j === -1) return [];
+    return col[j][1];
+}
+
+function parent_at(col: Column, h: Height): number {
+    const j = col.findIndex((entry) => compare_height(entry[1], h) >= 0);
+    if (j === -1) return -1;
+    return col[j][0];
+}
+
+function discard_after(col: Column, r: number): Column {
+    return col.filter((entry) => entry[0] <= r);
+}
+
+function compute_up(expr: Expr, r: number, h: Height): boolean[] {
+    const right = expr.length - 1;
+
+    const result: boolean[] = Array(expr.length);
+    result.fill(false, 0, r);
+    result[r] = true;
+
+    if (h.length <= 1) {
+        result.fill(true, r);
+        return result;
+    }
+
+    for (let i = r + 1; i <= right; i++) {
+        const col = expr[i];
+
+        const h0 = height_after(col, r);
+
+        if (h0.length < 2 || h0[1] < h[1]) {
+            result[i] = false;
+            continue;
+        }
+
+        const h_test = height_after(col, r + 1);
+        const threshold_height = h_test.length < 2 ? [r + 1] : [r + 1, h_test[1]];
+
+        if (compare_height(h_test, threshold_height) >= 0) {
+            result[i] = result[parent_at(col, threshold_height)];
+            continue;
+        }
+
+        const X_start = i;
+        let Y_start = right;
+        let next: number;
+        while ((next = parent_at(expr[Y_start], threshold_height)) !== r) Y_start = next;
+
+        if (Y_start <= X_start) {
+            result[i] = X_start === Y_start;
+            continue;
+        }
+
+        const X0 = discard_after(expr[X_start], r);
+        const Y0 = discard_after(expr[Y_start], r);
+        const cmp_0 = compare_column(X0, Y0);
+        if (cmp_0 !== 0) {
+            result[i] = cmp_0 > 0;
+            continue;
+        }
+
+        for (let k = 1; Y_start + k < expr.length; k++) {
+            const Xk = to_rel_column(expr[X_start + k], X_start);
+            const Yk = to_rel_column(expr[Y_start + k], Y_start);
+            const cmp = compare_rel_column(Xk, Yk);
+            if (cmp !== 0) {
+                result[i] = cmp > 0;
+                break;
+            }
+        }
+
+        if (result[i] === undefined) {
+            result[i] = true;
+        }
+    }
+
+    return result;
 }
 
 function top_separator(h: Height): number {
@@ -298,9 +446,11 @@ function expand(expr: Expr, index: number, shorter: boolean): Expr {
     const result: Expr = expr.slice(0, -1);
     result.push(merge_column(expr[right].slice(0, -1), [[r, new_h]], expr[r]));
 
+    const up = compute_up(expr, r, h);
+
     for (let w = 1; w <= index; w++) {
         for (let i = r + 1; i <= right; i++) {
-            result.push(copy_column(result[i], r, (right - r) * w));
+            result.push(copy_column(result[i], r, (right - r) * w, up[i]));
         }
     }
     if (shorter) result.pop();
@@ -449,16 +599,16 @@ function dbms_to_y_mountain(expr: Expr_DBMS): number[][] {
 }
 
 function display_as_Y(matrix: Expr_DBMS): string {
-    if (is_infinity_dbms(matrix)) return '1,ω';
+    if (is_infinity_dbms(matrix)) return '1,4';
     return dbms_to_y_mountain(matrix)
         .map((col) => col[0])
         .join(',');
 }
 
-export const S_omega_DBMS: NotationDefinition<Expr> = {
-    id: 's-omega-dbms',
-    name: 'SωDBMS',
-    category_id: 'category-sdbms',
+export const UP2DBMS_v2: NotationDefinition<Expr> = {
+    id: 'up2dbms-v2',
+    name: 'UP2DBMS v2',
+    category_id: 'category-upmn',
     display: {
         plain: (m) => display(m, 'plain'),
         html: (m) => display(m, 'html'),

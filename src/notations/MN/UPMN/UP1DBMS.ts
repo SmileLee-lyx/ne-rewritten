@@ -238,7 +238,7 @@ function parent_at(col: Column, h: number): number {
 }
 
 function discard_after(col: Column, r: number): Column {
-    return col.filter((entry) => entry[0] > r);
+    return col.filter((entry) => entry[0] <= r);
 }
 
 function compute_up(expr: Expr, r: number, h: number): boolean[] {
@@ -247,6 +247,8 @@ function compute_up(expr: Expr, r: number, h: number): boolean[] {
     const result: boolean[] = Array(expr.length);
     result.fill(false, 0, r);
     result[r] = true;
+
+    const h0 = height(expr[h]);
 
     for (let i = r + 1; i < expr.length; i++) {
         // perform UP check
@@ -260,8 +262,8 @@ function compute_up(expr: Expr, r: number, h: number): boolean[] {
 
         const h_test = height_after(col, r + 1);
 
-        if (h_test >= h) {
-            result[i] = true;
+        if (h_test >= h0) {
+            result[i] = result[parent_at(col, h0)];
             continue;
         }
 
