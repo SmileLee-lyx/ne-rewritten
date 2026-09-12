@@ -1,14 +1,14 @@
 import {
-    Mountain as Expr_nMN,
-    INFINITY as INFINITY_nMN,
-    is_infinity as is_infinity_nMN,
-    mountain_display as display_nMN,
-    mountain_display_marked as display_marked_nMN,
-    from_display as from_display_nMN,
-    MarkSpec,
-    from_display_simple as from_display_simple_nMN,
     DiagramData,
     draw_diagram_control as draw_diagram_control_nMN,
+    from_display as from_display_nMN,
+    from_display_simple as from_display_simple_nMN,
+    INFINITY as INFINITY_nMN,
+    is_infinity as is_infinity_nMN,
+    MarkSpec,
+    Mountain as Expr_nMN,
+    mountain_display as display_nMN,
+    mountain_display_marked as display_marked_nMN,
 } from '@/notations/MN/SMN/n_MN.ts';
 import {
     anti_lex_compare,

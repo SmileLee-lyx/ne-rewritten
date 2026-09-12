@@ -1,11 +1,4 @@
-import {
-    boolean_compare,
-    deepcopy,
-    lex_compare,
-    number_compare,
-    tuple_lex_compare,
-    tuple_lex_compare_by,
-} from '@/utils.ts';
+import { boolean_compare, deepcopy, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import {

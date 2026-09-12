@@ -1,12 +1,4 @@
-import {
-    anti_lex_compare,
-    anti_lex_compare_by,
-    deepcopy,
-    lex_compare,
-    lex_compare_by,
-    number_compare,
-    tuple_lex_compare,
-} from '@/utils.ts';
+import { anti_lex_compare, deepcopy, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 

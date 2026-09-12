@@ -1,13 +1,13 @@
 import {
-    Mountain as Expr_nMN,
+    entry_display as entry_display_nMN,
+    from_display as from_display_nMN,
+    from_display_simple as from_display_simple_nMN,
     INFINITY as INFINITY_nMN,
     is_infinity as is_infinity_nMN,
-    entry_display as entry_display_nMN,
+    MarkSpec,
+    Mountain as Expr_nMN,
     mountain_display as display_nMN,
     mountain_display_marked as display_marked_nMN,
-    from_display as from_display_nMN,
-    MarkSpec,
-    from_display_simple as from_display_simple_nMN,
 } from '@/notations/MN/SMN/n_MN.ts';
 import {
     anti_lex_compare,
@@ -20,7 +20,6 @@ import {
     tuple_lex_compare,
 } from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
-import { Diagram } from '@/core/diagram_types.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { draw_mountain_diagram, MountainDiagramData } from '@/notations/draw_mountain_util.ts';
 
