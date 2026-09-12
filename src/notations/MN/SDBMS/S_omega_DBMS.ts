@@ -1,6 +1,7 @@
 import {
     anti_lex_compare,
     anti_lex_compare_by,
+    deepcopy,
     lex_compare,
     lex_compare_by,
     number_compare,
@@ -67,6 +68,31 @@ function display(expr: Expr, type: DisplayType = 'plain'): string {
     return expr.map((col) => column_display(col, type)).join('');
 }
 
+/** 标记列标显示: 对每一列显式给出其列标(1-based, 自 start_index 起递增), 仿 S1DBMS 的 display_marked。
+ *  plain 把列标写在括号内并以 ':' 引导(如 (:1)(1^(1):2));
+ *  html 把列标写在括号之后作为灰色下标。 */
+export function display_marked(expr: Expr, type: DisplayType, start_index: number = 1): string {
+    if (is_infinity(expr)) return 'Limit';
+    const parts: string[] = [];
+    let index = start_index;
+    for (const col of expr) {
+        parts.push(column_display_marked(col, type, index));
+        index++;
+    }
+    return parts.join('');
+}
+
+/** 单列的标记列标显示: 空列在 plain 下写作 '(:N)'(不带 0), html 下仍保留 (0)。 */
+function column_display_marked(col: Column, type: DisplayType, index: number): string {
+    if (col.length === 0) {
+        if (type === 'html') return "(0)<sub><span style='color:#888'>" + index + '</span></sub>';
+        return '(:' + index + ')';
+    }
+    const content = col.map((entry) => entry_display(entry, type)).join(',');
+    if (type === 'html') return '(' + content + ")<sub><span style='color:#888'>" + index + '</span></sub>';
+    return '(' + content + ':' + index + ')';
+}
+
 /** 反解析(手写递归下降, 不用正则)。语法与 display 的 plain 产物一致:
  *  若干列 '(...)' 依次拼接, 空列为 '(0)', 项为 'v^(s1,s2,…)'。
  *  行高在显示时按 1-based 且反序(见 entry_display), 故解析时反向还原: 先减一, 再反序。 */
@@ -80,6 +106,15 @@ export function from_display(str: string): Expr {
 
     function skip_spaces(): void {
         while (i < s.length && s[i] === ' ') i++;
+    }
+
+    /** 跳过 display_marked 写入的列标(如 ':2'), 其值被舍弃(列标即列的位置)。 */
+    function skip_index(): void {
+        if (i < s.length && s[i] === ':') {
+            i++;
+            skip_spaces();
+            while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        }
     }
 
     function parse_number(): number {
@@ -127,7 +162,7 @@ export function from_display(str: string): Expr {
 
         const entries: Entry[] = [];
         skip_spaces();
-        if (i < s.length && s[i] !== ')') {
+        if (i < s.length && s[i] !== ')' && s[i] !== ':') {
             entries.push(parse_entry());
             skip_spaces();
             while (i < s.length && s[i] === ',') {
@@ -139,6 +174,9 @@ export function from_display(str: string): Expr {
             }
         }
 
+        skip_spaces();
+        skip_index();
+        skip_spaces();
         if (i >= s.length || s[i] !== ')') error();
         i++;
         // 删去列尾表示 0 的项(显示 0 ↔ 内部 v = -1): 空列的显示形式为 (0)
@@ -322,6 +360,25 @@ function dbms_display(expr: Expr_DBMS): string {
     return expr.map((col) => dbms_column_display(col)).join('');
 }
 
+/** dbms 的单列标记列标显示: plain 在括号内以 ':' 追加列标(空列写作 '(0:N)'), html 作灰色下标写在括号之后。 */
+function dbms_column_display_marked(col: Column_DBMS, index: number, type: DisplayType): string {
+    const content = col.length === 0 ? '0' : col.map((entry) => dbms_entry_display(entry)).join('');
+    if (type === 'html') return '(' + content + ")<sub><span style='color:#888'>" + index + '</span></sub>';
+    return '(' + content + ':' + index + ')';
+}
+
+/** dbms 的标记列标显示: 列标自 start_index 起(1-based)。 */
+export function dbms_display_marked(expr: Expr_DBMS, type: DisplayType = 'plain', start_index: number = 1): string {
+    if (is_infinity_dbms(expr)) return 'Limit';
+    const parts: string[] = [];
+    let index = start_index;
+    for (const col of expr) {
+        parts.push(dbms_column_display_marked(col, index, type));
+        index++;
+    }
+    return parts.join('');
+}
+
 type Vertical_DBMS = number[];
 
 function compare_dbms_vertical(v1: Vertical_DBMS, v2: Vertical_DBMS): number {
@@ -357,6 +414,29 @@ function dbms_find_index_below_row(V: Vertical_DBMS[], v: Vertical_DBMS): number
     return l;
 }
 
+function dbms_compute_parent(expr: Expr_DBMS, V: Vertical_DBMS[][], [i, j]: [number, number]): [number, number] {
+    const pi = expr[i][j][0];
+    const pj = dbms_find_index_below_row(V[pi], V[i][j]);
+    return [pi, pj];
+}
+
+export function convert_dbms_to_layer(om: Expr_DBMS): Expr_DBMS {
+    if (is_infinity_dbms(om)) return om;
+
+    const V = om.map(dbms_column_verticals);
+
+    const dm = deepcopy(om);
+    for (let i = 0; i < dm.length; i++) {
+        const column = dm[i];
+        for (let j = 0; j < column.length; j++) {
+            const [pi, pj] = dbms_compute_parent(om, V, [i, j]);
+            const entry = column[j];
+            entry[0] = pj === om[pi].length ? 0 : 1 + dm[pi][pj][0];
+        }
+    }
+    return dm;
+}
+
 function dbms_to_y_mountain(expr: Expr_DBMS): number[][] {
     const V = expr.map(dbms_column_verticals);
     const result: number[][] = [];
@@ -364,8 +444,7 @@ function dbms_to_y_mountain(expr: Expr_DBMS): number[][] {
         result[i] = [];
         result[i][expr[i].length] = 1;
         for (let j = expr[i].length - 1; j >= 0; j--) {
-            const pi = expr[i][j][0];
-            const pj = dbms_find_index_below_row(V[pi], V[i][j]);
+            const [pi, pj] = dbms_compute_parent(expr, V, [i, j]);
             result[i][j] = result[pi][pj] + result[i][j + 1];
         }
     }
@@ -390,8 +469,24 @@ export const S_omega_DBMS: NotationDefinition<Expr> = {
         name: { id: 'display.index' },
     },
     display_equiv: {
-        DBMS: {
+        marked: {
+            plain: (m) => display_marked(m, 'plain'),
+            html: (m) => display_marked(m, 'html'),
+            from_display,
+            name: { id: 'display.index-marked' },
+        },
+        dbms: {
             plain: (m) => dbms_display(convert_to_dbms(m)),
+            name: { id: 'display.dbms' },
+        },
+        'marked dbms': {
+            plain: (m) => dbms_display_marked(convert_to_dbms(m), 'plain'),
+            html: (m) => dbms_display_marked(convert_to_dbms(m), 'html'),
+            name: { id: 'display.marked-dbms' },
+        },
+        'layered dbms': {
+            plain: (m) => dbms_display(convert_dbms_to_layer(convert_to_dbms(m))),
+            name: { id: 'display.layered-dbms' },
         },
         Y: {
             plain: (m) => display_as_Y(convert_to_dbms(m)),
