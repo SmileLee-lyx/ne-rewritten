@@ -642,7 +642,7 @@ export const UP2DBMS_v2: NotationDefinition<Expr> = {
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     is_limit,
     compare,
-    credit_text_id: 'credit.s-omega-dbms',
+    credit_text_id: 'credit.up2dbms-v2',
 
     init: () => [INFINITY, [[]], []],
 };
