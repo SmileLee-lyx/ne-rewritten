@@ -1,0 +1,21 @@
+# 行尾策略: 文本文件在仓库与工作区统一使用 LF。
+# 该设置优先级高于 core.autocrlf(Windows 上 Git 安装默认 true),
+# 因此可消除 "LF will be replaced by CRLF the next time Git touches it" 提示,
+# 并保证各平台检出的行尾一致。
+* text=auto eol=lf
+
+# 二进制文件: 不做行尾转换, 也不参与文本 diff/merge
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.xlsx binary
+*.xls binary
