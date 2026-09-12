@@ -313,6 +313,4 @@ export const UP1MN: NotationDefinition<Expr> = {
     credit_text_id: 'credit.up1mn',
 
     init: () => [INFINITY, []],
-
-    debug_verification,
 };
