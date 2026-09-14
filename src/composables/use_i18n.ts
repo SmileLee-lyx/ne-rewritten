@@ -220,6 +220,9 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up2dbms-v1.1': '在 v1b+ 的基础上, 重新加入了所有 BMS 提升.',
         'description.up2dbms-v1.2':
             'UP1Y v1 为有 BMS 提升而无 Y 提升的 1Y 版本, 预期与 TBMS 对应良好, 且正确实现了 IIIY 的预期.',
+        'description.up2dbms-v1c.1': '此版本为无 BMS 提升, 亦无 Y 提升的 1Y, 以 1,3,9 为极限.',
+        'description.up2dbms-v1c.2': '对 UP1Y v1b+ 进行修改, 预期使得其 UP 判定的语义与 UP2MN v1b+ 一致.',
+        'description.up2dbms-v1c.3': '预期此版本与 TUPMS 对应良好.',
         'diagram.den.offset': '起始偏移',
         'diagram.den.offset-x': '横向偏移',
         'diagram.den.max-display': '最大显示行数',
@@ -496,6 +499,11 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up2dbms-v1.1': 'Based on v1b+, all BMS elevation is added back.',
         'description.up2dbms-v1.2':
             'UP1Y v1 is the 1Y version with BMS elevation but no Y elevation, expected to correspond well with TBMS, and correctly realizes the expectations of IIIY.',
+        'description.up2dbms-v1c.1':
+            'This version is the 1Y with neither BMS elevation nor Y elevation, taking 1,3,9 as its limit.',
+        'description.up2dbms-v1c.2':
+            'It is obtained by modifying UP1Y v1b+, with the expectation that its UP decision semantics agree with those of UP2MN v1b+.',
+        'description.up2dbms-v1c.3': 'This version is expected to correspond well with TUPMS.',
         'diagram.den.offset': 'Start offset',
         'diagram.den.offset-x': 'Horizontal offset',
         'diagram.den.max-display': 'Max display rows',
