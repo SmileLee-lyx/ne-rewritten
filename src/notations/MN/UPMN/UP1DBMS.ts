@@ -248,29 +248,38 @@ function compute_up(expr: Expr, r: number, h: number): boolean[] {
     result.fill(false, 0, r);
     result[r] = true;
 
-    const h0 = height(expr[h]);
-
     for (let i = r + 1; i < expr.length; i++) {
         // perform UP check
 
         let col = expr[i];
 
-        if (height_after(col, r) < h) {
+        let h_root = height_after(col, r);
+
+        if (h_root < h) {
             result[i] = false;
             continue;
         }
 
-        const h_test = height_after(col, r + 1);
+        const h_proj = height_after(col, r + 1);
 
-        if (h_test >= h0) {
-            result[i] = result[parent_at(col, h0)];
+        if (h_proj >= h) {
+            result[i] = result[parent_at(col, h)];
+            continue;
+        }
+
+        const p_proj = parent_at(col, h_proj);
+        if (!result[p_proj]) {
+            result[i] = false;
             continue;
         }
 
         const X_start = i;
         let Y_start = right;
-        let next: number;
-        while ((next = parent_at(expr[Y_start], h_test)) !== r) Y_start = next;
+
+        {
+            let next: number;
+            while ((next = parent_at(expr[Y_start], h_proj + 1)) !== r) Y_start = next;
+        }
 
         if (Y_start <= X_start) {
             result[i] = X_start === Y_start;

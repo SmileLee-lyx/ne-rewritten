@@ -66,56 +66,54 @@ function compute_up(expr: Expr, r: number, b: number): boolean[] {
     result[r] = true;
 
     for (let i = r + 1; i < expr.length; i++) {
-        for (let j = 0; j <= b; j++) {
-            if (j >= expr.length) {
-                result[i] = false;
-            }
-            if (j === b) {
-                result[i] = result[b === 0 ? i - 1 : expr[i][b - 1]];
-            }
-            if (expr[i][j] < r) {
-                result[i] = false;
+        const col = expr[i];
+
+        if (col.length <= b) {
+            result[i] = false;
+            continue;
+        }
+
+        if (col[b] !== r) {
+            result[i] = result[col[b]];
+            continue;
+        }
+
+        const j = col.findIndex((v) => v === r);
+        if (j > 0 && !result[col[j - 1]]) {
+            result[i] = false;
+            continue;
+        }
+
+        // perform UP check
+        const X_start = i;
+        let Y_start = right;
+        while (expr[Y_start][j] !== r) Y_start = expr[Y_start][j];
+
+        if (Y_start <= X_start) {
+            result[i] = X_start === Y_start;
+            continue;
+        }
+
+        const X0 = expr[X_start].slice(j);
+        const Y0 = expr[Y_start].slice(j);
+        const cmp_0 = lex_compare(X0, Y0, number_compare);
+        if (cmp_0 !== 0) {
+            result[i] = cmp_0 > 0;
+            continue;
+        }
+
+        for (let k = 1; Y_start + k < expr.length; k++) {
+            const Xk = to_rel_column(expr[X_start + k], X_start);
+            const Yk = to_rel_column(expr[Y_start + k], Y_start);
+            const cmp = compare_rel_column(Xk, Yk);
+            if (cmp !== 0) {
+                result[i] = cmp > 0;
                 break;
             }
-            if (expr[i][j] > r) {
-                continue;
-            }
+        }
 
-            // perform UP check
-            do {
-                const X_start = i;
-                let Y_start = right;
-                while (expr[Y_start][j] !== r) Y_start = expr[Y_start][j];
-
-                if (Y_start <= X_start) {
-                    result[i] = X_start === Y_start;
-                    break;
-                }
-
-                const X0 = expr[X_start].slice(j);
-                const Y0 = expr[Y_start].slice(j);
-                const cmp_0 = lex_compare(X0, Y0, number_compare);
-                if (cmp_0 !== 0) {
-                    result[i] = cmp_0 > 0;
-                    break;
-                }
-
-                for (let k = 1; Y_start + k < expr.length; k++) {
-                    const Xk = to_rel_column(expr[X_start + k], X_start);
-                    const Yk = to_rel_column(expr[Y_start + k], Y_start);
-                    const cmp = compare_rel_column(Xk, Yk);
-                    if (cmp !== 0) {
-                        result[i] = cmp > 0;
-                        break;
-                    }
-                }
-
-                if (result[i] === undefined) {
-                    result[i] = true;
-                    break;
-                }
-            } while (false);
-            break;
+        if (result[i] === undefined) {
+            result[i] = true;
         }
     }
 

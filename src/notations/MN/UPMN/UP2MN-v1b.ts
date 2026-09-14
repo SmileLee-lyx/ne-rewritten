@@ -215,49 +215,50 @@ function compute_up_1mn(expr: Expr, P: Position[][], [Ri, Rj]: Position): boolea
             continue;
         }
 
-        const p = P[i][Rj - 1][0];
-        if (p !== Ri) {
-            result[i] = result[p];
+        if (P[i][Rj][0] !== Ri) {
+            result[i] = result[P[i][Rj][0]];
+            continue;
+        }
+
+        const j = col.findIndex((entry) => entry[0] === Ri);
+        if (j > 0 && !result[P[i][j - 1][0]]) {
+            result[i] = false;
             continue;
         }
 
         // perform UP check
-        do {
-            const X_start = i;
-            let Y_start = right;
-            const j = col.findIndex((entry) => entry[0] === Ri);
-            while (P[Y_start][j][0] !== Ri) {
-                Y_start = P[Y_start][j][0];
-            }
+        const X_start = i;
+        let Y_start = right;
+        while (P[Y_start][j][0] !== Ri) {
+            Y_start = P[Y_start][j][0];
+        }
 
-            if (Y_start <= X_start) {
-                result[i] = X_start === Y_start;
+        if (Y_start <= X_start) {
+            result[i] = X_start === Y_start;
+            continue;
+        }
+
+        const X0 = expr[X_start].slice(j);
+        const Y0 = expr[Y_start].slice(j);
+        const cmp_0 = column_compare(X0, Y0);
+        if (cmp_0 !== 0) {
+            result[i] = cmp_0 > 0;
+            continue;
+        }
+
+        for (let k = 1; Y_start + k < expr.length; k++) {
+            const Xk = to_rel_column(expr[X_start + k], X_start);
+            const Yk = to_rel_column(expr[Y_start + k], Y_start);
+            const cmp = compare_rel_column(Xk, Yk);
+            if (cmp !== 0) {
+                result[i] = cmp > 0;
                 break;
             }
+        }
 
-            const X0 = expr[X_start].slice(j);
-            const Y0 = expr[Y_start].slice(j);
-            const cmp_0 = column_compare(X0, Y0);
-            if (cmp_0 !== 0) {
-                result[i] = cmp_0 > 0;
-                break;
-            }
-
-            for (let k = 1; Y_start + k < expr.length; k++) {
-                const Xk = to_rel_column(expr[X_start + k], X_start);
-                const Yk = to_rel_column(expr[Y_start + k], Y_start);
-                const cmp = compare_rel_column(Xk, Yk);
-                if (cmp !== 0) {
-                    result[i] = cmp > 0;
-                    break;
-                }
-            }
-
-            if (result[i] === undefined) {
-                result[i] = true;
-                break;
-            }
-        } while (false);
+        if (result[i] === undefined) {
+            result[i] = true;
+        }
     }
 
     return result;
