@@ -1,6 +1,6 @@
 import { append_sibling, get_bound, prepend_child, TreeNode } from '@/core/tree.ts';
 import { FsTrialExpansionError } from '@/core/errors.ts';
-import { NotationDefinition, resolve_display } from '@/notation-definition.ts';
+import { NotationDefinition, resolve_display, run_debug_verification } from '@/notation-definition.ts';
 
 /**
  * "试展开次数过多"守卫阈值(模块级, 由 main.ts watch settings.max_find_fs 同步)。
@@ -90,16 +90,14 @@ function expand_single<T>(node: TreeNode<T>, ctx: ExpandCtx<T>, as_sibling: bool
     }
 
     // debug_verification(仅该记号定义时生效): 校验失败仅打印警告, 节点照常创建。
+    // 单个函数与 record 形态都支持; record 形态会额外打印所有未通过的字段名。
     if (notation.debug_verification) {
-        let verified = false;
-        try {
-            verified = notation.debug_verification(result_expr);
-        } catch {
-            verified = false;
-        }
-        if (!verified) {
+        const { passed, failed } = run_debug_verification(notation.debug_verification, result_expr);
+        if (!passed) {
             console.warn(
-                '[debug_verification] 展开生成的节点未通过校验(仍已创建): ' +
+                '[debug_verification] 展开生成的节点未通过校验(仍已创建)' +
+                    (failed.length > 0 ? ' [未通过: ' + failed.join(', ') + ']' : '') +
+                    ': ' +
                     resolve_display(notation.display).plain(result_expr),
             );
         }

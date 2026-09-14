@@ -1,4 +1,4 @@
-import { NotationDefinition } from '@/notation-definition.ts';
+import { NotationDefinition, run_debug_verification } from '@/notation-definition.ts';
 
 export interface FsState {
     variant: string;
@@ -54,14 +54,13 @@ export function init_dataset<T>(notation: NotationDefinition<T>): TreeNode<T> {
         const child = create_node(exprs[i], root, i);
         // debug_verification: 初始根节点也校验(仅 console.warn, 不弹窗; 展开新节点时才弹窗)
         if (notation.debug_verification) {
-            let verified = false;
-            try {
-                verified = notation.debug_verification(child.expr);
-            } catch {
-                verified = false;
-            }
-            if (!verified) {
-                console.warn('[debug_verification] init node failed:', child.expr);
+            const { passed, failed } = run_debug_verification(notation.debug_verification, child.expr);
+            if (!passed) {
+                console.warn(
+                    '[debug_verification] init node failed:' +
+                        (failed.length > 0 ? ' [未通过: ' + failed.join(', ') + ']' : ''),
+                    child.expr,
+                );
             }
         }
         root.children.push(child);

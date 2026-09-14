@@ -1,5 +1,8 @@
 export type NotationDisplay<T> = (a: T) => string;
 
+/** 调试校验函数: 输入表达式, 返回是否通过。 */
+export type TestFunc<T> = (expr: T) => boolean;
+
 export type NotationDisplaySpec<T> =
     | NotationDisplay<T>
     | {
@@ -30,9 +33,11 @@ export interface NotationDefinition<T> {
     /**
      * Debug 校验器(仅调试用): 存在时, 每次展开创建新节点都会对该表达式运行;
      * 返回 false 时仅在控制台打印警告, 节点照常创建。
+     * 可写单个 TestFunc, 也可写 Record<string, TestFunc<T>>——后者会运行其中全部校验函数,
+     * 并在未通过时额外打印所有未通过的字段名。
      * 每次建节点都有调用开销, 正式发布(或分发给他人)前请删除该字段。
      */
-    debug_verification?: (a: T) => boolean;
+    debug_verification?: TestFunc<T> | Record<string, TestFunc<T>>;
 }
 
 export interface NotationCategoryGenerator {

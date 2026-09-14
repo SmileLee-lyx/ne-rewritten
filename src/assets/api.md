@@ -32,7 +32,7 @@ export interface NotationDefinition<T> {
 
     debug?: Record<string, any>;
 
-    debug_verification?: (a: T) => boolean;
+    debug_verification?: TestFunc<T> | Record<string, TestFunc<T>>;
 }
 ```
 `T` 为记号的表达式类型.
@@ -169,12 +169,28 @@ type NotationDisplaySpec<T> =
 ### debug_verification
 
 ```ts
-    debug_verification?: (a: T) => boolean;
+export type TestFunc<T> = (expr: T) => boolean;
+
+    debug_verification?: TestFunc<T> | Record<string, TestFunc<T>>;
 ```
 
 `debug_verification` 可选字段为调试校验器: 若定义了该字段, 每次展开创建新节点时,
-都会对新生成的表达式调用该函数. 若返回 `false`, 仅会在控制台打印警告, 节点仍会正常创建,
+都会对新生成的表达式运行校验. 若未通过, 仅会在控制台打印警告, 节点仍会正常创建,
 便于在手动展开表达式树时快速校验展开是否正确.
+
+该字段有两种写法:
+
+- **单个函数**: 直接写一个 `TestFunc<T>`, 行为与以往一致;
+- **record**: 写 `Record<string, TestFunc<T>>`(字段名可自由取, 如 `{ 基本列正确, 提升对齐 }`),
+  此时会运行其中的**全部**校验函数, 并在未通过时**额外打印所有未通过的字段名**,
+  便于快速定位是哪一项校验不过, 例如:
+
+```ts
+    debug_verification: {
+        'UP 判定': (e) => check_up(e),
+        '基本列': (e) => check_fs(e),
+    },
+```
 
 > **注意**: 该字段仅供调试使用, 对每个新建节点都有额外调用开销;
 > 在正式发布(或把记号分发给他人)之前, 建议删除该字段以减少性能开销.

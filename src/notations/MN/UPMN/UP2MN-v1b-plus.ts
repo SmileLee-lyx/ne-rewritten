@@ -219,9 +219,14 @@ function compute_up_1mn(expr: Expr, P: Position[][], [Ri, Rj]: Position): boolea
         }
 
         const j = col.findIndex((entry) => entry[0] === Ri);
-        if (j > 0 && !result[P[i][j - 1][0]]) {
-            result[i] = false;
-            continue;
+        if (j > 0) {
+            let p = i;
+            while (P[p][j - 1][0] !== Ri) p = P[p][j - 1][0];
+
+            if (!result[p]) {
+                result[i] = false;
+                continue;
+            }
         }
 
         // perform UP check

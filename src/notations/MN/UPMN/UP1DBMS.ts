@@ -1,6 +1,7 @@
 import { boolean_compare, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import { UP1MN } from '@/notations/MN/UPMN/UP1MN.ts';
 
 type Entry = [number, number];
 type Column = Entry[];
@@ -267,10 +268,15 @@ function compute_up(expr: Expr, r: number, h: number): boolean[] {
             continue;
         }
 
-        const p_proj = parent_at(col, h_proj);
-        if (!result[p_proj]) {
-            result[i] = false;
-            continue;
+        if (h_proj >= 0) {
+            let p_proj = i;
+            let next: number;
+            while ((next = parent_at(expr[p_proj], h_proj)) !== r) p_proj = next;
+
+            if (!result[p_proj]) {
+                result[i] = false;
+                continue;
+            }
         }
 
         const X_start = i;
@@ -436,6 +442,13 @@ function display_as_Y(matrix: Expr_DBMS): string {
     return dbms_to_Y_mountain(matrix)
         .map((col) => col[0])
         .join(',');
+}
+
+function verify_up1mn(expr: Expr): boolean {
+    if (is_infinity(expr)) return true;
+    const FS_up1dbms = convert_to_dbms(UP1DBMS.FS(expr, 3));
+    const FS_up1mn = UP1MN.FS(convert_to_dbms(expr), 3);
+    return UP1MN.compare(FS_up1dbms, FS_up1mn) === 0;
 }
 
 export const UP1DBMS: NotationDefinition<Expr> = {

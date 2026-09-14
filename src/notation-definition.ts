@@ -140,6 +140,42 @@ export interface DiagramControl<T, DataType> {
     handle_action?: (data: DataType, action: DiagramAction) => DataType | null;
 }
 
+/** 调试校验函数: 输入表达式, 返回是否通过。 */
+export type TestFunc<T> = (expr: T) => boolean;
+
+/**
+ * 运行 debug_verification 校验器。
+ * - 单个函数: 等价于直接调用(未通过时 failed 为空数组, 与原行为一致);
+ * - record 形态: 运行其中的**全部**校验函数, 并返回未通过的字段名列表(便于定位是哪一项不过)。
+ * 校验函数抛异常一律视为未通过。
+ */
+export function run_debug_verification<T>(
+    verification: TestFunc<T> | Record<string, TestFunc<T>> | undefined,
+    expr: T,
+): { passed: boolean; failed: string[] } {
+    if (verification === undefined) return { passed: true, failed: [] };
+
+    if (typeof verification === 'function') {
+        try {
+            return { passed: verification(expr), failed: [] };
+        } catch {
+            return { passed: false, failed: [] };
+        }
+    }
+
+    const failed: string[] = [];
+    for (const name of Object.keys(verification)) {
+        let passed = false;
+        try {
+            passed = verification[name](expr);
+        } catch {
+            passed = false;
+        }
+        if (!passed) failed.push(name);
+    }
+    return { passed: failed.length === 0, failed };
+}
+
 export interface NotationDefinition<T> {
     id: string;
     name: TextSpec;
@@ -163,11 +199,13 @@ export interface NotationDefinition<T> {
     debug?: Record<string, any>;
 
     /**
-     * Debug 校验器(可选): 存在时, expander 每生成一个新树节点都会对该表达式运行本函数;
+     * Debug 校验器(可选): 存在时, expander 每生成一个新树节点都会对该表达式运行本校验;
      * 返回 false 时仅在控制台打印警告(节点照常创建)。
+     * 可写单个函数, 也可写 `Record<string, TestFunc<T>>`——后者会运行其中全部校验函数,
+     * 并在未通过时额外打印所有未通过的字段名。
      * 仅供"手动展开表达式树做快速校验"这类调试用途; 未定义时完全无开销。
      */
-    debug_verification?: (a: T) => boolean;
+    debug_verification?: TestFunc<T> | Record<string, TestFunc<T>>;
 }
 
 export interface NotationCategoryGenerator {

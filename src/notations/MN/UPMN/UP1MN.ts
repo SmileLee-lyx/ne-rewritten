@@ -79,9 +79,14 @@ function compute_up(expr: Expr, r: number, b: number): boolean[] {
         }
 
         const j = col.findIndex((v) => v === r);
-        if (j > 0 && !result[col[j - 1]]) {
-            result[i] = false;
-            continue;
+        if (j > 0) {
+            let p = i;
+            while (expr[p][j - 1] !== r) p = expr[p][j - 1];
+
+            if (!result[p]) {
+                result[i] = false;
+                continue;
+            }
         }
 
         // perform UP check
@@ -248,14 +253,17 @@ const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     handle_action: draw_diagram_control_nMN.handle_action,
 };
 
-function debug_verification(e: Expr): boolean {
+function to_upms(expr: Expr): number[][] {
+    return convert_to_layer(expr).map((col) => col.map((v) => v + 1));
+}
+
+function verify_layer_reversible(e: Expr): boolean {
     if (is_infinity(e)) return true;
+    return compare(e, convert_from_layer(convert_to_layer(e))) === 0;
+}
 
-    if (compare(e, convert_from_layer(convert_to_layer(e))) !== 0) return false;
-
-    function to_upms(expr: Expr): number[][] {
-        return convert_to_layer(expr).map((col) => col.map((v) => v + 1));
-    }
+function verify_with_upms(e: Expr): boolean {
+    if (is_infinity(e)) return true;
 
     const e_upms = to_upms(e);
     const e2 = UP1MN.FS(e, 2);
