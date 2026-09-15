@@ -1,5 +1,16 @@
 export type Comparator<T> = (a: T, b: T) => number;
 
+export function compare_undefined_last<T>(a: T | undefined, b: T | undefined, cmp: Comparator<T>): number {
+    if (a === undefined || b === undefined) {
+        return boolean_compare(a === undefined, b === undefined);
+    }
+    return cmp(a, b);
+}
+
+export function compare_undefined_last_by<T>(cmp: Comparator<T>): Comparator<T | undefined> {
+    return (a, b) => compare_undefined_last(a, b, cmp);
+}
+
 export function number_compare(a: number, b: number): number {
     return a === b ? 0 : a < b ? -1 : 1;
 }
