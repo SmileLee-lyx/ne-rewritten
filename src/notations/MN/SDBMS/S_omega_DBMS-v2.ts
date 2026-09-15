@@ -9,6 +9,7 @@ import {
 } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import { omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
 
 type HeightEntry = [number | undefined, number | undefined];
 type Height = HeightEntry[];
@@ -299,7 +300,7 @@ function copy_height_entry([p, v]: HeightEntry, r: number, offset: number): Heig
 }
 
 function copy_height(h: Height, r: number, offset: number): Height {
-    return h.map(([p, v]) => [p, copy_value(v, r, offset)]);
+    return h.map((he) => copy_height_entry(he, r, offset));
 }
 
 function copy_entry(entry: Entry, r: number, offset: number): Entry {
@@ -310,30 +311,9 @@ function copy_column(col: Column, r: number, offset: number): Column {
     return col.map((entry) => copy_entry(entry, r, offset));
 }
 
-function find_index_below_height(col: Column, h: Height): number {
-    let l = 0,
-        r = col.length;
-    while (l < r) {
-        const m = (l + r + 1) >> 1;
-        if (compare_height(h, col[m - 1][1]) > 0) l = m;
-        else r = m - 1;
-    }
-    return l;
-}
-
 function top_separator(h: Height): number {
     if (h[h.length - 1][1] === undefined) return h[h.length - 1][0]! + 1;
     return 0;
-}
-
-function height_value_at(h: Height, p: number): number | undefined {
-    const j = h.findLastIndex(([q]) => q === undefined || q >= p);
-    if (j === -1) return -1;
-    return h[j][1];
-}
-
-function height_above_pos(h: Height, p: number): Height {
-    return h.filter(([q]) => q === undefined || q >= p);
 }
 
 function height_fill(h: Height, p: number, v: number | undefined): Height {
@@ -343,10 +323,6 @@ function height_fill(h: Height, p: number, v: number | undefined): Height {
         new_h.push([p, v]);
     }
     return new_h;
-}
-
-function height_coincide_above(h1: Height, h2: Height, p: number): boolean {
-    return compare_height(height_above_pos(h1, p), height_above_pos(h2, p)) === 0;
 }
 
 function compute_new_height(h: Height, expr: Expr, r: number): Height {
@@ -366,18 +342,23 @@ function compute_new_height(h: Height, expr: Expr, r: number): Height {
     } else {
         const col_rh = expr[v];
         const hj = col_rh.findIndex(([, hv]) => compare_height(h, hv) <= 0);
-        let new_value: number;
-        if (hj > 0 && height_coincide_above(col_rh[hj - 1][1], h, p + 1)) {
-            new_value = height_value_at(col_rh[hj - 1][1], p)!;
+
+        if (hj === -1) {
+            new_h = height(col_rh);
         } else {
-            new_value = col_rh[hj][0];
-        }
-        new_h = height_fill(new_h, p, new_value);
-        if (p > 0) {
-            new_h = height_fill(new_h, p - 1, undefined);
+            const new_value = col_rh[hj][0];
+            new_h = height_fill(new_h, p, new_value);
+            if (p > 0) {
+                new_h = height_fill(new_h, p - 1, undefined);
+            }
+            if (hj > 0) {
+                const lower = hj > 0 ? col_rh[hj - 1][1] : [];
+                if (compare_height(lower, new_h) > 0) {
+                    new_h = lower;
+                }
+            }
         }
     }
-
     return new_h;
 }
 
@@ -555,9 +536,28 @@ function display_as_Y(matrix: Expr_DBMS): string {
         .join(',');
 }
 
-export const S_omega_DBMS_v2: NotationDefinition<Expr> = {
+function to_y_sequence(expr: Expr): number[] {
+    return dbms_to_y_mountain(convert_to_dbms(expr)).map((col) => col[0]);
+}
+
+function verify_with_weak_omega_y(expr: Expr): boolean {
+    if (is_infinity(expr)) return true;
+
+    const index = 3;
+    const y_seq = to_y_sequence(expr);
+    const mine = to_y_sequence(S_omega_DBMS.FS(expr, index));
+    const theirs = omega_Y_weak.FS(y_seq, index);
+
+    const result = omega_Y_weak.compare(mine, theirs) === 0;
+    if (!result) {
+        console.log(mine, theirs);
+    }
+    return result;
+}
+
+export const S_omega_DBMS: NotationDefinition<Expr> = {
     id: 's-omega-dbms-v2',
-    name: 'SωDBMS v2',
+    name: 'SωDBMS',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),
@@ -593,6 +593,11 @@ export const S_omega_DBMS_v2: NotationDefinition<Expr> = {
     is_limit,
     compare,
     credit_text_id: 'credit.s-omega-dbms',
+
+    /** 调试校验: 见文件中的 verify_with_weak_omega_y。正式提交时可移除本行, 函数本身保留。 */
+    debug_verification: {
+        verify_with_weak_omega_y,
+    },
 
     init: () => [INFINITY, [[]], []],
 };

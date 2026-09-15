@@ -6,3 +6,9 @@ export const category_sdbms: NotationCategoryDefinition = {
     simple_name: 'SDBMS',
     parent_id: 'category-mn',
 };
+
+export const category_sdbms_test: NotationCategoryDefinition = {
+    id: 'category-sdbms-test',
+    name: { id: 'category-name.sdbms-test' },
+    parent_id: 'category-sdbms',
+};

@@ -455,10 +455,10 @@ function display_as_Y(matrix: Expr_DBMS): string {
         .join(',');
 }
 
-export const S_omega_DBMS: NotationDefinition<Expr> = {
+export const S_omega_DBMS_v1: NotationDefinition<Expr> = {
     id: 's-omega-dbms',
-    name: 'SωDBMS',
-    category_id: 'category-sdbms',
+    name: 'SωDBMS v1',
+    category_id: 'category-sdbms-test',
     display: {
         plain: (m) => display(m, 'plain'),
         html: (m) => display(m, 'html'),
