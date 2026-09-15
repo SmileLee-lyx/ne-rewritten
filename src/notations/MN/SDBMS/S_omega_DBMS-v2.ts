@@ -138,20 +138,36 @@ export function from_display(str: string): Expr {
         return parseInt(s.substring(start, i), 10);
     }
 
-    /** 行高的单项 'v@p': v 为显示值(内部值 + 1), p 为位置(原样)。内部存 [位置, 值]。 */
-    function parse_height_item(): [number, number] {
-        const v = parse_number() - 1;
+    /** 行高的值: 'ω'(容错写法 'w')表示 ω(内部 undefined); 数字 n 的内部值 = n - 1。 */
+    function parse_height_value(): number | undefined {
         skip_spaces();
-        if (i >= s.length || s[i] !== '@') error();
-        i++;
-        const p = parse_number();
-        return [p, v];
+        if (i < s.length && (s[i] === 'ω' || s[i] === 'w')) {
+            i++;
+            return undefined;
+        }
+        return parse_number() - 1;
     }
 
     /**
-     * 解析行高: 形如 '(v1@p1,v2@p2,…)'。
-     * 由于 display 的 plain 产物目前会多包一层括号(形如 'v^((…))'),
-     * 这里额外容忍一层外层括号, 使单括号与双括号两种写法都能解析。
+     * 行高的单项: 'v@p', 或省略 '@p' 的 'v'。
+     * v 为值(见 parse_height_value, undefined 即 ω); p 为位置, **p === undefined 表示无穷**,
+     * display 对无穷省略 '@p', 因此该写法只在首位合法(即 '@无穷' 只能出现在首位)。
+     * 内部按 [位置, 值] 存放。
+     */
+    function parse_height_item(first: boolean): HeightEntry {
+        const v = parse_height_value();
+        skip_spaces();
+        if (i < s.length && s[i] === '@') {
+            i++;
+            return [parse_number(), v];
+        }
+        if (!first) error(); // 省略 '@p'(即位置为无穷)只允许出现在首位
+        return [undefined, v];
+    }
+
+    /**
+     * 解析行高: 形如 '(项,项,…)', 项为 'v@p' 或首位的 'v'(见 parse_height_item), 空为 '()'。
+     * 另容忍多一层外层括号(历史上 display 的 plain 曾输出 'v^((…))'), 使单/双括号都能解析。
      */
     function parse_height(): Height {
         skip_spaces();
@@ -168,12 +184,12 @@ export function from_display(str: string): Expr {
 
         const result: Height = [];
         if (i < s.length && s[i] !== ')') {
-            result.push(parse_height_item());
+            result.push(parse_height_item(true));
             skip_spaces();
             while (i < s.length && s[i] === ',') {
                 i++;
                 skip_spaces();
-                result.push(parse_height_item());
+                result.push(parse_height_item(false));
                 skip_spaces();
             }
         }
