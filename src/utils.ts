@@ -7,8 +7,35 @@ export function compare_undefined_last<T>(a: T | undefined, b: T | undefined, cm
     return cmp(a, b);
 }
 
+export function compare_undefined_first<T>(a: T | undefined, b: T | undefined, cmp: Comparator<T>): number {
+    if (a === undefined || b === undefined) {
+        return boolean_compare(a !== undefined, b !== undefined);
+    }
+    return cmp(a, b);
+}
+
 export function compare_undefined_last_by<T>(cmp: Comparator<T>): Comparator<T | undefined> {
     return (a, b) => compare_undefined_last(a, b, cmp);
+}
+
+export function compare_undefined_first_by<T>(cmp: Comparator<T>): Comparator<T | undefined> {
+    return (a, b) => compare_undefined_first(a, b, cmp);
+}
+
+export function max_by_compare<T>(cmp: Comparator<T>, a0: T, ...a: T[]): T {
+    let result: T = a0;
+    for (const x of a) {
+        if (cmp(x, result) > 0) result = x;
+    }
+    return result;
+}
+
+export function min_by_compare<T>(cmp: Comparator<T>, a0: T, ...a: T[]): T {
+    let result: T = a0;
+    for (const x of a) {
+        if (cmp(x, result) < 0) result = x;
+    }
+    return result;
 }
 
 export function number_compare(a: number, b: number): number {
@@ -24,17 +51,17 @@ export function compare_by<T, S>(transform: (a: T) => S, cmp: Comparator<S>): Co
 }
 
 /** 字典序比较（通用）。 */
-export function lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>): number {
+export function lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>, longer_last: boolean = true): number {
     let len = Math.min(a.length, b.length);
     for (let i = 0; i < len; i++) {
         const result = cmp(a[i], b[i]);
         if (result !== 0) return result;
     }
-    return number_compare(a.length, b.length);
+    return (longer_last ? 1 : -1) * number_compare(a.length, b.length);
 }
 
-export function lex_compare_by<T>(cmp: Comparator<T>): Comparator<T[]> {
-    return (a, b) => lex_compare(a, b, cmp);
+export function lex_compare_by<T>(cmp: Comparator<T>, longer_last: boolean = true): Comparator<T[]> {
+    return (a, b) => lex_compare(a, b, cmp, longer_last);
 }
 
 export function anti_lex_compare<T>(a: T[], b: T[], cmp: Comparator<T>): number {
