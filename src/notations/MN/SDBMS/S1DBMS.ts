@@ -426,7 +426,6 @@ function draw_s1dbms_mountain_diagram_dispatcher(
         {
             vertical_display: (x) => '' + x,
             vertical_compare: number_compare,
-            // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
             separator_count: (higher, lower) => 0,
         },
         { invert_vertical, display_html_entry: true },

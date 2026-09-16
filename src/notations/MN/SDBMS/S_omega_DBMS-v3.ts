@@ -1,20 +1,12 @@
-import {
-    anti_lex_compare,
-    compare_undefined_last_by,
-    deepcopy,
-    lex_compare,
-    lex_compare_by,
-    number_compare,
-    tuple_lex_compare,
-} from '@/utils.ts';
+import { anti_lex_compare, deepcopy, lex_compare, lex_compare_by, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
 import { Diagram } from '@/core/diagram_types.ts';
-import { DiagramData } from '@/notations/MN/SDBMS/S1DBMS.ts';
 import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import { DiagramData } from '@/notations/MN/SDBMS/S1DBMS.ts';
 
-type HeightEntry = [number | undefined, number | undefined];
+type HeightEntry = [number, number];
 type Height = HeightEntry[];
 type Entry = [number, Height];
 type Column = Entry[];
@@ -27,18 +19,7 @@ function is_infinity(expr: Expr): boolean {
 }
 
 function infinity_FS(index: number): Expr {
-    return [
-        [],
-        [
-            [
-                0,
-                [
-                    [undefined, 0],
-                    [index, undefined],
-                ],
-            ],
-        ],
-    ];
+    return [[], [[0, [[0, index]]]]];
 }
 
 function is_limit(expr: Expr): boolean {
@@ -47,7 +28,7 @@ function is_limit(expr: Expr): boolean {
 }
 
 function compare_height(h1: Height, h2: Height): number {
-    return lex_compare(h1, h2, lex_compare_by(compare_undefined_last_by(number_compare)));
+    return lex_compare(h1, h2, lex_compare_by(number_compare), false);
 }
 
 function compare_entry(entry1: Entry, entry2: Entry): number {
@@ -64,10 +45,8 @@ function compare(expr1: Expr, expr2: Expr): number {
 
 type DisplayType = 'plain' | 'html';
 
-function height_entry_display([p, v]: HeightEntry): string {
-    const d_v = v === undefined ? 'ω' : '' + (v + 1);
-    if (p === undefined) return d_v;
-    return d_v + '@' + p;
+function height_entry_display([v, p]: HeightEntry): string {
+    return v + 1 + '@' + p;
 }
 
 function height_display(h: Height): string {
@@ -142,35 +121,25 @@ export function from_display(str: string): Expr {
         return parseInt(s.substring(start, i), 10);
     }
 
-    /** 行高的值: 'ω'(容错写法 'w')表示 ω(内部 undefined); 数字 n 的内部值 = n - 1。 */
-    function parse_height_value(): number | undefined {
-        skip_spaces();
-        if (i < s.length && (s[i] === 'ω' || s[i] === 'w')) {
-            i++;
-            return undefined;
-        }
+    /** 行高的值: 数字 n 的内部值 = n - 1。本版本的高度无 ω 等特殊值。 */
+    function parse_height_value(): number {
         return parse_number() - 1;
     }
 
     /**
-     * 行高的单项: 'v@p', 或省略 '@p' 的 'v'。
-     * v 为值(见 parse_height_value, undefined 即 ω); p 为位置, **p === undefined 表示无穷**,
-     * display 对无穷省略 '@p', 因此该写法只在首位合法(即 '@无穷' 只能出现在首位)。
-     * 内部按 [位置, 值] 存放。
+     * 行高的单项 'v@p': v 为值(见 parse_height_value), p 为位置(原样, 不存在缺省)。
+     * 内部按 [值, 位置] 存放(注意本版本与 v1/v2 的 [位置, 值] 顺序相反)。
      */
-    function parse_height_item(first: boolean): HeightEntry {
+    function parse_height_item(): HeightEntry {
         const v = parse_height_value();
         skip_spaces();
-        if (i < s.length && s[i] === '@') {
-            i++;
-            return [parse_number(), v];
-        }
-        if (!first) error(); // 省略 '@p'(即位置为无穷)只允许出现在首位
-        return [undefined, v];
+        if (i >= s.length || s[i] !== '@') error();
+        i++;
+        return [v, parse_number()];
     }
 
     /**
-     * 解析行高: 形如 '(项,项,…)', 项为 'v@p' 或首位的 'v'(见 parse_height_item), 空为 '()'。
+     * 解析行高: 形如 '(项,项,…)', 每项为 'v@p'(见 parse_height_item), 空为 '()'。
      * 另容忍多一层外层括号(历史上 display 的 plain 曾输出 'v^((…))'), 使单/双括号都能解析。
      */
     function parse_height(): Height {
@@ -188,12 +157,12 @@ export function from_display(str: string): Expr {
 
         const result: Height = [];
         if (i < s.length && s[i] !== ')') {
-            result.push(parse_height_item(true));
+            result.push(parse_height_item());
             skip_spaces();
             while (i < s.length && s[i] === ',') {
                 i++;
                 skip_spaces();
-                result.push(parse_height_item(false));
+                result.push(parse_height_item());
                 skip_spaces();
             }
         }
@@ -211,8 +180,12 @@ export function from_display(str: string): Expr {
     function parse_entry(): Entry {
         const v = parse_number() - 1;
         skip_spaces();
+        // 上标一律带括号, 故本版本允许省略 '^': '2^(1@1)' 与 '2(1@1)' 等价。
         if (i < s.length && s[i] === '^') {
             i++;
+            return [v, parse_height()];
+        }
+        if (i < s.length && s[i] === '(') {
             return [v, parse_height()];
         }
         return [v, []]; // '(0)' 这类省略上标的形式, 稍后作为空列处理
@@ -271,8 +244,8 @@ export function from_display(str: string): Expr {
     return result;
 }
 
-function height(col: Column): Height {
-    if (col.length === 0) return [];
+function height(col: Column): Height | undefined {
+    if (col.length === 0) return undefined;
     return col[col.length - 1][1];
 }
 
@@ -286,20 +259,18 @@ function merge_column(...cols: Column[]): Column {
     if (cols.length === 2) {
         const col1 = cols[0];
         const col2 = cols[1];
-        return [...col1, ...filter_height_greater(col2, height(col1))];
+        let h = height(col1);
+        return [...col1, ...(h === undefined ? col2 : filter_height_greater(col2, h))];
     }
     return merge_column(merge_column(cols[0], cols[1]), ...cols.slice(2));
 }
 
-function copy_value(value: number, r: number, offset: number): number;
-function copy_value(value: number | undefined, r: number, offset: number): number | undefined;
-
-function copy_value(value: number | undefined, r: number, offset: number): number | undefined {
-    return value === undefined ? undefined : value >= r ? value + offset : value;
+function copy_value(value: number, r: number, offset: number): number {
+    return value >= r ? value + offset : value;
 }
 
-function copy_height_entry([p, v]: HeightEntry, r: number, offset: number): HeightEntry {
-    return [p, copy_value(v, r, offset)];
+function copy_height_entry([v, p]: HeightEntry, r: number, offset: number): HeightEntry {
+    return [copy_value(v, r, offset), p];
 }
 
 function copy_height(h: Height, r: number, offset: number): Height {
@@ -315,54 +286,44 @@ function copy_column(col: Column, r: number, offset: number): Column {
 }
 
 function top_separator(h: Height): number {
-    if (h[h.length - 1][1] === undefined) return h[h.length - 1][0]! + 1;
-    return 0;
+    return h[h.length - 1][1];
 }
 
-function height_fill(h: Height, p: number, v: number | undefined): Height {
-    const new_h = deepcopy(h);
-    while (new_h.length > 1 && new_h[new_h.length - 1][0]! <= p) new_h.pop();
-    if (new_h[new_h.length - 1][1] !== v) {
-        new_h.push([p, v]);
-    }
+function height_fill_dec(h: Height, p: number, v: number): Height {
+    const new_h = h.slice();
+    while (new_h.length > 0 && new_h[new_h.length - 1][1] <= p) new_h.pop();
+    if (new_h.length > 0 && new_h[new_h.length - 1][0] === v) new_h.pop();
+    new_h.push([v, p]);
+
     return new_h;
 }
 
-function compute_new_height(h: Height, expr: Expr, r: number): Height {
-    const [p, v] = h[h.length - 1];
-    let new_h: Height = h;
-    if (v === undefined) {
-        if (p === undefined) {
-            throw new Error('Illegal state');
-        }
-
-        new_h = height_fill(new_h, p, r);
-        if (p > 0) {
-            new_h = height_fill(new_h, p - 1, undefined);
-        }
-    } else if (p === undefined) {
-        new_h = height(expr[v]);
+function compute_new_height(h: Height, expr: Expr, r: number): Height | undefined {
+    const [v, p] = h[h.length - 1];
+    if (p > 0) {
+        return height_fill_dec(h, p - 1, r);
+    } else if (h.length === 1) {
+        return height(expr[v]);
     } else {
+        const p_bound = h[h.length - 2][1];
+
         const col_rh = expr[v];
         const hj = col_rh.findIndex(([, hv]) => compare_height(h, hv) <= 0);
 
         if (hj === -1) {
-            new_h = height(col_rh);
+            return height(col_rh);
         } else {
             const new_value = col_rh[hj][0];
-            new_h = height_fill(new_h, p, new_value);
-            if (p > 0) {
-                new_h = height_fill(new_h, p - 1, undefined);
-            }
+            let new_h = height_fill_dec(h, p_bound - 1, new_value);
             if (hj > 0) {
                 const lower = hj > 0 ? col_rh[hj - 1][1] : [];
                 if (compare_height(lower, new_h) > 0) {
                     new_h = lower;
                 }
             }
+            return new_h;
         }
     }
-    return new_h;
 }
 
 function expand(expr: Expr, index: number, shorter: boolean): Expr {
@@ -379,8 +340,12 @@ function expand(expr: Expr, index: number, shorter: boolean): Expr {
 
     const new_h = compute_new_height(h, expr, r);
 
+    let new_col = expr[right].slice(0, -1);
+    if (new_h !== undefined) new_col = merge_column(new_col, [[r, new_h]]);
+    new_col = merge_column(new_col, expr[r]);
+
     const result: Expr = expr.slice(0, -1);
-    result.push(merge_column(expr[right].slice(0, -1), [[r, new_h]], expr[r]));
+    result.push(new_col);
 
     for (let w = 1; w <= index; w++) {
         for (let i = r + 1; i <= right; i++) {
@@ -416,9 +381,9 @@ function convert_to_dbms_data(expr: Expr): [Entry[][], Expr_DBMS] {
         result_dbms[i] = [];
         for (let j = expr[i].length - 1; j >= 0; j--) {
             const v = expr[i][j][0];
-            let current = expr[i][j][1];
+            let current: Height | undefined = expr[i][j][1];
             while (true) {
-                if (current.length === 0 || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
+                if (current === undefined || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
                 const s = top_separator(current);
                 result[i].push([v, current]);
                 result_dbms[i].push([v, s]);
@@ -555,7 +520,7 @@ function verify_with_weak_omega_y(expr: Expr): boolean {
 
     const index = 3;
     const y_seq = to_y_sequence(expr);
-    const mine = to_y_sequence(S_omega_DBMS_v2.FS(expr, index));
+    const mine = to_y_sequence(S_omega_DBMS_v3.FS(expr, index));
     const theirs = omega_Y_weak.FS(y_seq, index);
 
     const result = omega_Y_weak.compare(mine, theirs) === 0;
@@ -642,10 +607,10 @@ export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     },
 };
 
-export const S_omega_DBMS_v2: NotationDefinition<Expr> = {
-    id: 's-omega-dbms-v2',
-    name: 'SωDBMS v2',
-    category_id: 'category-sdbms-test',
+export const S_omega_DBMS_v3: NotationDefinition<Expr> = {
+    id: 's-omega-dbms-v3',
+    name: 'SωDBMS v3',
+    category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),
         html: (m) => display(m, 'html'),

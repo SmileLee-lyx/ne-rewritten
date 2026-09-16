@@ -104,10 +104,11 @@ import { UP2MN_v1b_plus } from '@/notations/MN/UPMN/UP2MN-v1b-plus.ts';
 import { UP2DBMS_v1b_plus } from '@/notations/MN/UPMN/UP2DBMS-v1b-plus.ts';
 import { UP2DBMS_v1 } from '@/notations/MN/UPMN/UP2DBMS-v1.ts';
 import { S_omega_DBMS_v1 } from '@/notations/MN/SDBMS/S_omega_DBMS-v1.ts';
-import { S_omega_DBMS } from '@/notations/MN/SDBMS/S_omega_DBMS-v2.ts';
+import { S_omega_DBMS_v2 } from '@/notations/MN/SDBMS/S_omega_DBMS-v2.ts';
 import { UP1DBMS } from '@/notations/MN/UPMN/UP1DBMS.ts';
 import { UP2DBMS_v2 } from '@/notations/MN/UPMN/UP2DBMS-v2.ts';
 import { UP2DBMS_v1c } from '@/notations/MN/UPMN/UP2DBMS-v1c.ts';
+import { S_omega_DBMS_v3 } from '@/notations/MN/SDBMS/S_omega_DBMS-v3.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -230,9 +231,10 @@ register_notation(S_omega2_MN);
 register_notation(S_omega_pow_omega_MN);
 register_category(category_sdbms);
 register_notation(S1DBMS);
-register_notation(S_omega_DBMS);
+register_notation(S_omega_DBMS_v3);
 register_category(category_sdbms_test);
 register_notation(S_omega_DBMS_v1);
+register_notation(S_omega_DBMS_v2);
 register_category(category_upmn);
 register_notation(UP1MN);
 register_notation(UP2MN_v1b_plus);
