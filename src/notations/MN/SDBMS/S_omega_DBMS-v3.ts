@@ -377,23 +377,30 @@ function convert_to_dbms_data(expr: Expr): [Entry[][], Expr_DBMS] {
     const result_dbms: Expr_DBMS = [];
 
     for (let i = 0; i < expr.length; i++) {
-        result[i] = [];
-        result_dbms[i] = [];
-        for (let j = expr[i].length - 1; j >= 0; j--) {
-            const v = expr[i][j][0];
-            let current: Height | undefined = expr[i][j][1];
-            while (true) {
-                if (current === undefined || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
-                const s = top_separator(current);
-                result[i].push([v, current]);
-                result_dbms[i].push([v, s]);
-                current = compute_new_height(current, expr, v);
-            }
-        }
-        result[i].reverse();
-        result_dbms[i].reverse();
+        const [result_i, result_dbms_i] = convert_to_dbms_data_column(expr, i);
+        result[i] = result_i;
+        result_dbms[i] = result_dbms_i;
     }
 
+    return [result, result_dbms];
+}
+
+function convert_to_dbms_data_column(expr: Expr, i: number): [Entry[], Column_DBMS] {
+    const result: Entry[] = [];
+    const result_dbms: Column_DBMS = [];
+    for (let j = expr[i].length - 1; j >= 0; j--) {
+        const v = expr[i][j][0];
+        let current: Height | undefined = expr[i][j][1];
+        while (true) {
+            if (current === undefined || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
+            const s = top_separator(current);
+            result.push([v, current]);
+            result_dbms.push([v, s]);
+            current = compute_new_height(current, expr, v);
+        }
+    }
+    result.reverse();
+    result_dbms.reverse();
     return [result, result_dbms];
 }
 
@@ -490,16 +497,21 @@ export function convert_dbms_to_layer(om: Expr_DBMS): Expr_DBMS {
     return dm;
 }
 
+function dbms_to_y_mountain_column(expr: Expr_DBMS, V: Vertical_DBMS[][], y_mountain: number[][], i: number): number[] {
+    const result = [];
+    result[expr[i].length] = 1;
+    for (let j = expr[i].length - 1; j >= 0; j--) {
+        const [pi, pj] = dbms_compute_parent(expr, V, [i, j]);
+        result[j] = y_mountain[pi][pj] + result[j + 1];
+    }
+    return result;
+}
+
 function dbms_to_y_mountain(expr: Expr_DBMS): number[][] {
     const V = expr.map(dbms_column_verticals);
     const result: number[][] = [];
     for (let i = 0; i < expr.length; i++) {
-        result[i] = [];
-        result[i][expr[i].length] = 1;
-        for (let j = expr[i].length - 1; j >= 0; j--) {
-            const [pi, pj] = dbms_compute_parent(expr, V, [i, j]);
-            result[i][j] = result[pi][pj] + result[i][j + 1];
-        }
+        result[i] = dbms_to_y_mountain_column(expr, V, result, i);
     }
     return result;
 }
@@ -540,7 +552,7 @@ function dbms_vertical_display(v: Vertical_DBMS): string {
     return result.toReversed().join('/');
 }
 
-function draw_SomegaDBMS_diagram(
+function draw_SDBMS_diagram(
     expr: Expr,
     current_equiv: string | undefined,
     invert_vertical: boolean,
@@ -592,9 +604,90 @@ function draw_SomegaDBMS_diagram(
     );
 }
 
+// 从极限展开, 查找 to_y_seq 等于 target 的表达式
+function from_y_seq(target: number[]): Expr {
+    if (target.length === 0) return [];
+    if (target[0] !== 1) throw new Error('Illegal argument');
+    if (target.length === 1) return [[]];
+    if (!target.every((x) => Number.isInteger(x) && x > 0)) throw new Error('Illegal argument');
+
+    let bound: Expr = infinity_FS(target[1] - 1); // 初始时, to_y_seq(bound) = (1, target[1]+1)
+    let [mountain, dbms] = convert_to_dbms_data(bound);
+    let V = dbms.map(dbms_column_verticals);
+    let y_mountain = dbms_to_y_mountain(dbms);
+
+    // 假设: to_y_seq(bound) 和 target 仅在 bound 的末位不同.
+    while (true) {
+        const right = bound.length - 1;
+
+        // 首先尝试直接截断山脉.
+
+        let new_l = dbms[right].length;
+        while (new_l > 0 && y_mountain[right][0] - y_mountain[right][new_l - 1] + 1 > target[right]) {
+            new_l--;
+        }
+
+        if (new_l !== dbms[right].length) {
+            const [v, h] = mountain[right][new_l - 1];
+            while (bound[right][bound[right].length - 1][0] < v) bound[right].pop();
+            bound[right][bound[right].length - 1][1] = h;
+        }
+
+        // 进行展开. 展开其实是线性的, 代价远低于 to_dbms 和 y_mountain. 只需对后两者进行重用.
+
+        let bound_fs_index = 0;
+        let bound_fs = expand(bound, bound_fs_index, false);
+        let mountain_fs = mountain.slice(0, -1);
+        let dbms_fs = dbms.slice(0, -1);
+        let V_fs = V.slice(0, -1);
+        let y_mountain_fs = y_mountain.slice(0, -1);
+
+        // 不断生成并比较基本列
+
+        let compared = right;
+        while (true) {
+            if (compared === target.length) return bound_fs.slice(0, compared);
+            if (compared === bound_fs.length) {
+                bound_fs_index++;
+                bound_fs = expand(bound, bound_fs_index, false);
+            }
+            const [next, dbms_next] = convert_to_dbms_data_column(bound_fs, compared);
+            mountain_fs.push(next);
+            dbms_fs.push(dbms_next);
+            V_fs.push(dbms_column_verticals(dbms_next));
+            y_mountain_fs.push(dbms_to_y_mountain_column(dbms_fs, V_fs, y_mountain_fs, compared));
+
+            if (y_mountain_fs[compared][0] > target[compared]) {
+                break;
+            }
+
+            if (y_mountain_fs[compared][0] < target[compared]) {
+                throw new Error('Not standard');
+            }
+
+            compared++;
+        }
+
+        [bound, mountain, dbms, V, y_mountain] = [
+            bound_fs.slice(0, compared + 1),
+            mountain_fs,
+            dbms_fs,
+            V_fs,
+            y_mountain_fs,
+        ];
+    }
+}
+
+function from_display_y_seq(str: string): Expr {
+    if (str.trim() === '1,w' || str.trim() === '1,ω') return INFINITY;
+    const seq = str.split(',').map((x) => Number(x.trim()));
+    if (!seq.every(Number.isInteger)) throw new Error('Illegal input: ' + str);
+    return from_y_seq(seq);
+}
+
 export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     default_data: { current_equiv: undefined, invert_vertical: undefined },
-    draw_diagram: (_expr, _data) => draw_SomegaDBMS_diagram(_expr, _data.current_equiv, _data.invert_vertical ?? false),
+    draw_diagram: (_expr, _data) => draw_SDBMS_diagram(_expr, _data.current_equiv, _data.invert_vertical ?? false),
     handle_action: (data: DiagramData, action): DiagramData | null => {
         if (action.type === 'scroll') {
             if (action.direction === 'down') {
@@ -639,6 +732,7 @@ export const S_omega_DBMS_v3: NotationDefinition<Expr> = {
         },
         Y: {
             plain: (m) => display_as_Y(convert_to_dbms(m)),
+            from_display: from_display_y_seq,
         },
     },
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
