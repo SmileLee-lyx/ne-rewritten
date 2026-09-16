@@ -1,6 +1,8 @@
 import { lex_compare, number_compare } from '@/utils.ts';
-import { NotationDefinition } from '@/notation-definition.ts';
+import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import type { Diagram } from '@/core/diagram_types.ts';
+import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
 
 type Entry = [number, number];
 type Column = Entry[];
@@ -326,6 +328,127 @@ function display_as_Y(matrix: Expr_DBMS): string {
         .join(',');
 }
 
+export interface DiagramData {
+    current_equiv: string | undefined;
+    invert_vertical?: boolean;
+}
+
+function draw_s1dbms_mountain_diagram(expr: Expr, layered_height: boolean): MountainShape<number> {
+    const shape: MountainShape<number> = [];
+
+    const heights = compute_layered_heights(expr);
+
+    for (let i = 0; i < expr.length; i++) {
+        shape[i] = [];
+
+        const col = expr[i];
+        for (let j = col.length - 1; j >= 0; j--) {
+            const [v, h] = col[j];
+            let current = h;
+            const base = j === 0 ? -1 : col[j - 1][1];
+            while (current !== base) {
+                const next = height(expr[current]);
+
+                shape[i].push({
+                    vertical: heights[current] + 1,
+                    text: '' + (v + 1) + '<sup>' + (layered_height ? heights[current] + 1 : current + 1) + '</sup>',
+                    leg_target: [v, heights[current]],
+                });
+
+                current = next;
+            }
+        }
+        shape[i].push({
+            vertical: 0,
+            text: '*',
+        });
+        shape[i].reverse();
+    }
+
+    return shape;
+}
+
+function draw_dbms_mountain_diagram(expr: Expr_DBMS, variant?: 'y' | 'l'): MountainShape<number> {
+    const shape: MountainShape<number> = [];
+
+    const layered = variant === 'l' ? convert_dbms_to_layer(expr) : [];
+    const y_mountain = variant === 'y' ? dbms_to_Y_mountain(expr) : [];
+
+    for (let i = 0; i < expr.length; i++) {
+        shape[i] = [
+            {
+                vertical: 0,
+                text: variant === 'y' ? '' + y_mountain[i][0] : '*',
+            },
+        ];
+
+        const col = expr[i];
+
+        for (let j = 0; j < col.length; j++) {
+            const v = col[j];
+
+            shape[i].push({
+                vertical: j + 1,
+                text: '' + (variant === 'l' ? layered[i][j] + 1 : variant === 'y' ? y_mountain[i][j + 1] : v + 1),
+                leg_target: [v, j],
+            });
+        }
+    }
+
+    return shape;
+}
+
+function draw_s1dbms_mountain_diagram_dispatcher(
+    expr: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    if (is_infinity(expr) || expr.length === 0) return undefined;
+
+    let shape: MountainShape<number>;
+
+    if (current_equiv === undefined || current_equiv === 'm') {
+        shape = draw_s1dbms_mountain_diagram(expr, false);
+    } else if (current_equiv.includes('lh')) {
+        shape = draw_s1dbms_mountain_diagram(expr, true);
+    } else if (current_equiv === 'dbms' || current_equiv === 'm dbms') {
+        shape = draw_dbms_mountain_diagram(convert_to_dbms(expr));
+    } else if (current_equiv === 'l dbms') {
+        shape = draw_dbms_mountain_diagram(convert_to_dbms(expr), 'l');
+    } else if (current_equiv === 'Y') {
+        shape = draw_dbms_mountain_diagram(convert_to_dbms(expr), 'y');
+    } else {
+        return undefined;
+    }
+
+    return draw_mountain_diagram(
+        shape,
+        {
+            vertical_display: (x) => '' + x,
+            vertical_compare: number_compare,
+            // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
+            separator_count: (higher, lower) => 0,
+        },
+        { invert_vertical, display_html_entry: true },
+    );
+}
+
+export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
+    default_data: { current_equiv: undefined, invert_vertical: undefined },
+    draw_diagram: (_expr, _data) =>
+        draw_s1dbms_mountain_diagram_dispatcher(_expr, _data.current_equiv, _data.invert_vertical ?? false),
+    handle_action: (data: DiagramData, action): DiagramData | null => {
+        if (action.type === 'scroll') {
+            if (action.direction === 'down') {
+                return { ...data, invert_vertical: true };
+            } else if (action.direction === 'up') {
+                return { ...data, invert_vertical: false };
+            }
+        }
+        return null;
+    },
+};
+
 export const S1DBMS: NotationDefinition<Expr> = {
     id: 's1dbms',
     name: 'S1DBMS',
@@ -337,18 +460,18 @@ export const S1DBMS: NotationDefinition<Expr> = {
         name: { id: 'display.index' },
     },
     display_equiv: {
-        'layered height': {
+        lh: {
             plain: (m) => display(convert_to_layered_height(m), 'plain'),
             html: (m) => display(convert_to_layered_height(m), 'html'),
             name: { id: 'display.layered-height' },
         },
-        marked: {
+        m: {
             plain: (m) => display_marked(m, 'plain'),
             html: (m) => display_marked(m, 'html'),
             from_display,
             name: { id: 'display.index-marked' },
         },
-        'marked layered height': {
+        'm lh': {
             plain: (m) => display_marked(convert_to_layered_height(m), 'plain'),
             html: (m) => display_marked(convert_to_layered_height(m), 'html'),
             name: { id: 'display.marked-layered-height' },
@@ -357,12 +480,12 @@ export const S1DBMS: NotationDefinition<Expr> = {
             plain: (m) => display_dbms(convert_to_dbms(m)),
             name: { id: 'display.dbms' },
         },
-        'marked dbms': {
+        'm dbms': {
             plain: (m) => display_dbms_marked(convert_to_dbms(m), 'plain'),
             html: (m) => display_dbms_marked(convert_to_dbms(m), 'html'),
             name: { id: 'display.marked-dbms' },
         },
-        'layered dbms': {
+        'l dbms': {
             plain: (m) => display_dbms(convert_dbms_to_layer(convert_to_dbms(m))),
             name: { id: 'display.layered-dbms' },
         },
@@ -373,6 +496,9 @@ export const S1DBMS: NotationDefinition<Expr> = {
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     is_limit,
     compare,
+
+    draw_diagram: draw_diagram_control,
+
     credit_text_id: 'credit.s1dbms',
 
     init: () => [INFINITY, []],

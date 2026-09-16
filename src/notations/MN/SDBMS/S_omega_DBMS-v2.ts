@@ -7,9 +7,12 @@ import {
     number_compare,
     tuple_lex_compare,
 } from '@/utils.ts';
-import { NotationDefinition } from '@/notation-definition.ts';
+import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
+import { Diagram } from '@/core/diagram_types.ts';
+import { DiagramData } from '@/notations/MN/SDBMS/S1DBMS.ts';
+import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
 
 type HeightEntry = [number | undefined, number | undefined];
 type Height = HeightEntry[];
@@ -401,25 +404,32 @@ function is_infinity_dbms(expr: Expr_DBMS): boolean {
 function convert_to_dbms(expr: Expr): Expr_DBMS {
     if (is_infinity(expr)) return INFINITY_dbms;
 
-    const result: Expr_DBMS = [];
+    return convert_to_dbms_data(expr)[1];
+}
+
+function convert_to_dbms_data(expr: Expr): [Entry[][], Expr_DBMS] {
+    const result: Entry[][] = [];
+    const result_dbms: Expr_DBMS = [];
+
     for (let i = 0; i < expr.length; i++) {
         result[i] = [];
-        for (let j = 0; j < expr[i].length; j++) {
-            const part: Column_DBMS = [];
-
+        result_dbms[i] = [];
+        for (let j = expr[i].length - 1; j >= 0; j--) {
             const v = expr[i][j][0];
             let current = expr[i][j][1];
             while (true) {
                 if (current.length === 0 || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
                 const s = top_separator(current);
+                result[i].push([v, current]);
+                result_dbms[i].push([v, s]);
                 current = compute_new_height(current, expr, v);
-                part.push([v, s]);
             }
-
-            result[i].push(...part.reverse());
         }
+        result[i].reverse();
+        result_dbms[i].reverse();
     }
-    return result;
+
+    return [result, result_dbms];
 }
 
 function dbms_entry_display([v, s]: Entry_DBMS): string {
@@ -555,6 +565,79 @@ function verify_with_weak_omega_y(expr: Expr): boolean {
     return result;
 }
 
+function dbms_vertical_display(v: Vertical_DBMS): string {
+    const result: string[] = [];
+    for (let i = 0; i < v.length; i++) {
+        for (let j = 0; j < v[i]; j++) {
+            result.push(','.repeat(i + 1));
+        }
+    }
+    return result.toReversed().join('/');
+}
+
+function draw_SomegaDBMS_diagram(
+    expr: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const [mountain, dbms] = convert_to_dbms_data(expr);
+    const V = dbms.map(dbms_column_verticals);
+    const layered = current_equiv === 'l dbms' ? convert_dbms_to_layer(dbms) : [];
+    const y = current_equiv === 'Y' ? dbms_to_y_mountain(dbms) : [];
+
+    const shape: MountainShape<Vertical_DBMS> = [];
+
+    for (let i = 0; i < expr.length; i++) {
+        shape[i] = [
+            {
+                vertical: [],
+                text: current_equiv === 'Y' ? '' + y[i][0] : '*',
+            },
+        ];
+
+        for (let j = 0; j < dbms[i].length; j++) {
+            shape[i][j + 1] = {
+                vertical: V[i][j],
+                text:
+                    current_equiv === 'dbms' || current_equiv === 'm dbms'
+                        ? dbms_entry_display(dbms[i][j])
+                        : current_equiv === 'l dbms'
+                          ? dbms_entry_display(layered[i][j])
+                          : current_equiv === 'Y'
+                            ? '' + y[i][j + 1]
+                            : entry_display(mountain[i][j], 'html'),
+                leg_target: dbms_compute_parent(dbms, V, [i, j]),
+            };
+        }
+    }
+
+    return draw_mountain_diagram(
+        shape,
+        {
+            vertical_display: dbms_vertical_display,
+            vertical_compare: compare_dbms_vertical,
+            // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
+            separator_count: (higher, lower) => 1,
+        },
+        { invert_vertical, display_html_entry: true, column_width: current_equiv === undefined ? 100 : 30 },
+    );
+}
+
+export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
+    default_data: { current_equiv: undefined, invert_vertical: undefined },
+    draw_diagram: (_expr, _data) => draw_SomegaDBMS_diagram(_expr, _data.current_equiv, _data.invert_vertical ?? false),
+    handle_action: (data: DiagramData, action): DiagramData | null => {
+        if (action.type === 'scroll') {
+            if (action.direction === 'down') {
+                return { ...data, invert_vertical: true };
+            } else if (action.direction === 'up') {
+                return { ...data, invert_vertical: false };
+            }
+        }
+        return null;
+    },
+};
+
 export const S_omega_DBMS: NotationDefinition<Expr> = {
     id: 's-omega-dbms-v2',
     name: 'SωDBMS',
@@ -566,7 +649,7 @@ export const S_omega_DBMS: NotationDefinition<Expr> = {
         name: { id: 'display.index' },
     },
     display_equiv: {
-        marked: {
+        m: {
             plain: (m) => display_marked(m, 'plain'),
             html: (m) => display_marked(m, 'html'),
             from_display,
@@ -576,12 +659,12 @@ export const S_omega_DBMS: NotationDefinition<Expr> = {
             plain: (m) => dbms_display(convert_to_dbms(m)),
             name: { id: 'display.dbms' },
         },
-        'marked dbms': {
+        'm dbms': {
             plain: (m) => dbms_display_marked(convert_to_dbms(m), 'plain'),
             html: (m) => dbms_display_marked(convert_to_dbms(m), 'html'),
             name: { id: 'display.marked-dbms' },
         },
-        'layered dbms': {
+        'l dbms': {
             plain: (m) => dbms_display(convert_dbms_to_layer(convert_to_dbms(m))),
             name: { id: 'display.layered-dbms' },
         },
@@ -592,12 +675,10 @@ export const S_omega_DBMS: NotationDefinition<Expr> = {
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     is_limit,
     compare,
-    credit_text_id: 'credit.s-omega-dbms',
 
-    /** 调试校验: 见文件中的 verify_with_weak_omega_y。正式提交时可移除本行, 函数本身保留。 */
-    debug_verification: {
-        verify_with_weak_omega_y,
-    },
+    draw_diagram: draw_diagram_control,
+
+    credit_text_id: 'credit.s-omega-dbms',
 
     init: () => [INFINITY, [[]], []],
 };
