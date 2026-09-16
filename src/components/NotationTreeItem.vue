@@ -4,6 +4,7 @@ import type { TreeNode } from '@/core/tree.ts';
 import { find_next, find_prev } from '@/core/tree.ts';
 import type { TreeNodeExtra } from '@/core/extra.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
+import { resolve_diagram_equiv } from '@/core/settings.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { expand_item } from '@/core/expander.ts';
 import { FsTrialExpansionError } from '@/core/errors.ts';
@@ -359,7 +360,7 @@ function on_focus(e: FocusEvent) {
 
     const dc = props.notation.draw_diagram;
     if (dc && settings.show_diagram) {
-        show_diagram(dc, props.node.expr, r.left, 60 + r.height, settings.equiv_active[props.notation.id] ?? undefined);
+        show_diagram(dc, props.node.expr, r.left, 60 + r.height, resolve_diagram_equiv(settings, props.notation.id));
     } else {
         hide_diagram();
     }

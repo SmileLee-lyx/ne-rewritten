@@ -51,6 +51,10 @@ export interface Settings {
     /** 输入框获得焦点时平滑滚动页面到其位置。 */
     scroll_on_focus: boolean;
     show_diagram: boolean;
+    /** 图表使用指定的等价表示绘制, 而非记号当前激活的等价表示。 */
+    diagram_use_equiv: boolean;
+    /** 图表使用的等价表示: 记号 id → 等价表示 id(缺失或 undefined 表示按原记号绘制)。 */
+    diagram_equiv: Record<string, string | undefined>;
     show_latex: boolean;
     show_description: boolean;
     /** 导入时自动展开全部挂载条目。 */
@@ -85,6 +89,8 @@ export const DEFAULT_SETTINGS: Settings = {
     use_delete_to_clear: true,
     scroll_on_focus: true,
     show_diagram: true,
+    diagram_use_equiv: false,
+    diagram_equiv: {},
     show_latex: false,
     show_description: true,
     expand_all_on_import: false,
@@ -111,3 +117,14 @@ export const DEFAULT_SETTINGS: Settings = {
         psi_subscript: false,
     },
 };
+
+/**
+ * 图表绘制时应当填充的等价表示。
+ *
+ * 勾选 diagram_use_equiv 时取 diagram_equiv 中为该记号选定的等价表示,
+ * 否则取记号当前实际激活的等价表示(equiv_active);undefined 表示按原记号绘制。
+ */
+export function resolve_diagram_equiv(settings: Settings, notation_id: string): string | undefined {
+    if (settings.diagram_use_equiv) return settings.diagram_equiv[notation_id];
+    return settings.equiv_active[notation_id];
+}

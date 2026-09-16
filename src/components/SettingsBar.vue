@@ -7,6 +7,7 @@ import { use_ui_states } from '@/composables/use_ui_states.ts';
 import { use_diagram } from '@/composables/use_diagram.ts';
 import { expand_all_pending, import_analysis_eager } from '@/core/analysis.ts';
 import { resolve_display, resolve_display_name } from '@/notation-definition.ts';
+import { resolve_diagram_equiv } from '@/core/settings.ts';
 import { COMPAT_URL, IS_COMPAT } from '@/core/deployment.ts';
 import { focus_node_input } from '@/composables/use_focus_tracker.ts';
 import { reload_all } from '@/core/user_defined_notation.ts';
@@ -91,6 +92,17 @@ function on_expand_all_import_change(e: Event) {
     settings.expand_all_on_import = (e.target as HTMLInputElement).checked;
 }
 
+function on_diagram_use_equiv_change(e: Event) {
+    settings.diagram_use_equiv = (e.target as HTMLInputElement).checked;
+}
+
+function on_diagram_equiv_change(e: Event) {
+    settings.diagram_equiv = {
+        ...settings.diagram_equiv,
+        [settings.current_notation_id]: (e.target as HTMLSelectElement).value || undefined,
+    };
+}
+
 function toggle_latex() {
     settings.show_latex = !settings.show_latex;
     if (settings.show_latex) settings.show_diagram = false;
@@ -153,7 +165,7 @@ function on_find_input() {
         const el = find_input.value;
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        show_diagram(dc, expr, rect.left, 60 + rect.height, equiv_name ?? undefined);
+        show_diagram(dc, expr, rect.left, 60 + rect.height, resolve_diagram_equiv(settings, n.id));
     } catch {
         hide();
     }
@@ -314,6 +326,24 @@ function on_find_keydown(e: KeyboardEvent) {
                 <label v-if="notation?.draw_diagram">
                     <input type="checkbox" :checked="settings.show_diagram" @change="toggle_diagram" />
                     {{ t('diagram.show') }}
+                </label>
+                <label v-if="notation?.draw_diagram">
+                    <input
+                        type="checkbox"
+                        :checked="settings.diagram_use_equiv"
+                        @change="on_diagram_use_equiv_change"
+                    />
+                    {{ t('diagram.use-equiv') }}
+                    <select
+                        :value="settings.diagram_equiv[settings.current_notation_id] ?? ''"
+                        @mousedown.stop
+                        @change="on_diagram_equiv_change"
+                    >
+                        <option value="">(None)</option>
+                        <option v-for="k in equiv_options" :key="k.id" :value="k.id">
+                            {{ k.id }}
+                        </option>
+                    </select>
                 </label>
                 <button
                     v-if="settings.show_diagram && has_diagram_settings"
