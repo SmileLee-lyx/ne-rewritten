@@ -1,7 +1,7 @@
 import { boolean_compare, index_of_last, lex_compare, number_compare } from '@/utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
-import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
+import { draw_mountain_diagram, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { BM_to_triangular, triangular_to_BM } from '@/notations/BM-like/BM_converter.ts';
 
@@ -367,51 +367,47 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-function compute_bm_mountain_diagram(
+function draw_bm_mountain_diagram(
     m: Expr,
     current_equiv: DiagramData['current_equiv'] & string,
-): MountainDiagramData {
+    invert_vertical: boolean,
+): Diagram | undefined {
     const { M, P } = compute_mountain(m);
     const h = M[0].length - 1; // 行数 - 1
 
-    const line_height = 40;
-
-    const sorted_verticals: (string | undefined)[] = [];
-    const heights: number[] = [];
-    for (let vj = 0; vj <= h; vj++) {
-        sorted_verticals.push(undefined);
-        heights.push(vj * line_height); // 统一行高，与 MN 一致
-    }
-
-    const entries: (string | undefined)[][] = Array.from({ length: m.length }, () =>
-        Array.from({ length: h + 1 }, () => undefined),
-    );
-    const left_legs: ([number, number] | undefined)[][] = Array.from({ length: m.length }, () =>
-        Array.from({ length: h + 1 }, () => undefined),
+    // 行就是矩阵行号,故节点在列内的下标即行号。
+    const shape: MountainShape<number> = m.map((_, i) =>
+        Array.from({ length: h + 1 }, (_, j) => ({
+            vertical: j,
+            text: '' + (current_equiv === '0Y' ? M[i][j] : ((m[i] ?? [])[j] ?? 0)),
+        })),
     );
 
+    // left legs: 从上方元素 (j+1) 指向其父项
     for (let i = 0; i < m.length; i++) {
-        for (let j = 0; j <= h; j++) {
-            const val = current_equiv === '0Y' ? M[i][j] : ((m[i] ?? [])[j] ?? 0);
-            entries[i][j] = '' + val;
-        }
-        // left legs: 从上方元素 (j+1) 指向其父项
         for (let j = 0; j < P[i].length; j++) {
-            if (P[i][j] >= 0 && j + 1 <= h) {
-                left_legs[i][j + 1] = [P[i][j], j];
-            }
+            if (P[i][j] >= 0 && j + 1 <= h) shape[i][j + 1].leg_target = [P[i][j], j];
         }
     }
 
-    return { sorted_verticals, heights, line_heights: [], entries, left_legs };
+    return draw_mountain_diagram(
+        shape,
+        {
+            vertical_display: (v) => '' + v,
+            vertical_compare: (a, b) => a - b,
+            // 分割线恒为 0:各行等距 40px,且不画水平网格线(与原实现一致)。
+            separator_count: () => 0,
+            row_label: () => undefined, // 不显示行标
+        },
+        { row_label_width: 0, invert_vertical },
+    );
 }
 
 const draw_diagram_control_BM: DiagramControl<Expr, DiagramData> = {
     default_data: { current_equiv: undefined, invert_vertical: undefined },
     draw_diagram: (m: Expr, _data: DiagramData): Diagram | undefined => {
         if (is_infinity(m) || m.length === 0) return undefined;
-        const mountain = compute_bm_mountain_diagram(m, _data.current_equiv ?? 'BMS');
-        return draw_mountain_diagram(mountain, { WV: 0, invert_vertical: _data.invert_vertical ?? false });
+        return draw_bm_mountain_diagram(m, _data.current_equiv ?? 'BMS', _data.invert_vertical ?? false);
     },
     handle_action: (data: DiagramData, action): DiagramData | null => {
         if (action.type === 'scroll') {
@@ -426,8 +422,7 @@ const draw_diagram_control_0Y: DiagramControl<Expr, DiagramData> = {
     ...draw_diagram_control_BM,
     draw_diagram: (m: Expr, _data: DiagramData): Diagram | undefined => {
         if (is_infinity(m) || m.length === 0) return undefined;
-        const mountain = compute_bm_mountain_diagram(m, _data.current_equiv ?? '0Y');
-        return draw_mountain_diagram(mountain, { WV: 0, invert_vertical: _data.invert_vertical ?? false });
+        return draw_bm_mountain_diagram(m, _data.current_equiv ?? '0Y', _data.invert_vertical ?? false);
     },
 };
 

@@ -1,6 +1,7 @@
-import { DisplayMap, DisplaySet, lex_compare, number_compare } from '@/utils.ts';
+import { lex_compare, number_compare } from '@/utils.ts';
 import { Y_FS_variants } from '@/notations/notation_utils.ts';
-import { draw_mountain_diagram, type MountainDiagramData } from '@/notations/draw_mountain_util.ts';
+import type { Diagram } from '@/core/diagram_types.ts';
+import { draw_mountain_diagram, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import { DiagramControl, NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
 
 export type Expr = number[];
@@ -506,6 +507,8 @@ interface DBMS_Entry {
     right_down?: DBMS_Entry;
     sep?: number;
     depth?: number;
+    /** 该元素在参与绘制的元素中的位置 [列, 列内下标];虚拟项不参与绘制,故没有位置。 */
+    position?: [number, number];
 }
 
 type DBMSType = 'DBMS' | "DBMS'" | 'ADBMS';
@@ -513,6 +516,17 @@ type DBMS_Mountain = DBMS_Entry[][];
 
 function draw_dbms_mountain(m: Mountain, Asheep: boolean): DBMS_Mountain {
     let mountain: DBMS_Mountain = m;
+
+    // 记录各元素的位置,供左腿落点使用。列末元素是内部行标为 0 的虚拟项,不参与绘制。
+    for (let i = 0; i < mountain.length; i++) {
+        const col = mountain[i];
+        let position = 0;
+        for (let j = 0; j < col.length - 1; j++) {
+            const entry = col[j];
+            if (entry.y.length === 0) continue;
+            entry.position = [i, position++];
+        }
+    }
 
     for (let col of mountain) {
         for (let j = col.length - 3; j >= 0; j--) {
@@ -582,72 +596,62 @@ interface YDiagramData {
     invert_vertical?: boolean;
 }
 
-function compute_y_mountain_diagram(seq: Expr, current_equiv: string | undefined): MountainDiagramData | undefined {
+/** 单个元素的显示文字;DBMS 类等价记号按其自身含义显示。 */
+function y_entry_display(entry: DBMS_Entry, current_equiv: string | undefined): string {
+    if (current_equiv === 'DBMS') {
+        return entry.right_up !== undefined ? '' + entry.right_up.depth + ','.repeat(entry.right_up.sep! + 1) : '0';
+    }
+    if (current_equiv === 'ADBMS' || current_equiv === "DBMS'") {
+        return entry.sep !== undefined ? ','.repeat(entry.sep + 1) + entry.depth : '*';
+    }
+    return '' + entry.value;
+}
+
+/** 行标显示:ω 进制 Cantor 典范形;自然数行标(单项向量)统一减 1,如 [1] → 0、[2] → 1。 */
+function y_row_label(v: Vertical): string {
+    return vertical_display_html(v.length === 1 ? (v[0] === 1 ? [] : [v[0] - 1]) : v);
+}
+
+/** 计算层:把 ω-Y 序列化为山脉形状,交给通用绘制函数。 */
+function draw_y_mountain_diagram(
+    seq: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
     if (is_infinity(seq) || seq.length === 0) return undefined;
     const mountain = draw_dbms_mountain(draw_mountain(from_sequence(seq)), current_equiv === 'ADBMS');
 
-    const vertical_set = new DisplaySet<Vertical>(vertical_display);
-    for (const col of mountain) for (const entry of col) vertical_set.add(entry.y);
-    const sorted = vertical_set.values().sort(vertical_compare);
-    const vertical_index = new DisplayMap<Vertical, number>(vertical_display);
-    for (let i = 0; i < sorted.length; i++) vertical_index.set(sorted[i], i);
-
-    const entries: (string | undefined)[][] = Array.from({ length: mountain.length }, () =>
-        Array.from({ length: sorted.length }, () => undefined),
-    );
-    const left_legs: ([number, number] | undefined)[][] = Array.from({ length: mountain.length }, () =>
-        Array.from({ length: sorted.length }, () => undefined),
+    // 每列末尾的元素是内部行标为 0 的虚拟项,没有 position,故不进 shape。
+    const shape: MountainShape<Vertical> = mountain.map((col) =>
+        col
+            .filter((entry) => entry.position !== undefined)
+            .map((entry) => ({ vertical: entry.y, text: y_entry_display(entry, current_equiv) })),
     );
 
-    for (let i = 0; i < mountain.length; i++) {
-        for (let j = 0; j < mountain[i].length - 1; j++) {
-            const entry = mountain[i][j];
-            const vj = vertical_index.get(entry.y)!;
-            if (current_equiv === 'DBMS') {
-                entries[i][vj - 1] =
-                    entry.right_up !== undefined
-                        ? '' + entry.right_up.depth + ','.repeat(entry.right_up.sep! + 1)
-                        : '0';
-            } else if (current_equiv === 'ADBMS' || current_equiv === "DBMS'") {
-                entries[i][vj - 1] = entry.sep !== undefined ? ','.repeat(entry.sep + 1) + entry.depth : '*';
-            } else {
-                entries[i][vj - 1] = '' + entry.value;
-            }
-            if (entry.left_down) {
-                const pvj = vertical_index.get(entry.left_down.y)!;
-                if (pvj !== 0) left_legs[i][vj - 1] = [entry.left_down.x, pvj - 1];
-            }
+    for (const col of mountain) {
+        for (const entry of col) {
+            const target = entry.left_down?.position;
+            if (entry.position === undefined || target === undefined) continue; // 落点是虚拟项 → 无左腿
+            shape[entry.position[0]][entry.position[1]].leg_target = target;
         }
     }
 
-    const H = 40,
-        HS = 5;
-    const heights: number[] = [0];
-    const line_heights: number[] = [];
-    for (let i = 2; i < sorted.length; i++) {
-        const sep = dimension_difference(sorted[i], sorted[i - 1]);
-        const d_height = H + HS * sep;
-        heights.push(heights[i - 2] + d_height);
-        for (let k = 0; k <= sep; k++) line_heights.push(heights[i - 2] + H / 2 + HS * k);
-    }
-
-    let vertical_names = sorted
-        .slice(1)
-        .map((v) => vertical_display_html(v.length === 1 ? (v[0] === 1 ? [] : [v[0] - 1]) : v));
-
-    return { sorted_verticals: vertical_names, heights, line_heights, entries, left_legs };
+    return draw_mountain_diagram(
+        shape,
+        {
+            vertical_display,
+            vertical_compare,
+            // dimension_difference 给出的是相邻两行的间隔数,分割线数量为其 + 1。
+            separator_count: (higher, lower) => dimension_difference(higher, lower) + 1,
+            row_label: y_row_label,
+        },
+        { invert_vertical, display_html_row_label: true },
+    );
 }
 
 export const y_diagram_control: DiagramControl<Expr, YDiagramData> = {
     default_data: { current_equiv: undefined, invert_vertical: undefined },
-    draw_diagram: (seq, data) => {
-        const mountain = compute_y_mountain_diagram(seq, data.current_equiv);
-        if (!mountain) return undefined;
-        return draw_mountain_diagram(mountain, {
-            invert_vertical: data.invert_vertical ?? false,
-            display_html_vertical: true,
-        });
-    },
+    draw_diagram: (seq, data) => draw_y_mountain_diagram(seq, data.current_equiv, data.invert_vertical ?? false),
     handle_action: (data, action): YDiagramData | null => {
         if (action.type === 'scroll') {
             if (action.direction === 'down') return { ...data, invert_vertical: true };

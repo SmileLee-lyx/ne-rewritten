@@ -2,15 +2,14 @@ import {
     anti_lex_compare,
     boolean_compare,
     deepcopy,
-    DisplayMap,
-    DisplaySet,
     lex_compare,
     number_compare,
     tuple_lex_compare,
 } from '@/utils.ts';
 import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
-import { draw_mountain_diagram, MountainDiagramData } from '@/notations/draw_mountain_util.ts';
+import type { Diagram } from '@/core/diagram_types.ts';
+import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
 
 export type Sep = number[];
 export type Vertical = Sep[];
@@ -571,62 +570,50 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-function compute_mountain_diagram(expr: Mountain, current_equiv?: string): MountainDiagramData | undefined {
+/** 计算层：把 Sω²MN 的山脉化为形状，交给通用绘制函数。 */
+function draw_s_omega2_mn_mountain_diagram(
+    expr: Mountain,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
     const m = expr;
     const m_display = current_equiv?.includes('layer') ? convert_to_layer(expr) : expr;
     const V = m.map(column_verticals);
 
-    const vertical_set = new DisplaySet<Vertical>(vertical_display);
-    vertical_set.add([]);
-    for (const Vi of V) for (const v of Vi) vertical_set.add(v);
-    const sorted = vertical_set.values().sort(vertical_compare);
-    const sorted_verticals = sorted.map(vertical_display);
-    const vertical_index = new DisplayMap<Vertical, number>(vertical_display);
-    for (let i = 0; i < sorted.length; i++) {
-        vertical_index.set(sorted[i], i);
-    }
-
-    // 计算行高
-    const H = 40,
-        HS = 5;
-    const line_heights: number[] = [];
-    const heights: number[] = [0];
-    for (let i = 1; i < sorted.length; i++) {
-        const d_height = H + HS;
-        heights.push(heights[i - 1] + d_height);
-        line_heights.push(heights[i - 1] + H / 2);
-    }
-
-    const entries: (string | undefined)[][] = Array.from({ length: m.length }, () =>
-        Array.from({ length: vertical_index.size }, () => undefined),
-    );
-    const left_legs: ([number, number] | undefined)[][] = Array.from({ length: m.length }, () =>
-        Array.from({ length: vertical_index.size }, () => undefined),
-    );
-
-    for (let i = 0; i < m.length; ++i) {
-        entries[i][0] = '*';
-        for (let j = 0; j < m[i].length; j++) {
-            const vj = vertical_index.get(V[i][j])!;
-            entries[i][vj] = entry_display(m_display[i][j]);
+    // 每列第 0 个节点是底行哨兵（vertical 为 []、文字 '*'）：空行因此参与排序，也是左腿的落点。
+    const shape: MountainShape<Vertical> = m.map((col, i) => {
+        const nodes: MountainNode<Vertical>[] = [{ vertical: [], text: '*' }];
+        for (let j = 0; j < col.length; j++) {
             const [pi, pj] = parent(m, V, [i, j]);
-            const pvj = pj === 0 ? 0 : vertical_index.get(V[pi][pj - 1])!;
-            left_legs[i][vj] = [pi, pvj];
+            const node: MountainNode<Vertical> = {
+                vertical: V[i][j],
+                text: entry_display(m_display[i][j]),
+            };
+            // 哨兵占列内位置 0，故“父项下方一格”的落点正是位置 pj。
+            if (pi !== -1) node.leg_target = [pi, pj];
+            nodes.push(node);
         }
-    }
+        return nodes;
+    });
 
-    return { sorted_verticals, heights, line_heights, entries, left_legs };
+    return draw_mountain_diagram(
+        shape,
+        {
+            vertical_display,
+            vertical_compare,
+            // 本记号行距一律相同：每个间隙一条分割线，行距 40px。
+            separator_count: () => 1,
+        },
+        { invert_vertical },
+    );
 }
 
 const draw_diagram_control: DiagramControl<Mountain, DiagramData> = {
     default_data: { current_equiv: undefined, invert_vertical: undefined },
-    draw_diagram: (_expr, _data) => {
-        const mountain = compute_mountain_diagram(_expr, _data.current_equiv);
-        if (!mountain) return undefined;
-        return draw_mountain_diagram(mountain, { invert_vertical: _data.invert_vertical ?? false });
-    },
+    draw_diagram: (_expr, _data) =>
+        draw_s_omega2_mn_mountain_diagram(_expr, _data.current_equiv, _data.invert_vertical ?? false),
     handle_action: (data: DiagramData, action): DiagramData | null => {
         if (action.type === 'scroll') {
             if (action.direction === 'down') {

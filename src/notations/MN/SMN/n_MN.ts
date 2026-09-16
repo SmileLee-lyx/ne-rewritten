@@ -1,14 +1,7 @@
-import {
-    boolean_compare,
-    deepcopy,
-    DisplayMap,
-    DisplaySet,
-    lex_compare,
-    number_compare,
-    tuple_lex_compare,
-} from '@/utils.ts';
+import { boolean_compare, deepcopy, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { MN_FS_variants } from '@/notations/notation_utils.ts';
-import { draw_mountain_diagram, MountainDiagramData } from '@/notations/draw_mountain_util.ts';
+import type { Diagram } from '@/core/diagram_types.ts';
+import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import { DiagramControl, NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
 
 export type Sep = number;
@@ -549,66 +542,50 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-/** 计算层：将 ωMN 的 Expr 转为 MountainDiagramData。 */
-function compute_mountain_diagram(expr: Mountain, current_equiv?: string): MountainDiagramData | undefined {
+/** 计算层：把 n-MN 的山脉化为形状，交给通用绘制函数。 */
+function draw_n_mn_mountain_diagram(
+    expr: Mountain,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
     const m = fill_ghost(expr);
     const m_display = current_equiv?.includes('layer') ? convert_to_layer(expr) : expr;
     const V = m.map(column_verticals);
 
-    const vertical_set = new DisplaySet<Vertical>(vertical_display);
-    vertical_set.add([]);
-    for (const Vi of V) for (const v of Vi) vertical_set.add(v);
-    const sorted = vertical_set.values().sort(vertical_compare);
-    const sorted_verticals = sorted.map(vertical_display);
-    const vertical_index = new DisplayMap<Vertical, number>(vertical_display);
-    for (let i = 0; i < sorted.length; i++) {
-        vertical_index.set(sorted[i], i);
-    }
-
-    // 计算行高
-    const H = 40,
-        HS = 5;
-    const line_heights: number[] = [];
-    const heights: number[] = [0];
-    for (let i = 1; i < sorted.length; i++) {
-        const sep = vertical_diff(sorted[i], sorted[i - 1]);
-        const d_height = H + HS * sep;
-        heights.push(heights[i - 1] + d_height);
-        for (let k = 0; k <= sep; k++) line_heights.push(heights[i - 1] + H / 2 + HS * k);
-    }
-
-    const entries: (string | undefined)[][] = Array.from({ length: m.length }, () =>
-        Array.from({ length: vertical_index.size }, () => undefined),
-    );
-    const left_legs: ([number, number] | undefined)[][] = Array.from({ length: m.length }, () =>
-        Array.from({ length: vertical_index.size }, () => undefined),
-    );
-
-    for (let i = 0; i < m.length; ++i) {
-        entries[i][0] = '*';
-        for (let j = 0; j < m[i].length; j++) {
-            const vj = vertical_index.get(V[i][j])!;
-            entries[i][vj] = j < m_display[i].length ? entry_display(m_display[i][j], false) : '*';
+    // 每列第 0 个节点是底行哨兵（vertical 为 []、文字 '*'）：空行因此参与排序，也是左腿的落点。
+    const shape: MountainShape<Vertical> = m.map((col, i) => {
+        const nodes: MountainNode<Vertical>[] = [{ vertical: [], text: '*' }];
+        for (let j = 0; j < col.length; j++) {
             const [pi, pj] = parent(m, V, [i, j]);
-            if (pi !== -1) {
-                const pvj = pj === 0 ? 0 : vertical_index.get(V[pi][pj - 1])!;
-                left_legs[i][vj] = [pi, pvj];
-            }
+            const node: MountainNode<Vertical> = {
+                vertical: V[i][j],
+                text: j < m_display[i].length ? entry_display(m_display[i][j], false) : '*',
+            };
+            // 哨兵占列内位置 0，故“父项下方一格”的落点正是位置 pj。
+            if (pi !== -1) node.leg_target = [pi, pj];
+            nodes.push(node);
         }
-    }
+        return nodes;
+    });
 
-    return { sorted_verticals, heights, line_heights, entries, left_legs };
+    return draw_mountain_diagram(
+        shape,
+        {
+            vertical_display,
+            vertical_compare,
+            // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
+            separator_count: (higher, lower) => vertical_diff(higher, lower) + 1,
+        },
+        { invert_vertical },
+    );
 }
 
 export const draw_diagram_control: DiagramControl<Mountain, DiagramData> = {
     default_data: { current_equiv: undefined, invert_vertical: undefined },
-    draw_diagram: (_expr, _data) => {
-        const mountain = compute_mountain_diagram(_expr, _data.current_equiv);
-        if (!mountain) return undefined;
-        return draw_mountain_diagram(mountain, { invert_vertical: _data.invert_vertical ?? false });
-    },
+    draw_diagram: (_expr, _data) =>
+        draw_n_mn_mountain_diagram(_expr, _data.current_equiv, _data.invert_vertical ?? false),
     handle_action: (data: DiagramData, action): DiagramData | null => {
         if (action.type === 'scroll') {
             if (action.direction === 'down') {
