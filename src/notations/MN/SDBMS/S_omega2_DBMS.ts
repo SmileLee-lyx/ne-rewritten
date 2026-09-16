@@ -14,7 +14,8 @@ import { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import { DiagramData } from '@/notations/MN/SDBMS/S1DBMS.ts';
 
-type HeightEntry = [number, number | 'w'];
+type HeightPos = number | [number];
+type HeightEntry = [number, HeightPos];
 type Height = HeightEntry[];
 type Entry = [number, Height];
 type Column = Entry[];
@@ -29,7 +30,7 @@ function is_infinity(expr: Expr): boolean {
 function infinity_FS(index: number): Expr {
     const result: Expr = [[]];
     for (let i = 0; i < index; ++i) {
-        result.push([[i, [[i, 'w']]]]);
+        result.push([[i, [[i, [i]]]]]);
     }
     return result;
 }
@@ -39,9 +40,16 @@ function is_limit(expr: Expr): boolean {
     return expr.length > 0 && expr[expr.length - 1].length > 0;
 }
 
-function compare_height_pos(hp1: number | 'w', hp2: number | 'w'): number {
-    if (hp1 === 'w' || hp2 === 'w') {
-        return boolean_compare(hp1 === 'w', hp2 === 'w');
+function is_higher_pos(hp: HeightPos): hp is [number] {
+    return typeof hp !== 'number';
+}
+
+function compare_height_pos(hp1: HeightPos, hp2: HeightPos): number {
+    if (is_higher_pos(hp1) && is_higher_pos(hp2)) {
+        return number_compare(hp1[0], hp2[0]);
+    }
+    if (is_higher_pos(hp1) || is_higher_pos(hp2)) {
+        return boolean_compare(is_higher_pos(hp1), is_higher_pos(hp2));
     }
     return number_compare(hp1, hp2);
 }
@@ -64,9 +72,15 @@ function compare(expr1: Expr, expr2: Expr): number {
 
 type DisplayType = 'plain' | 'html';
 
+function height_pos_display(p: HeightPos): string {
+    if (is_higher_pos(p)) return 'ω' + (p[0] === 0 ? '' : '+' + p[0]);
+    return '' + (p + 1);
+}
+
 function height_entry_display([v, p]: HeightEntry): string {
-    const d_p = p === 'w' ? 'ω' : '' + (p + 1);
-    return v + 1 + '@' + d_p;
+    const d_v = '' + (v + 1);
+    const d_p = height_pos_display(p);
+    return d_v + '@' + d_p;
 }
 
 function height_display(h: Height): string {
@@ -146,24 +160,21 @@ export function from_display(str: string): Expr {
         return parse_number() - 1;
     }
 
-    /**
-     * 行高的位置: 数字 n 为列标, 内部位置 = n - 1(与 display 的 'p + 1' 互逆);
-     * 或 'w' / 'ω' 表示第 ω 个 pos(内部存 'w')。
-     * 本记号在 indexed SωDBMS 的基础上增加了第 ω 个 pos, 故位置可以是 ω。
-     */
-    function parse_height_pos(): number | 'w' {
+    function parse_height_pos(): HeightPos {
         skip_spaces();
         if (i < s.length && (s[i] === 'ω' || s[i] === 'w')) {
             i++;
-            return 'w';
+            skip_spaces();
+            if (s[i] === '+') {
+                i++;
+                skip_spaces();
+                return [parse_number()];
+            }
+            return [0];
         }
         return parse_number() - 1;
     }
 
-    /**
-     * 行高的单项 'v@p': v 为值(见 parse_height_value), p 为位置(见 parse_height_pos)。
-     * 内部按 [值, 位置] 存放(注意本版本与 v1/v2 的 [位置, 值] 顺序相反)。
-     */
     function parse_height_item(): HeightEntry {
         const v = parse_height_value();
         skip_spaces();
@@ -172,10 +183,6 @@ export function from_display(str: string): Expr {
         return [v, parse_height_pos()];
     }
 
-    /**
-     * 解析行高: 形如 '(项,项,…)', 每项为 'v@p'(见 parse_height_item), 空为 '()'。
-     * 另容忍多一层外层括号(历史上 display 的 plain 曾输出 'v^((…))'), 使单/双括号都能解析。
-     */
     function parse_height(): Height {
         skip_spaces();
         if (i >= s.length || s[i] !== '(') error();
@@ -298,14 +305,17 @@ function merge_column(...cols: Column[]): Column {
     return merge_column(merge_column(cols[0], cols[1]), ...cols.slice(2));
 }
 
-function copy_value<T extends number | 'w'>(value: T, r: number, offset: number): T;
+function copy_value(value: number, r: number, offset: number): number {
+    return value >= r ? value + offset : value;
+}
 
-function copy_value(value: number | 'w', r: number, offset: number): number | 'w' {
-    return value === 'w' ? 'w' : value >= r ? value + offset : value;
+function copy_height_pos(p: HeightPos, r: number, offset: number): HeightPos {
+    if (is_higher_pos(p)) return p;
+    return copy_value(p, r, offset);
 }
 
 function copy_height_entry([v, p]: HeightEntry, r: number, offset: number): HeightEntry {
-    return [copy_value(v, r, offset), copy_value(p, r, offset)];
+    return [copy_value(v, r, offset), copy_height_pos(p, r, offset)];
 }
 
 function copy_height(h: Height, r: number, offset: number): Height {
@@ -320,7 +330,7 @@ function copy_column(col: Column, r: number, offset: number): Column {
     return col.map((entry) => copy_entry(entry, r, offset));
 }
 
-function height_fill_dec(h: Height, p: number | 'w', v: number): Height {
+function height_fill_dec(h: Height, p: HeightPos, v: number): Height {
     const new_h = h.slice();
     while (new_h.length > 0 && compare_height_pos(new_h[new_h.length - 1][1], p) <= 0) new_h.pop();
     if (new_h.length > 0 && new_h[new_h.length - 1][0] === v) new_h.pop();
@@ -329,7 +339,7 @@ function height_fill_dec(h: Height, p: number | 'w', v: number): Height {
     return new_h;
 }
 
-function find_maximal_height_pos(h: Height, expr: Expr, ph: number): number | undefined {
+function find_lower_height_pos(h: Height, expr: Expr, ph: number): number | undefined {
     const col = expr[ph];
     let j = col.findIndex(([, hv]) => compare_height(hv, h) >= 0);
     if (j === -1) j = col.length;
@@ -337,13 +347,13 @@ function find_maximal_height_pos(h: Height, expr: Expr, ph: number): number | un
     let lower_candidate: number | undefined = undefined;
     if (j > 0) {
         const h_lower = col[j - 1][1];
-        const hj = h_lower.findIndex(([, p]) => p !== 'w');
+        const hj = h_lower.findIndex(([, p]) => !is_higher_pos(p));
         if (hj !== -1) {
             const [v, p] = h_lower[hj];
             if (v === p) {
                 lower_candidate = v;
             } else {
-                lower_candidate = find_maximal_height_pos(h_lower, expr, v);
+                lower_candidate = find_lower_height_pos(h_lower, expr, v);
             }
         }
     }
@@ -356,11 +366,11 @@ function find_maximal_height_pos(h: Height, expr: Expr, ph: number): number | un
 function compute_new_height(h: Height, expr: Expr, r: number): Height | undefined {
     const [v, p] = h[h.length - 1];
 
-    if (p === 'w') {
-        return height_fill_dec(h, r, r);
+    if (is_higher_pos(p)) {
+        return height_fill_dec(h, p[0] === 0 ? r : [p[0] - 1], r);
     }
 
-    let new_p = find_maximal_height_pos(h, expr, p);
+    let new_p = find_lower_height_pos(h, expr, p);
 
     if (new_p !== undefined) {
         return height_fill_dec(h, new_p, r);
@@ -376,7 +386,11 @@ function compute_new_height(h: Height, expr: Expr, r: number): Height | undefine
             return height(col_rh);
         } else {
             const new_value = col_rh[hj][0];
-            const new_p_bound = p_bound === 'w' ? new_value : find_maximal_height_pos(h, expr, p_bound)!;
+            const new_p_bound: HeightPos = is_higher_pos(p_bound)
+                ? p_bound[0] === 0
+                    ? new_value
+                    : [p_bound[0] - 1]
+                : find_lower_height_pos(h, expr, p_bound)!;
 
             let new_h = height_fill_dec(h, new_p_bound, new_value);
             if (hj > 0) {
@@ -420,20 +434,20 @@ function expand(expr: Expr, index: number, shorter: boolean): Expr {
     return result;
 }
 
-function layered_top_separator(expr: Expr, h: Height): number | 'w' {
+function layered_top_separator(expr: Expr, h: Height): HeightPos {
     const [, p] = h[h.length - 1];
-    if (p === 'w') return 'w';
+    if (is_higher_pos(p)) return p;
 
     let layer = -1;
     let current: number | undefined = p;
     while (current !== undefined) {
-        current = find_maximal_height_pos(h, expr, current);
+        current = find_lower_height_pos(h, expr, current);
         layer++;
     }
     return layer;
 }
 
-type Entry_DBMS = [number, number | 'w'];
+type Entry_DBMS = [number, HeightPos];
 type Column_DBMS = Entry_DBMS[];
 type Expr_DBMS = Column_DBMS[];
 
@@ -442,6 +456,7 @@ const INFINITY_dbms: Expr_DBMS = Infinity as any;
 function is_infinity_dbms(expr: Expr_DBMS): boolean {
     return expr === INFINITY_dbms;
 }
+
 function convert_to_dbms(expr: Expr): Expr_DBMS {
     if (is_infinity(expr)) return INFINITY_dbms;
 
@@ -473,9 +488,13 @@ function convert_to_dbms_data(expr: Expr): [Entry[][], Expr_DBMS] {
     return [result, result_dbms];
 }
 
+function dbms_sep_display(s: HeightPos): string {
+    return is_higher_pos(s) ? ';' + ','.repeat(s[0]) : ','.repeat(s + 1);
+}
+
 function dbms_entry_display([v, s]: Entry_DBMS): string {
     const d_v = v + 1;
-    const d_s = s === 'w' ? ';' : ','.repeat(s + 1);
+    const d_s = dbms_sep_display(s);
     return d_s + d_v;
 }
 
@@ -508,13 +527,13 @@ export function dbms_display_marked(expr: Expr_DBMS, type: DisplayType = 'plain'
     return parts.join('');
 }
 
-type Vertical_DBMS = (number | 'w')[];
+type Vertical_DBMS = HeightPos[];
 
 function compare_dbms_vertical(v1: Vertical_DBMS, v2: Vertical_DBMS): number {
     return lex_compare(v1, v2, compare_height_pos);
 }
 
-function dbms_vertical_increase(v: Vertical_DBMS, s: number | 'w'): Vertical_DBMS {
+function dbms_vertical_increase(v: Vertical_DBMS, s: HeightPos): Vertical_DBMS {
     const result = deepcopy(v);
     while (result.length > 0 && compare_height_pos(result[result.length - 1], s) < 0) result.pop();
     result.push(s);
@@ -580,7 +599,7 @@ function dbms_to_y_mountain(expr: Expr_DBMS): number[][] {
 }
 
 function display_as_Y(matrix: Expr_DBMS): string {
-    if (is_infinity_dbms(matrix)) return '1,3,13';
+    if (is_infinity_dbms(matrix)) return '1,3,14';
     return dbms_to_y_mountain(matrix)
         .map((col) => col[0])
         .join(',');
@@ -591,7 +610,7 @@ function to_y_sequence(expr: Expr): number[] {
 }
 
 function dbms_vertical_display(v: Vertical_DBMS): string {
-    return v.map((x) => (x === 'w' ? ';' : ','.repeat(x + 1))).join('/');
+    return v.map(dbms_sep_display).join('/');
 }
 
 function draw_SDBMS_diagram(
@@ -661,9 +680,9 @@ export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     },
 };
 
-export const S_omega_p1_DBMS: NotationDefinition<Expr> = {
-    id: 's-omega+1-dbms',
-    name: 'S ω+1 DBMS',
+export const S_omega2_DBMS: NotationDefinition<Expr> = {
+    id: 's-omega2-dbms',
+    name: 'S ω2 DBMS',
     category_id: 'category-sdbms-test',
     display: {
         plain: (m) => display(m, 'plain'),
