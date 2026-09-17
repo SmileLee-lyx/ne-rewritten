@@ -137,68 +137,55 @@ export function sequence_FS_variants<T>(
     return core;
 }
 
+/**
+ * MN 系列的基本列: FS / FS_alter / FS_short 与 sequence_FS_variants 完全一致(同一实现),
+ * 原先 MN 专属的 lnz-1(第 1 项改用截断)现在作为额外变体 FS_equiv.fast 保留。
+ */
 export function MN_FS_variants<T>(
     expand: (seq: T[][], index: number, shorter: boolean) => T[][],
     is_infinity: (seq: T[][]) => boolean,
     infinity_FS: (index: number) => T[][],
     is_limit: (seq: T[][]) => boolean,
     display: (seq: T[][]) => string,
-): Record<'FS' | 'FS_alter' | 'FS_short', (seq: T[][], index: number) => T[][]> {
-    const data: Record<string, T[][][]> = {};
-    const data_alter: Record<string, T[][][]> = {};
+): Record<'FS' | 'FS_alter' | 'FS_short', (seq: T[][], index: number) => T[][]> & {
+    FS_equiv: { fast: (seq: T[][], index: number) => T[][] };
+} {
+    const base = sequence_FS_variants<T[]>(expand, is_infinity, infinity_FS, is_limit, display);
     const data_short: Record<string, [boolean, boolean]> = {};
 
-    const core = {
-        FS: (seq: T[][], index: number): T[][] => {
-            if (is_infinity(seq)) return infinity_FS(index);
-            if (!seq.length) return [];
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            const data_key = display(seq);
-            if (data[data_key] === undefined) data[data_key] = [];
-            else if (data[data_key][index] !== undefined) return data[data_key][index];
-            return (data[data_key][index] = expand(seq, index, true));
-        },
-        FS_alter: (seq: T[][], index: number): T[][] => {
-            if (is_infinity(seq)) return infinity_FS(index);
-            if (!seq.length) return [];
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            const data_key = display(seq);
-            if (data_alter[data_key] === undefined) data_alter[data_key] = [];
-            else if (data_alter[data_key][index] !== undefined) return data_alter[data_key][index];
-            return (data_alter[data_key][index] = expand(seq, index, false));
-        },
-        FS_short: (seq: T[][], index: number): T[][] => {
-            if (is_infinity(seq)) return infinity_FS(index);
-            if (!seq.length) return [];
-            if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
-            if (index === 0) return seq.slice(0, seq.length - 1);
-            const data_key = display(seq);
-            let d = data_short[data_key];
-            if (d === undefined) {
-                let target = core.FS(seq, 1);
-                d = data_short[data_key] = [
-                    target[seq.length - 1].length !== seq[seq.length - 1].length - 1,
-                    target.length !== seq.length,
-                ];
-            }
-            let current = 1;
-            if (d[0]) {
-                if (index === current) {
-                    let result = seq.slice();
-                    result[result.length - 1] = result[result.length - 1].slice();
-                    result[result.length - 1].pop();
-                    return result;
-                } else current++;
-            }
-            if (d[1]) {
-                if (index === current) {
-                    return core.FS(seq, 1).slice(0, seq.length);
-                } else current++;
-            }
-            return core.FS(seq, 1 + index - current);
-        },
+    /** 原 MN 的 lnz-1: 与 FS_short 的区别是第 1 项用"末列去掉最后一个元素"的截断。 */
+    const fast = (seq: T[][], index: number): T[][] => {
+        if (is_infinity(seq)) return infinity_FS(index);
+        if (!seq.length) return [];
+        if (!is_limit(seq)) return seq.slice(0, seq.length - 1);
+        if (index === 0) return seq.slice(0, seq.length - 1);
+        const data_key = display(seq);
+        let d = data_short[data_key];
+        if (d === undefined) {
+            let target = base.FS(seq, 1);
+            d = data_short[data_key] = [
+                target[seq.length - 1].length !== seq[seq.length - 1].length - 1,
+                target.length !== seq.length,
+            ];
+        }
+        let current = 1;
+        if (d[0]) {
+            if (index === current) {
+                let result = seq.slice();
+                result[result.length - 1] = result[result.length - 1].slice();
+                result[result.length - 1].pop();
+                return result;
+            } else current++;
+        }
+        if (d[1]) {
+            if (index === current) {
+                return base.FS(seq, 1).slice(0, seq.length);
+            } else current++;
+        }
+        return base.FS(seq, 1 + index - current);
     };
-    return core;
+
+    return { ...base, FS_equiv: { fast } };
 }
 
 export function merge_sum(terms: string[]): string {

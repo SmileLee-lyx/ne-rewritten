@@ -190,6 +190,12 @@ export interface NotationDefinition<T> {
     FS: (a: T, index: number) => T;
     FS_alter?: (a: T, index: number) => T;
     FS_short?: (a: T, index: number) => T;
+    /**
+     * 额外的基本列变体: 键即变体 id(显示在下拉中, 自定义键原样显示字段名)。
+     * 保留键 'FS' / 'FS_alter' / 'FS_short' 缺省时由上面三个同名字段充当,
+     * 因此老记号(只写三个裸字段)与新记号(需要更多变体)可以共存。
+     */
+    FS_equiv?: Record<string, (a: T, index: number) => T>;
     draw_diagram?: DiagramControl<T, any>;
 
     /**

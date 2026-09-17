@@ -15,6 +15,7 @@ import { download_buffer, export_to_xlsx, import_from_xlsx } from '@/core/xlsx_i
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { create_t } from '@/composables/use_i18n.ts';
 import { use_ui_states } from '@/composables/use_ui_states.ts';
+import { active_FS_variant } from '@/core/fs_variants.ts';
 
 export interface SaveLoadInstance {
     trees: Map<string, TreeNode<unknown>>;
@@ -151,7 +152,7 @@ export function use_save_load(trees: Map<string, TreeNode<any>>) {
                 alert(create_t(settings.language)('import.error'));
             }
             if (settings.expand_all_on_import) {
-                expand_all_pending(r, n, settings.variant);
+                expand_all_pending(r, n, active_FS_variant(settings, n));
             }
             if (matched.length > 0) {
                 const last = matched[matched.length - 1];

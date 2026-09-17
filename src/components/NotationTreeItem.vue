@@ -5,6 +5,7 @@ import { find_next, find_prev } from '@/core/tree.ts';
 import type { TreeNodeExtra } from '@/core/extra.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { resolve_diagram_equiv } from '@/core/settings.ts';
+import { active_FS_variant } from '@/core/fs_variants.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { expand_item } from '@/core/expander.ts';
 import { FsTrialExpansionError } from '@/core/errors.ts';
@@ -193,7 +194,7 @@ function on_leave() {
 }
 
 function do_expand(tier?: number, focus?: boolean) {
-    const v = settings.variant;
+    const v = active_FS_variant(settings, props.notation);
     try {
         const child = expand_item(props.node, props.notation, v, tier ?? props.tier ?? 0);
         if (focus && child) focus_node_input(child);
@@ -213,7 +214,7 @@ function on_expr_mousedown(e: MouseEvent) {
 }
 
 function on_pending_badge_click() {
-    expand_pending_node(props.node, props.notation, settings.variant);
+    expand_pending_node(props.node, props.notation, active_FS_variant(settings, props.notation));
 }
 
 function on_expr_click(e: MouseEvent) {
@@ -280,7 +281,7 @@ function on_keydown(e: KeyboardEvent) {
     } else if (e.key.toLowerCase() === 'e' && e.ctrlKey) {
         e.preventDefault();
         const ed_expand = use_expand_dialog();
-        ed_expand.open(ed.value.analysis![0] ?? '', settings.expand);
+        ed_expand.open(ed.value.analysis![0] ?? '', active_FS_variant(settings, props.notation), settings.expand);
     } else if (e.key.toLowerCase() === 'd' && e.ctrlKey) {
         e.preventDefault();
         console.log('DEBUG expr:', props.node.expr);

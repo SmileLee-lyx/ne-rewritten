@@ -1,11 +1,9 @@
-export type Variant = 'FS' | 'FS_alter' | 'FS_short';
 export type DisplayMode = 'plain' | 'html' | 'latex';
 
 export interface ExpandSettings {
     FS_index: number;
     notation_id: string;
     notation_equiv: string | undefined;
-    variant: Variant;
 }
 
 export interface LatexAnalysisSettings {
@@ -40,7 +38,12 @@ export interface InitVariantDef {
 export interface Settings {
     current_notation_id: string;
     tier: number;
-    variant: Variant;
+    /**
+     * 记号当前使用的展开变体: 记号 id → 变体 id('FS' / 'FS_alter' / 'FS_short' 或 FS_equiv 中的自定义键)。
+     * 无记录(或记录已失效)时用该记号的默认变体, 即 lnz-1(FS_short), 不存在则短展开(FS)。
+     * 旧版的全局 variant 字段已废弃: 迁移时直接丢弃其值, 所有记号回到默认变体。
+     */
+    FS_active: Record<string, string | undefined>;
     input_width: number;
     show_input: boolean;
     font_family: string;
@@ -79,7 +82,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
     current_notation_id: 'bm4',
     tier: 0,
-    variant: 'FS_short',
+    FS_active: {},
     input_width: 180,
     show_input: true,
     font_family: 'Comic Sans MS',
@@ -105,7 +108,7 @@ export const DEFAULT_SETTINGS: Settings = {
     generator_state: {},
     variant_state: {},
     user_scripts: [],
-    expand: { FS_index: 1, notation_id: 'omega', notation_equiv: undefined, variant: 'FS_short' },
+    expand: { FS_index: 1, notation_id: 'omega', notation_equiv: undefined },
     latex_analysis: {
         subscript_bracket: true,
         map_p: false,

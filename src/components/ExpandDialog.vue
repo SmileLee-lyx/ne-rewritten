@@ -5,6 +5,7 @@ import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { resolve_name } from '@/notation-definition.ts';
+import { FS_variant_label } from '@/core/fs_variants.ts';
 import type { Settings } from '@/core/settings.ts';
 
 defineProps<{ show: boolean }>();
@@ -61,12 +62,12 @@ function on_fill() {
                         <option v-for="k in ed.equiv_options.value" :key="k" :value="k">{{ k }}</option>
                     </select>
                 </label>
-                <label
+                <label v-if="ed.variant_options.value.length > 0"
                     >{{ t('expand.fs-variant') }}
                     <select v-model="ed.variant.value">
-                        <option value="FS_short">{{ t('fs-variant.short') }}</option>
-                        <option value="FS">{{ t('fs-variant.normal') }}</option>
-                        <option value="FS_alter">{{ t('fs-variant.alternative') }}</option>
+                        <option v-for="id in ed.variant_options.value" :key="id" :value="id">
+                            {{ FS_variant_label(id, t) }}
+                        </option>
                     </select>
                 </label>
             </div>

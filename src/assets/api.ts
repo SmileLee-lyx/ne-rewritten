@@ -25,6 +25,14 @@ export interface NotationDefinition<T> {
     FS: (a: T, index: number) => T;
     FS_alter?: (a: T, index: number) => T;
     FS_short?: (a: T, index: number) => T;
+
+    /**
+     * 额外的基本列变体(可选): 键为变体 id, 值为该变体的基本列函数。
+     * 其中的保留键 'FS' / 'FS_alter' / 'FS_short' 缺省时由上面三个同名字段充当。
+     * 主要作用为添加各种 "fast" 变体(参考 MN 记号: 其 fast 即"第 1 项为截断"的那份 lnz-1 基本列)。
+     */
+    FS_equiv?: Record<string, (a: T, index: number) => T>;
+
     draw_diagram?: DiagramControl<T, any>;
 
     /**

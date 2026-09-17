@@ -8,6 +8,7 @@ import { use_diagram } from '@/composables/use_diagram.ts';
 import { expand_all_pending, import_analysis_eager } from '@/core/analysis.ts';
 import { resolve_display, resolve_display_name } from '@/notation-definition.ts';
 import { resolve_diagram_equiv } from '@/core/settings.ts';
+import { active_FS_variant, FS_variant_label, list_FS_variants } from '@/core/fs_variants.ts';
 import { COMPAT_URL, IS_COMPAT } from '@/core/deployment.ts';
 import { focus_node_input } from '@/composables/use_focus_tracker.ts';
 import { reload_all } from '@/core/user_defined_notation.ts';
@@ -53,6 +54,18 @@ interface EquivOption {
     label: string;
 }
 
+/** 当前记号可用的展开变体(只列出实际存在的; 自定义变体显示字段名)。 */
+const FS_variant_options = computed<string[]>(() => (notation.value ? list_FS_variants(notation.value) : []));
+const active_FS_variant_id = computed<string>(() =>
+    notation.value ? active_FS_variant(settings, notation.value) : '',
+);
+
+function on_FS_variant_change(e: Event) {
+    const n = notation.value;
+    if (!n) return;
+    settings.FS_active = { ...settings.FS_active, [n.id]: (e.target as HTMLSelectElement).value || undefined };
+}
+
 const equiv_options = computed<EquivOption[]>(() => {
     const n = notation.value;
     if (!n?.display_equiv) return [];
@@ -85,7 +98,7 @@ function handle_expand_all() {
     const n = notation.value;
     const r = root.value;
     if (!n || !r) return;
-    expand_all_pending(r, n, settings.variant);
+    expand_all_pending(r, n, active_FS_variant(settings, n));
 }
 
 function on_expand_all_import_change(e: Event) {
@@ -133,7 +146,7 @@ function handle_find() {
     }
     try {
         const expr = display_spec.from_display(val);
-        const matched = import_analysis_eager(r, [{ expr, analysis: [] }], n, settings.variant);
+        const matched = import_analysis_eager(r, [{ expr, analysis: [] }], n, active_FS_variant(settings, n));
         if (matched.length > 0) {
             focus_node_input(matched[0]);
         } else {
@@ -265,12 +278,12 @@ function on_find_keydown(e: KeyboardEvent) {
                         {{ t('display.' + settings.display_mode) }}
                     </button>
                 </span>
-                <label>
+                <label v-if="FS_variant_options.length > 0">
                     {{ t('fs-variant.label') }}
-                    <select v-model="settings.variant" @mousedown.stop>
-                        <option value="FS">{{ t('fs-variant.normal') }}</option>
-                        <option value="FS_alter">{{ t('fs-variant.alternative') }}</option>
-                        <option value="FS_short">{{ t('fs-variant.short') }}</option>
+                    <select :value="active_FS_variant_id" @mousedown.stop @change="on_FS_variant_change">
+                        <option v-for="id in FS_variant_options" :key="id" :value="id">
+                            {{ FS_variant_label(id, t) }}
+                        </option>
                     </select>
                 </label>
                 <span v-if="equiv_options.length > 0" style="margin-left: 8px">

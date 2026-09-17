@@ -130,6 +130,11 @@ function load_settings(): Partial<Settings> {
         // 迁移: 移除已废弃的 shown_notations
         delete (parsed as any).shown_notations;
 
+        // 迁移: 移除旧的全局展开变体(其值直接丢弃, 所有记号改用默认变体 FS_short ?? FS)
+        delete (parsed as any).variant;
+        // 迁移: 展开对话框不再单独记忆变体(它现在直接取该记号的当前变体)
+        if (parsed.expand) delete (parsed as any).expand.variant;
+
         return parsed;
     } catch {
         return {};

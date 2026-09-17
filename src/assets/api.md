@@ -29,6 +29,7 @@ export interface NotationDefinition<T> {
     FS: (a: T, index: number) => T;
     FS_alter?: (a: T, index: number) => T;
     FS_short?: (a: T, index: number) => T;
+    FS_equiv?: Record<string, (a: T, index: number) => T>;
 
     draw_diagram?: DiagramControl<T, any>;              // 图表(画布), 详见"绘制图表与山脉图"章节
     mountain_view?: (expr: T, data: any) => MountainViewSource | undefined;  // 山脉图(HTML 面板)
@@ -142,10 +143,11 @@ type NotationDisplaySpec<T> =
     FS: (a: T, index: number) => T;
     FS_alter?: (a: T, index: number) => T;
     FS_short?: (a: T, index: number) => T;
+    FS_equiv?: Record<string, (a: T, index: number) => T>;
 ```
 
-`FS` 字段以及 `FS_alter`, `FS_short` 可选字段表示计算记号的基本列.
-它们对应设置项中的三种展开变体.
+`FS` 字段以及 `FS_alter`, `FS_short`, `FS_equiv` 可选字段表示计算记号的基本列.
+它们对应设置项中的展开变体.
 
 以矩阵记号或序列记号为例, 若完整提供, 
 则语义上 `FS` 与 `FS_alter` 为短展开与长展开.
@@ -157,6 +159,32 @@ type NotationDisplaySpec<T> =
 其中若与第 $1$ 项重复则删去一个重复项.
 
 可以不定义 `FS_short` 字段, 这时在 lnz-1 模式下会默认使用 `FS` 字段.
+
+```ts
+    FS_equiv?: Record<string, (a: T, index: number) => T>;
+```
+
+`FS_equiv` 为可选字段, 用于给出三种预设变体之外的更多展开变体.
+其键为变体的 id, 值为该变体的基本列函数.
+
+`FS_equiv` 的主要作用为添加各种 "fast" 变体 (参考 MN):
+MN 系列记号的 `FS_short` 与通常记号一致,
+而把第 $1$ 项为截断的那份 lnz-1 基本列作为额外的变体提供, 写作
+
+```ts
+    FS_equiv: { fast: ... },
+```
+
+其中的保留键 `FS`, `FS_alter`, `FS_short` 缺省时由上面三个同名字段充当,
+即 `FS_equiv` 中的 `FS_short` 与字段 `FS_short` 同义
+(若两者都存在, 则以 `FS_equiv` 中的为准).
+
+变体选择是**按记号**分别记录的.
+未定义的变体不会出现在设置项中;
+自定义键的变体在设置项中直接以键名 (如 `fast`) 显示,
+而三个保留键则显示为"短展开", "长展开", "lnz-1".
+若某记号还没有记录过所选的变体, 则使用默认变体,
+即存在 `FS_short` 时用 `FS_short`, 否则用 `FS`.
 
 ### 绘制图表
 

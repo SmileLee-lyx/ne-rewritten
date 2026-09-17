@@ -1,5 +1,6 @@
 import { append_sibling, get_bound, prepend_child, TreeNode } from '@/core/tree.ts';
 import { FsTrialExpansionError } from '@/core/errors.ts';
+import { resolve_FS } from '@/core/fs_variants.ts';
 import { NotationDefinition, resolve_display, run_debug_verification } from '@/notation-definition.ts';
 
 /**
@@ -12,19 +13,6 @@ export function set_max_find_fs(value: number): void {
     max_find_fs_value = value;
 }
 
-function resolve_fs<T>(notation: NotationDefinition<T>, variant: string): (expr: T, index: number) => T {
-    switch (variant) {
-        case 'FS':
-            return notation.FS;
-        case 'FS_alter':
-            return notation.FS_alter ?? notation.FS;
-        case 'FS_short':
-            return notation.FS_short ?? notation.FS;
-        default:
-            return notation.FS;
-    }
-}
-
 /** 展开过程中的共享上下文: notation 与 variant 同源, fs 由其预解析, 避免四处手传同源参数。 */
 interface ExpandCtx<T> {
     notation: NotationDefinition<T>;
@@ -33,7 +21,7 @@ interface ExpandCtx<T> {
 }
 
 function make_ctx<T>(notation: NotationDefinition<T>, variant: string): ExpandCtx<T> {
-    return { notation, variant, fs: resolve_fs(notation, variant) };
+    return { notation, variant, fs: resolve_FS(notation, variant) };
 }
 
 function is_last_child<T>(node: TreeNode<T>): boolean {
@@ -222,7 +210,7 @@ export function check_is_standard<T>(expr: T, notation: NotationDefinition<T>, v
         if (upper_fs_index > max_find_fs_value) return false;
         if (upper_fs_index > 0 && !notation.is_limit(upper)) return false;
 
-        const current = resolve_fs(notation, variant)(upper, upper_fs_index);
+        const current = resolve_FS(notation, variant)(upper, upper_fs_index);
         const cmp = notation.compare(current, expr);
         upper_fs_index++;
 
