@@ -30,6 +30,9 @@ export interface NotationDefinition<T> {
     FS_alter?: (a: T, index: number) => T;
     FS_short?: (a: T, index: number) => T;
 
+    draw_diagram?: DiagramControl<T, any>;              // 图表(画布), 详见"绘制图表与山脉图"章节
+    mountain_view?: (expr: T, data: any) => MountainViewSource | undefined;  // 山脉图(HTML 面板)
+
     debug?: Record<string, any>;
 
     debug_verification?: TestFunc<T> | Record<string, TestFunc<T>>;
@@ -154,6 +157,121 @@ type NotationDisplaySpec<T> =
 其中若与第 $1$ 项重复则删去一个重复项.
 
 可以不定义 `FS_short` 字段, 这时在 lnz-1 模式下会默认使用 `FS` 字段.
+
+### 绘制图表
+
+```ts
+    draw_diagram?: DiagramControl<T, any>;
+```
+
+`draw_diagram` 为可选字段, 描述该记号如何在鼠标聚焦表达式时弹出图表.
+其中最常用的写法是给出山脉图(见下一节), 由通用绘制函数负责排布与画线.
+
+### 山脉图
+
+```ts
+    mountain_view?: (expr: T, data: any) => MountainViewSource | undefined;
+```
+
+`mountain_view` 为可选字段: 定义后, 该记号的表达式可以在"山脉图面板"里以 **HTML 表格**的形式查看
+(表格可滚动, 左侧行标列在横向滚动时固定). 它与 `draw_diagram` 的图表是**同一份数据**的两种呈现,
+因此建议两者共用一个构造函数, 只造一次形状与布局.
+
+返回的数据如下:
+
+```ts
+export interface MountainViewSource<V = any> {
+    shape: MountainShape<V>;
+    layout: MountainLayoutOptions<V>;
+    display_html_row_label?: boolean;  // 行标是否按 HTML 渲染
+    display_html_entry?: boolean;      // 格子文字是否按 HTML 渲染
+}
+```
+
+"形状"是每列的节点数组; 每个节点给出所在的行高向量, 显示文字, 以及可选的左腿落点
+(落点写作 `shape[i][j]` 的下标, 省略或越界表示无左腿):
+
+```ts
+export interface MountainNode<V> {
+    vertical: V;                    // 行高向量(记号自己的载体类型)
+    text: string;                   // 该格显示的文字
+    leg_target?: [number, number];  // 左腿折线的落点
+}
+export type MountainShape<V> = MountainNode<V>[][];
+```
+
+"布局"告诉渲染器如何把行高向量排成行:
+
+```ts
+export interface MountainLayoutOptions<V> {
+    vertical_display: (v: V) => string;                // 行高向量 → 文字(同时用作去重键与默认行标)
+    vertical_compare: (a: V, b: V) => number;          // 行的上下次序
+    separator_count: (higher: V, lower: V) => number;  // 相邻两行之间的分割线数量
+    row_label?: (v: V, index: number) => string | undefined;  // 行标; 返回 undefined 则不显示该行标
+    extra_verticals?: V[];                             // 强制参与排序, 但没有节点落在其上的行
+    row_height?: number;                               // 单行基准高度(默认 40, 仅画布版使用)
+    row_gap?: number;                                  // 每条额外分割线的高度增量(默认 5, 仅画布版使用)
+}
+```
+
+几点约定:
+
+- `shape` 中出现的行就是**会被绘制**的行; 记号内部的"虚拟行"不要放进去;
+- 同一列内两个节点不允许落在同一行;
+- HTML 版**无视上下翻转**, 固定按"行标小者在上"绘制(表格第一行即行标最小的行);
+- `separator_count` 只影响画布版的行距, HTML 表格版**无视分割线数量**(各行等距).
+
+### 绘制山脉图: draw_mountain_diagram
+
+画布版图表可以直接调用运行环境注入的 `draw_mountain_diagram`(无需 import):
+
+```ts
+declare function draw_mountain_diagram<V>(
+    shape: MountainShape<V>,
+    layout: MountainLayoutOptions<V>,
+    draw?: MountainDiagramOptions,
+): Diagram | undefined;
+```
+
+`MountainDiagramOptions` 全部可选: `column_width`(列宽, 默认 30), `row_label_width`(行标列宽, 默认 50),
+`connector_offset`(连线两端偏移, 默认 10), `outer_padding`(上下留白, 默认 10), `font_size`(字号, 默认 14),
+`invert_vertical`(是否上下翻转), `display_html_row_label` / `display_html_entry`(行标 / 格子文字是否按 HTML 渲染).
+
+共用一个构造函数的例子:
+
+```js
+function build_source(expr) {
+    return {
+        shape: expr.map((col, i) =>
+            col.map((e, j) => ({
+                vertical: [j],
+                text: '' + e,
+                leg_target: i > 0 && j > 0 ? [i - 1, j - 1] : undefined,
+            })),
+        ),
+        layout: {
+            vertical_display: (v) => '' + v[0],
+            vertical_compare: (a, b) => a[0] - b[0],
+            separator_count: () => 1,
+            row_label: (v) => '' + v[0],
+        },
+    };
+}
+
+register_notation({
+    // ...其余字段...
+    mountain_view: (expr) => build_source(expr),
+    draw_diagram: {
+        default_data: { invert_vertical: false },
+        draw_diagram: (expr, data) => {
+            const s = build_source(expr);
+            return draw_mountain_diagram(s.shape, s.layout, { invert_vertical: data.invert_vertical });
+        },
+    },
+});
+```
+
+若同时需要 HTML 渲染行标或格子文字, 记得在 source 里写 `display_html_row_label` / `display_html_entry`.
 
 ### debug
 

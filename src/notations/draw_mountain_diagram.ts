@@ -62,7 +62,7 @@ export interface MountainLayoutOptions<V> {
 }
 
 /** 布局结果:稠密的格子数据,行下标 vj 即排序后的行号。 */
-interface MountainLayoutData {
+export interface MountainLayoutData {
     /** 各行标号(仅用于左侧显示文本),undefined 表示不显示该行标号。 */
     sorted_verticals: (string | undefined)[];
     /** 各水平网格线距最底行的像素距离。 */
@@ -79,7 +79,10 @@ const DEFAULT_ROW_HEIGHT = 40;
 const DEFAULT_ROW_GAP = 5;
 
 /** 由形状与布局选项算出稠密格子数据。 */
-function compute_mountain_layout<V>(shape: MountainShape<V>, layout: MountainLayoutOptions<V>): MountainLayoutData {
+export function compute_mountain_layout<V>(
+    shape: MountainShape<V>,
+    layout: MountainLayoutOptions<V>,
+): MountainLayoutData {
     const { vertical_display, vertical_compare, separator_count, row_label } = layout;
     const row_height = layout.row_height ?? DEFAULT_ROW_HEIGHT;
     const row_gap = layout.row_gap ?? DEFAULT_ROW_GAP;

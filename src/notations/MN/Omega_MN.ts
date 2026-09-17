@@ -2,6 +2,7 @@ import { deepcopy, lex_compare, number_compare } from '@/utils.ts';
 import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 
 type Sep = number;
@@ -477,12 +478,8 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-/** 计算层：把 ωMN 的 Expr 化为山脉形状，交给通用绘制函数。 */
-function draw_omega_mn_mountain_diagram(
-    expr: Expr,
-    current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
+/** 计算层：把 ωMN 的 Expr 化为"形状 + 布局"，画布版与 HTML 版共用这一份数据。 */
+function build_omega_mn_mountain_source(expr: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
     const m = expr;
@@ -505,16 +502,25 @@ function draw_omega_mn_mountain_diagram(
         return nodes;
     });
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display,
             vertical_compare,
             // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
             separator_count: (higher, lower) => vertical_diff(higher, lower) + 1,
         },
-        { invert_vertical },
-    );
+    };
+}
+
+function draw_omega_mn_mountain_diagram(
+    expr: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_omega_mn_mountain_source(expr, current_equiv);
+    if (!source) return undefined;
+    return draw_mountain_diagram(source.shape, source.layout, { invert_vertical });
 }
 
 const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
@@ -584,6 +590,7 @@ export const omega_MN: NotationDefinition<Expr> = {
     is_limit: mountain_is_limit,
     compare: mountain_compare,
     draw_diagram: draw_diagram_control,
+    mountain_view: (expr, data) => build_omega_mn_mountain_source(expr, data?.current_equiv),
     ...MN_FS_variants(expand, is_infinity, infinity_FS, mountain_is_limit, to_data_key),
     credit_text_id: 'credit.hypcos_mn',
 

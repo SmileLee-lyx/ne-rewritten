@@ -10,6 +10,7 @@ import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 
 export type Sep = number[];
 export type Vertical = Sep[];
@@ -619,12 +620,11 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-/** 计算层：把 Sω↑ωMN 的山脉化为形状，交给通用绘制函数。 */
-function draw_s_omega_pow_omega_mn_mountain_diagram(
+/** 由表达式与等价表示算出"形状 + 布局选项"：画布版与 HTML 版共用这一份数据。 */
+function build_s_omega_pow_omega_mn_mountain_source(
     expr: Mountain,
     current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
+): MountainViewSource | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
     const m = expr;
@@ -644,17 +644,31 @@ function draw_s_omega_pow_omega_mn_mountain_diagram(
         return nodes;
     });
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display,
             vertical_compare,
             // 本记号行距一律相同：每个间隙一条分割线，行距 40px。
             separator_count: () => 1,
             row_label: vertical_cantor_display,
         },
-        { invert_vertical, display_html_row_label: true },
-    );
+        display_html_row_label: true,
+    };
+}
+
+/** 计算层：把 Sω↑ωMN 的山脉化为形状，交给通用绘制函数。 */
+function draw_s_omega_pow_omega_mn_mountain_diagram(
+    expr: Mountain,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_s_omega_pow_omega_mn_mountain_source(expr, current_equiv);
+    if (!source) return undefined;
+    return draw_mountain_diagram(source.shape, source.layout, {
+        invert_vertical,
+        display_html_row_label: source.display_html_row_label,
+    });
 }
 
 const draw_diagram_control: DiagramControl<Mountain, DiagramData> = {
@@ -695,6 +709,7 @@ export const S_omega_pow_omega_MN: NotationDefinition<Mountain> = {
     is_limit,
     compare,
     draw_diagram: draw_diagram_control,
+    mountain_view: (expr, data) => build_s_omega_pow_omega_mn_mountain_source(expr, data?.current_equiv),
     credit_text_id: 'credit.n_mn',
 
     init: () => [Limit_expr(), []],

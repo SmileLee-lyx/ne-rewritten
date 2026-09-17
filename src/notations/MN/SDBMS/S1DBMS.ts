@@ -3,6 +3,7 @@ import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 
 type Entry = [number, number];
 type Column = Entry[];
@@ -398,11 +399,8 @@ function draw_dbms_mountain_diagram(expr: Expr_DBMS, variant?: 'y' | 'l'): Mount
     return shape;
 }
 
-function draw_s1dbms_mountain_diagram_dispatcher(
-    expr: Expr,
-    current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
+/** 由表达式与等价表示算出"形状 + 布局选项":画布版与 HTML 版共用这一份数据。 */
+function build_s1dbms_mountain_source(expr: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
     let shape: MountainShape<number>;
@@ -421,15 +419,28 @@ function draw_s1dbms_mountain_diagram_dispatcher(
         return undefined;
     }
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display: (x) => '' + x,
             vertical_compare: number_compare,
             separator_count: (higher, lower) => 0,
         },
-        { invert_vertical, display_html_entry: true },
-    );
+        display_html_entry: true,
+    };
+}
+
+function draw_s1dbms_mountain_diagram_dispatcher(
+    expr: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_s1dbms_mountain_source(expr, current_equiv);
+    if (!source) return undefined;
+    return draw_mountain_diagram(source.shape, source.layout, {
+        invert_vertical,
+        display_html_entry: source.display_html_entry,
+    });
 }
 
 export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
@@ -497,6 +508,7 @@ export const S1DBMS: NotationDefinition<Expr> = {
     compare,
 
     draw_diagram: draw_diagram_control,
+    mountain_view: (expr, data) => build_s1dbms_mountain_source(expr, data?.current_equiv),
 
     credit_text_id: 'credit.s1dbms',
 

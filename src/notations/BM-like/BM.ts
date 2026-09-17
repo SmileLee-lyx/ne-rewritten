@@ -2,6 +2,7 @@ import { boolean_compare, index_of_last, lex_compare, number_compare } from '@/u
 import type { Diagram } from '@/core/diagram_types.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { draw_mountain_diagram, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { BM_to_triangular, triangular_to_BM } from '@/notations/BM-like/BM_converter.ts';
 
@@ -367,11 +368,8 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-function draw_bm_mountain_diagram(
-    m: Expr,
-    current_equiv: DiagramData['current_equiv'] & string,
-    invert_vertical: boolean,
-): Diagram | undefined {
+/** 由表达式与等价表示算出"形状 + 布局":画布版与 HTML 版共用这一份数据。 */
+function build_bm_mountain_source(m: Expr, current_equiv: DiagramData['current_equiv'] & string): MountainViewSource {
     const { M, P } = compute_mountain(m);
     const h = M[0].length - 1; // 行数 - 1
 
@@ -390,17 +388,25 @@ function draw_bm_mountain_diagram(
         }
     }
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display: (v) => '' + v,
             vertical_compare: (a, b) => a - b,
             // 分割线恒为 0:各行等距 40px,且不画水平网格线(与原实现一致)。
             separator_count: () => 0,
             row_label: () => undefined, // 不显示行标
         },
-        { row_label_width: 0, invert_vertical },
-    );
+    };
+}
+
+function draw_bm_mountain_diagram(
+    m: Expr,
+    current_equiv: DiagramData['current_equiv'] & string,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_bm_mountain_source(m, current_equiv);
+    return draw_mountain_diagram(source.shape, source.layout, { row_label_width: 0, invert_vertical });
 }
 
 const draw_diagram_control_BM: DiagramControl<Expr, DiagramData> = {
@@ -460,6 +466,7 @@ export const BM4: NotationDefinition<Expr> = {
     is_limit: is_limit,
     compare,
     draw_diagram: draw_diagram_control_BM,
+    mountain_view: (expr, data) => build_bm_mountain_source(expr, data?.current_equiv ?? 'BMS'),
 
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
 
@@ -503,6 +510,7 @@ export const TriangularBM4: NotationDefinition<Expr> = {
     is_limit: is_limit,
     compare,
     draw_diagram: draw_diagram_control_BM,
+    mountain_view: (expr, data) => build_bm_mountain_source(expr, data?.current_equiv ?? 'BMS'),
 
     ...sequence_FS_variants(expand, is_infinity, triangular_infinity_FS, is_limit, display),
 
@@ -535,6 +543,7 @@ export const seq_0Y: NotationDefinition<Expr> = {
     is_limit: is_limit,
     compare,
     draw_diagram: draw_diagram_control_0Y,
+    mountain_view: (expr, data) => build_bm_mountain_source(expr, data?.current_equiv ?? '0Y'),
 
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
 

@@ -165,7 +165,7 @@ function on_find_input() {
         const el = find_input.value;
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        show_diagram(dc, expr, rect.left, 60 + rect.height, resolve_diagram_equiv(settings, n.id));
+        show_diagram(dc, expr, rect.left, 60 + rect.height, resolve_diagram_equiv(settings, n.id), n.id);
     } catch {
         hide();
     }

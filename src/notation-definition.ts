@@ -1,4 +1,5 @@
 import type { Diagram } from '@/core/diagram_types.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 
 export type NotationDisplay<T> = (a: T) => string;
 
@@ -190,6 +191,14 @@ export interface NotationDefinition<T> {
     FS_alter?: (a: T, index: number) => T;
     FS_short?: (a: T, index: number) => T;
     draw_diagram?: DiagramControl<T, any>;
+
+    /**
+     * HTML 山脉图(可选):返回纯结构数据(形状 + 布局选项),供山脉图面板以表格形式渲染。
+     * 与 draw_diagram 共用同一份形状/布局,但不涉及像素,也不涉及 invert_vertical
+     * (HTML 版固定按"行标小者在上"绘制)。undefined 表示该表达式没有山脉图。
+     */
+    mountain_view?: (expr: T, data: any) => MountainViewSource | undefined;
+
     init: () => T[];
 
     /** Key(s) into the i18n table for credit text displayed below the notation tree. Each entry is rendered as a separate line. */

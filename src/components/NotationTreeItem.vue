@@ -360,7 +360,14 @@ function on_focus(e: FocusEvent) {
 
     const dc = props.notation.draw_diagram;
     if (dc && settings.show_diagram) {
-        show_diagram(dc, props.node.expr, r.left, 60 + r.height, resolve_diagram_equiv(settings, props.notation.id));
+        show_diagram(
+            dc,
+            props.node.expr,
+            r.left,
+            60 + r.height,
+            resolve_diagram_equiv(settings, props.notation.id),
+            props.notation.id,
+        );
     } else {
         hide_diagram();
     }

@@ -12,6 +12,10 @@ const diagram_data = ref<any>(null);
 // 仅用于引用比较, 不深包装 (ref 会把对象 reactive 化导致 proxy !== raw)
 const active_control = shallowRef<DiagramControl<any, any> | null>(null);
 
+// 当前图表所属的记号 id 与其表达式(供"用面板查看"之类的联动使用)
+const notation_id = ref<string | undefined>(undefined);
+const expr_value = ref<unknown>(undefined);
+
 let current_control: DiagramControl<any, any> | null = null;
 let current_expr: any = null;
 let current_data: any = null;
@@ -23,7 +27,14 @@ function refresh() {
 }
 
 export function use_diagram() {
-    function show<T>(control: DiagramControl<T, any>, expr: T, x: number, y: number, equiv?: string) {
+    function show<T>(
+        control: DiagramControl<T, any>,
+        expr: T,
+        x: number,
+        y: number,
+        equiv?: string,
+        notation_id_value?: string,
+    ) {
         if (current_control !== control) {
             current_data = { ...control.default_data };
             current_control = control;
@@ -38,6 +49,8 @@ export function use_diagram() {
         diagram_data.value = current_data;
         active_control.value = current_control;
         current_expr = expr;
+        expr_value.value = expr;
+        notation_id.value = notation_id_value;
         diagram.value = control.draw_diagram(expr, current_data) ?? null;
         pos_x.value = x;
         pos_y.value = y;
@@ -78,6 +91,8 @@ export function use_diagram() {
         pos_y,
         diagram_data,
         active_control,
+        notation_id,
+        expr_value,
         show,
         hide,
         dispatch_action,

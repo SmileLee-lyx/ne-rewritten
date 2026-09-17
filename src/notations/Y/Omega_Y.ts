@@ -2,6 +2,7 @@ import { lex_compare, number_compare } from '@/utils.ts';
 import { Y_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 import { DiagramControl, NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
 
 export type Expr = number[];
@@ -612,12 +613,8 @@ function y_row_label(v: Vertical): string {
     return vertical_display_html(v.length === 1 ? (v[0] === 1 ? [] : [v[0] - 1]) : v);
 }
 
-/** 计算层:把 ω-Y 序列化为山脉形状,交给通用绘制函数。 */
-function draw_y_mountain_diagram(
-    seq: Expr,
-    current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
+/** 计算层:把 ω-Y 序列化为"形状 + 布局",画布版与 HTML 版共用这一份数据。 */
+function build_y_mountain_source(seq: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
     if (is_infinity(seq) || seq.length === 0) return undefined;
     const mountain = draw_dbms_mountain(draw_mountain(from_sequence(seq)), current_equiv === 'ADBMS');
 
@@ -636,17 +633,30 @@ function draw_y_mountain_diagram(
         }
     }
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display,
             vertical_compare,
             // dimension_difference 给出的是相邻两行的间隔数,分割线数量为其 + 1。
             separator_count: (higher, lower) => dimension_difference(higher, lower) + 1,
             row_label: y_row_label,
         },
-        { invert_vertical, display_html_row_label: true },
-    );
+        display_html_row_label: true,
+    };
+}
+
+function draw_y_mountain_diagram(
+    seq: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_y_mountain_source(seq, current_equiv);
+    if (!source) return undefined;
+    return draw_mountain_diagram(source.shape, source.layout, {
+        invert_vertical,
+        display_html_row_label: source.display_html_row_label,
+    });
 }
 
 export const y_diagram_control: DiagramControl<Expr, YDiagramData> = {
@@ -685,6 +695,7 @@ function create_magma_notation(type: string, magma: (seq: Expr, index: number) =
         is_limit,
         compare: seq_compare,
         draw_diagram: y_diagram_control,
+        mountain_view: (expr, data) => build_y_mountain_source(expr, data?.current_equiv),
         ...Y_FS_variants(magma, is_infinity, (index) => [1, index + 1], is_limit, sequence_display),
         credit_text_id: 'credit.yukito',
 

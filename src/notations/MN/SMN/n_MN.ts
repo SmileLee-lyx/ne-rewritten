@@ -2,6 +2,7 @@ import { boolean_compare, deepcopy, lex_compare, number_compare, tuple_lex_compa
 import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 import { DiagramControl, NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
 
 export type Sep = number;
@@ -542,12 +543,8 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-/** 计算层：把 n-MN 的山脉化为形状，交给通用绘制函数。 */
-function draw_n_mn_mountain_diagram(
-    expr: Mountain,
-    current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
+/** 计算层：把 n-MN 的山脉化为"形状 + 布局"，画布版与 HTML 版共用这一份数据。 */
+function build_n_mn_mountain_source(expr: Mountain, current_equiv: string | undefined): MountainViewSource | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
     const m = fill_ghost(expr);
@@ -570,16 +567,25 @@ function draw_n_mn_mountain_diagram(
         return nodes;
     });
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display,
             vertical_compare,
             // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
             separator_count: (higher, lower) => vertical_diff(higher, lower) + 1,
         },
-        { invert_vertical },
-    );
+    };
+}
+
+function draw_n_mn_mountain_diagram(
+    expr: Mountain,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_n_mn_mountain_source(expr, current_equiv);
+    if (!source) return undefined;
+    return draw_mountain_diagram(source.shape, source.layout, { invert_vertical });
 }
 
 export const draw_diagram_control: DiagramControl<Mountain, DiagramData> = {
@@ -640,6 +646,7 @@ export function n_MN(n: number): NotationDefinition<Mountain> {
             },
         },
         draw_diagram: draw_diagram_control,
+        mountain_view: (expr, data) => build_n_mn_mountain_source(expr, data?.current_equiv),
         ...MN_FS_variants(expand, is_infinity, NT_infinity_FS(n), is_limit, to_data_key),
         is_limit,
         compare,

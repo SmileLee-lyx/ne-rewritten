@@ -7,6 +7,7 @@ import {
     unregister_item,
 } from '@/core/registry.ts';
 import type { UserScript } from '@/core/settings.ts';
+import { draw_mountain_diagram } from '@/notations/draw_mountain_diagram.ts';
 
 // ============ Types ============
 
@@ -33,8 +34,8 @@ function collect_from(code: string): CollectedItem[] {
     }
 
     // eslint-disable-next-line no-new-func
-    const fn = new Function('register_notation', 'register_category', code);
-    fn(fake_register_notation, fake_register_category);
+    const fn = new Function('register_notation', 'register_category', 'draw_mountain_diagram', code);
+    fn(fake_register_notation, fake_register_category, draw_mountain_diagram);
 
     return collected;
 }

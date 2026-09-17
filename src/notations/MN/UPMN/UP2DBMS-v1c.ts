@@ -21,6 +21,7 @@ import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 
 type Expr = Column[];
 type Column = Entry[];
@@ -534,12 +535,8 @@ export interface DiagramData {
     invert_vertical?: boolean;
 }
 
-/** 计算层：把表达式化为山脉形状，交给通用绘制函数。 */
-function draw_up2dbms_v1c_mountain_diagram(
-    m: Expr,
-    current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
+/** 由表达式与等价表示算出"形状 + 布局选项"：画布版与 HTML 版共用这一份数据。 */
+function build_up2dbms_v1c_mountain_source(m: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
     if (is_infinity(m) || m.length === 0) return undefined;
 
     const m_display = current_equiv?.includes('layer') ? convert_to_layer(m) : m;
@@ -564,16 +561,26 @@ function draw_up2dbms_v1c_mountain_diagram(
         return nodes;
     });
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display,
             vertical_compare,
             // vertical_diff 给出的是相邻两行的间隔数，分割线数量为其 + 1。
             separator_count: (higher, lower) => vertical_diff(higher, lower) + 1,
         },
-        { invert_vertical },
-    );
+    };
+}
+
+/** 计算层：把表达式化为山脉形状，交给通用绘制函数。 */
+function draw_up2dbms_v1c_mountain_diagram(
+    m: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_up2dbms_v1c_mountain_source(m, current_equiv);
+    if (!source) return undefined;
+    return draw_mountain_diagram(source.shape, source.layout, { invert_vertical });
 }
 
 export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
@@ -634,6 +641,7 @@ export const UP2DBMS_v1c: NotationDefinition<Expr> = {
         },
     },
     draw_diagram: draw_diagram_control,
+    mountain_view: (expr, data) => build_up2dbms_v1c_mountain_source(expr, data?.current_equiv),
     ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     is_limit,
     compare,

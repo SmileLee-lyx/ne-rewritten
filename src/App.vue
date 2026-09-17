@@ -2,13 +2,16 @@
 import { computed, inject, onMounted, onUnmounted, provide, reactive, watch } from 'vue';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { get_notation } from '@/core/registry.ts';
+import { resolve_diagram_equiv } from '@/core/settings.ts';
 import { resolve_display, resolve_name } from '@/notation-definition.ts';
 import type { TreeNode } from '@/core/tree.ts';
 import { focus_node, get_last_focus } from '@/composables/use_focus_tracker.ts';
 import NotationTree from '@/components/NotationTree.vue';
 
 import { use_diagram } from '@/composables/use_diagram.ts';
+import { use_mountain_panel } from '@/composables/use_mountain_panel.ts';
 import DiagramViewer from '@/components/DiagramViewer.vue';
+import MountainPanel from '@/components/MountainPanel.vue';
 import HotkeyDialog from '@/components/HotkeyDialog.vue';
 import TipPopup from '@/components/TipPopup.vue';
 import TipsDialog from '@/components/TipsDialog.vue';
@@ -39,7 +42,30 @@ const settings = inject(SETTINGS_KEY)!;
 const t = (key: string, params?: Record<string, string>) => create_t(settings.language)(key, params);
 provide(I18N_KEY, t);
 
-const { diagram, visible, pos_x, pos_y, hide, dispatch_action } = use_diagram();
+const {
+    diagram,
+    visible,
+    pos_x,
+    pos_y,
+    hide,
+    dispatch_action,
+    notation_id: diagram_notation_id,
+    expr_value,
+} = use_diagram();
+
+// 山脉图面板: 从图表弹窗打开, 带上该记号与当前表达式
+const mountain_panel = use_mountain_panel();
+const panel_available = computed(() => {
+    const id = diagram_notation_id.value;
+    return id !== undefined && get_notation(id)?.mountain_view !== undefined;
+});
+
+function open_mountain_panel() {
+    const id = diagram_notation_id.value;
+    if (!id || !panel_available.value) return;
+    mountain_panel.open(id, expr_value.value, settings.equiv_active[id], resolve_diagram_equiv(settings, id));
+    hide(); // 悬浮图表让位给面板
+}
 
 // 悬停在图表上滚动时: 拦截页面滚动, 改为触发图表自身的上下滚动 (等价于 Ctrl+↑/↓)
 function on_diagram_wheel(e: WheelEvent) {
@@ -261,21 +287,35 @@ function debug_compare_order(notation_id?: string) {
             </div>
         </div>
         <div v-else>{{ t('notation-tree.empty') }}</div>
+        <!--
+            悬浮图表: mousedown 一并 preventDefault, 否则点击弹窗会让输入框失焦,
+            而 NotationTreeItem 的 on_blur 会立刻 hide_diagram(), 表现为"点一下就关掉"。
+        -->
         <div
             v-if="visible && diagram"
             class="diagram-floating"
             :style="{ left: pos_x + 'px', top: pos_y + 'px' }"
-            @mousedown.stop
+            @mousedown.stop.prevent
             @wheel.prevent="on_diagram_wheel"
         >
             <button class="diagram-close" @mousedown.stop="hide">✕</button>
-            <DiagramViewer :diagram="diagram" />
+            <!-- 有 HTML 山脉图时, 点图表本体即打开面板(✕ 因 stop 而不会触发) -->
+            <div
+                class="diagram-body"
+                :class="{ 'diagram-body--clickable': panel_available }"
+                :title="panel_available ? t('mountain.open-panel') : undefined"
+                @mousedown.stop.prevent="open_mountain_panel"
+            >
+                <DiagramViewer :diagram="diagram" />
+                <div v-if="panel_available" class="diagram-hint">{{ t('mountain.click-hint') }}</div>
+            </div>
         </div>
+        <!-- 悬浮 LaTeX 同上: 也要 preventDefault, 否则点击会让输入框失焦而被 on_blur 关掉 -->
         <div
             v-if="latex_state.visible.value && latex_state.latex.value"
             class="diagram-floating"
             :style="{ left: latex_state.pos_x.value + 'px', top: latex_state.pos_y.value + 'px' }"
-            @mousedown.stop
+            @mousedown.stop.prevent
         >
             <button class="diagram-close" @mousedown.stop="latex_state.hide()">✕</button>
             <LaTeXViewer :latex="latex_state.latex.value" />
@@ -295,6 +335,7 @@ function debug_compare_order(notation_id?: string) {
         <AnalysisLatexSettingsPanel />
         <MultiSelectBar />
         <ConfigBar />
+        <MountainPanel />
     </div>
 </template>
 
@@ -740,5 +781,17 @@ body::after {
 
 .diagram-close:hover {
     color: var(--color-text);
+}
+
+/* 有 HTML 山脉图时: 整个图表区域可点, 底部给一行提示文字 */
+.diagram-body--clickable {
+    cursor: pointer;
+}
+
+.diagram-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--color-text-secondary);
 }
 </style>

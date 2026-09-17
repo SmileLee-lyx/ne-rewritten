@@ -4,6 +4,7 @@ import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import { omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
 import { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
 import { DiagramData } from '@/notations/MN/SDBMS/S1DBMS.ts';
 
 type HeightEntry = [number, number];
@@ -552,12 +553,10 @@ function dbms_vertical_display(v: Vertical_DBMS): string {
     return result.toReversed().join('/');
 }
 
-function draw_SDBMS_diagram(
-    expr: Expr,
-    current_equiv: string | undefined,
-    invert_vertical: boolean,
-): Diagram | undefined {
-    const is_original = current_equiv === undefined || current_equiv === 'm';
+/** 由表达式与等价表示算出"形状 + 布局选项":画布版与 HTML 版共用这一份数据。 */
+function build_SDBMS_mountain_source(expr: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
+    if (is_infinity(expr) || expr.length === 0) return undefined;
+
     const is_dbms = current_equiv === 'dbms' || current_equiv === 'm dbms';
     const is_m = current_equiv === 'm' || current_equiv === 'm dbms';
     const is_l_dbms = current_equiv === 'l dbms';
@@ -593,15 +592,30 @@ function draw_SDBMS_diagram(
         }
     }
 
-    return draw_mountain_diagram(
+    return {
         shape,
-        {
+        layout: {
             vertical_display: dbms_vertical_display,
             vertical_compare: compare_dbms_vertical,
-            separator_count: (higher, lower) => 1,
+            separator_count: () => 1,
         },
-        { invert_vertical, display_html_entry: true, column_width: is_original ? 100 : 30 },
-    );
+        display_html_entry: true,
+    };
+}
+
+function draw_SDBMS_diagram(
+    expr: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_SDBMS_mountain_source(expr, current_equiv);
+    if (!source) return undefined;
+    const is_original = current_equiv === undefined || current_equiv === 'm';
+    return draw_mountain_diagram(source.shape, source.layout, {
+        invert_vertical,
+        display_html_entry: source.display_html_entry,
+        column_width: is_original ? 100 : 30,
+    });
 }
 
 // 从极限展开, 查找 to_y_seq 等于 target 的表达式
@@ -628,6 +642,7 @@ function from_y_seq(target: number[]): Expr {
         }
 
         if (new_l !== dbms[right].length) {
+            bound = deepcopy(bound);
             const [v, h] = mountain[right][new_l - 1];
             while (bound[right][bound[right].length - 1][0] < v) bound[right].pop();
             bound[right][bound[right].length - 1][1] = h;
@@ -740,6 +755,7 @@ export const S_omega_DBMS_v3: NotationDefinition<Expr> = {
     compare,
 
     draw_diagram: draw_diagram_control,
+    mountain_view: (expr, data) => build_SDBMS_mountain_source(expr, data?.current_equiv),
 
     credit_text_id: 'credit.s-omega-dbms',
 
