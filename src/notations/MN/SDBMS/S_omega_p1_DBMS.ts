@@ -322,7 +322,13 @@ function height_fill_dec(h: Height, p: number | 'w', v: number): Height {
     return new_h;
 }
 
-function find_maximal_entry_below(expr: Expr, i: number, h: Height): Entry | undefined {
+function find_maximal_entry_below(expr: Expr, i: number, h: Height, r: number): Entry | undefined {
+    if (r !== i) {
+        const e = find_maximal_entry_below(expr, r, h, r);
+        if (e === undefined) return undefined;
+        return find_maximal_entry_below(expr, i, e[1], e[0]);
+    }
+
     const j = expr[i].findIndex(([, hj]) => compare_height(hj, h) > 0);
     if (j === -1) {
         if (expr[i].length === 0) return undefined;
@@ -339,6 +345,11 @@ function find_maximal_entry_below(expr: Expr, i: number, h: Height): Entry | und
 
 function descend_height_to_value(expr: Expr, h: Height, v: number): Height | undefined {
     const j = h.findIndex(([v1]) => v1 > v);
+
+    if (j === -1) {
+        return h;
+    }
+
     if (j === 0) {
         const rh = h[0][0];
         const col_rh = expr[rh];
@@ -357,7 +368,7 @@ function find_lower_height_pos(expr: Expr, h: Height, p: HeightPos, r: number): 
         return r;
     }
 
-    const bound = find_maximal_entry_below(expr, p, h);
+    const bound = find_maximal_entry_below(expr, p, h, r);
     if (bound === undefined) return undefined;
 
     const [r1, h1] = bound;
@@ -375,7 +386,7 @@ function compute_new_height(h: Height, expr: Expr, r: number): Height | undefine
     if (new_p !== undefined) {
         return height_fill_dec(h, new_p, r);
     } else {
-        return find_maximal_entry_below(expr, v, h)?.[1];
+        return find_maximal_entry_below(expr, v, h, r)?.[1];
     }
 }
 
