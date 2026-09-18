@@ -805,7 +805,7 @@ function from_y_seq(target: number[]): Expr {
 function from_display_y_seq(str: string): Expr {
     const seq = str.split(',').map((x) => Number(x.trim()));
     if (!seq.every(Number.isInteger)) throw new Error('Illegal input: ' + str);
-    if (lex_compare(seq, [1, 3, 14], number_compare) === 0) return INFINITY;
+    if (lex_compare(seq, [1, 3, 15], number_compare) === 0) return INFINITY;
     return from_y_seq(seq);
 }
 
