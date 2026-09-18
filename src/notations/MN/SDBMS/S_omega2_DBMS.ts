@@ -9,7 +9,7 @@ import {
     tuple_lex_compare,
 } from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
-import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import type { MountainViewSource } from '@/notations/mountain_view.ts';
@@ -340,68 +340,61 @@ function height_fill_dec(h: Height, p: HeightPos, v: number): Height {
     return new_h;
 }
 
-function find_lower_height_pos(h: Height, expr: Expr, ph: number): number | undefined {
-    const col = expr[ph];
-    let j = col.findIndex(([, hv]) => compare_height(hv, h) >= 0);
-    if (j === -1) j = col.length;
+function find_maximal_entry_below(expr: Expr, i: number, h: Height): Entry | undefined {
+    const j = expr[i].findIndex(([, hj]) => compare_height(hj, h) > 0);
+    if (j === -1) {
+        if (expr[i].length === 0) return undefined;
+        return expr[i][expr[i].length - 1];
+    }
+    const lower = j === 0 ? undefined : expr[i][j - 1][1];
+    const new_value = expr[i][j][0];
+    const upper = descend_height_to_value(expr, h, new_value);
+    if (upper !== undefined && (lower === undefined || compare_height(upper, lower) > 0)) {
+        return [expr[i][j][0], upper];
+    }
+    return expr[i][j - 1];
+}
 
-    let lower_candidate: number | undefined = undefined;
-    if (j > 0) {
-        const h_lower = col[j - 1][1];
-        const hj = h_lower.findIndex(([, p]) => !is_higher_pos(p));
-        if (hj !== -1) {
-            const [v, p] = h_lower[hj];
-            if (v === p) {
-                lower_candidate = v;
-            } else {
-                lower_candidate = find_lower_height_pos(h_lower, expr, v);
-            }
-        }
+function descend_height_to_value(expr: Expr, h: Height, v: number): Height | undefined {
+    const j = h.findIndex(([v1]) => v1 > v);
+    if (j === 0) {
+        const rh = h[0][0];
+        const col_rh = expr[rh];
+        const new_h = height(col_rh);
+        if (new_h === undefined) return undefined;
+        return descend_height_to_value(expr, new_h, v);
     }
 
-    let upper_candidate: number | undefined = j < col.length ? col[j][0] : undefined;
+    const [, p_bound] = h[j - 1];
+    const new_p: HeightPos = find_lower_height_pos(expr, h, p_bound, v)!;
+    return height_fill_dec(h, new_p, v);
+}
 
-    return max_by_compare(compare_undefined_first_by(number_compare), lower_candidate, upper_candidate);
+function find_lower_height_pos(expr: Expr, h: Height, p: HeightPos, r: number): HeightPos | undefined {
+    if (is_higher_pos(p)) {
+        if (p[0] > 0) return [p[0] - 1];
+        return r;
+    }
+
+    const bound = find_maximal_entry_below(expr, p, h);
+    if (bound === undefined) return undefined;
+
+    const [r1, h1] = bound;
+    const [v1, p1] = h1[h1.length - 1];
+    if (is_higher_pos(p1)) return undefined;
+    if (v1 === p1) return v1;
+    return find_lower_height_pos(expr, h1, v1, r1);
 }
 
 function compute_new_height(h: Height, expr: Expr, r: number): Height | undefined {
     const [v, p] = h[h.length - 1];
 
-    if (is_higher_pos(p)) {
-        return height_fill_dec(h, p[0] === 0 ? r : [p[0] - 1], r);
-    }
-
-    let new_p = find_lower_height_pos(h, expr, p);
+    let new_p = find_lower_height_pos(expr, h, p, r);
 
     if (new_p !== undefined) {
         return height_fill_dec(h, new_p, r);
-    } else if (h.length === 1) {
-        return height(expr[v]);
     } else {
-        const p_bound = h[h.length - 2][1];
-
-        const col_rh = expr[v];
-        const hj = col_rh.findIndex(([, hv]) => compare_height(h, hv) <= 0);
-
-        if (hj === -1) {
-            return height(col_rh);
-        } else {
-            const new_value = col_rh[hj][0];
-            const new_p_bound: HeightPos = is_higher_pos(p_bound)
-                ? p_bound[0] === 0
-                    ? new_value
-                    : [p_bound[0] - 1]
-                : find_lower_height_pos(h, expr, p_bound)!;
-
-            let new_h = height_fill_dec(h, new_p_bound, new_value);
-            if (hj > 0) {
-                const lower = hj > 0 ? col_rh[hj - 1][1] : [];
-                if (compare_height(lower, new_h) > 0) {
-                    new_h = lower;
-                }
-            }
-            return new_h;
-        }
+        return find_maximal_entry_below(expr, v, h)?.[1];
     }
 }
 
@@ -435,14 +428,14 @@ function expand(expr: Expr, index: number, shorter: boolean): Expr {
     return result;
 }
 
-function layered_top_separator(expr: Expr, h: Height): HeightPos {
+function layered_top_separator(expr: Expr, h: Height, r: number): HeightPos {
     const [, p] = h[h.length - 1];
     if (is_higher_pos(p)) return p;
 
     let layer = -1;
     let current: number | undefined = p;
     while (current !== undefined) {
-        current = find_lower_height_pos(h, expr, current);
+        current = find_lower_height_pos(expr, h, current, r) as number | undefined;
         layer++;
     }
     return layer;
@@ -485,7 +478,7 @@ function convert_to_dbms_data_column(expr: Expr, i: number): [Entry[], Column_DB
         let current: Height | undefined = expr[i][j][1];
         while (true) {
             if (current === undefined || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
-            const s = layered_top_separator(expr, current);
+            const s = layered_top_separator(expr, current, v);
             result.push([v, current]);
             result_dbms.push([v, s]);
             current = compute_new_height(current, expr, v);
@@ -830,7 +823,7 @@ export const S_omega2_DBMS: NotationDefinition<Expr> = {
             from_display: from_display_y_seq,
         },
     },
-    ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
+    ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
     is_limit,
     compare,
 
