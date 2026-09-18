@@ -1,15 +1,6 @@
-import {
-    boolean_compare,
-    compare_undefined_first_by,
-    deepcopy,
-    lex_compare,
-    lex_compare_by,
-    max_by_compare,
-    number_compare,
-    tuple_lex_compare,
-} from '@/utils.ts';
+import { boolean_compare, deepcopy, lex_compare, lex_compare_by, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
-import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import type { MountainViewSource } from '@/notations/mountain_view.ts';
@@ -771,6 +762,15 @@ function from_display_y_seq(str: string): Expr {
     return from_y_seq(seq);
 }
 
+function truncate(expr: Expr): Expr {
+    const right = expr.length - 1;
+    const top = expr[right].length - 1;
+    const result = expand(expr, 0, false);
+    if (result[right].length <= top) return result;
+    result[right] = result[right].slice(0, result[right][top][0] === expr[right][top][0] ? top + 1 : top);
+    return result;
+}
+
 export const S_omega_p1_DBMS: NotationDefinition<Expr> = {
     id: 's-omega+1-dbms',
     name: 'S ω+1 DBMS',
@@ -806,7 +806,7 @@ export const S_omega_p1_DBMS: NotationDefinition<Expr> = {
             from_display: from_display_y_seq,
         },
     },
-    ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
+    ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display, compare_column, truncate),
     is_limit,
     compare,
 

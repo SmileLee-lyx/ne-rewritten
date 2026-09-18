@@ -147,11 +147,16 @@ export function MN_FS_variants<T>(
     infinity_FS: (index: number) => T[][],
     is_limit: (seq: T[][]) => boolean,
     display: (seq: T[][]) => string,
+    compare_col?: (a: T[], b: T[]) => number,
+    truncate?: (seq: T[][]) => T[][],
 ): Record<'FS' | 'FS_alter' | 'FS_short', (seq: T[][], index: number) => T[][]> & {
     FS_equiv: { fast: (seq: T[][], index: number) => T[][] };
 } {
     const base = sequence_FS_variants<T[]>(expand, is_infinity, infinity_FS, is_limit, display);
     const data_short: Record<string, [boolean, boolean]> = {};
+
+    if (compare_col === undefined && truncate !== undefined)
+        throw new Error('MN_FS_variants with truncate must have compare_col');
 
     /** 原 MN 的 lnz-1: 与 FS_short 的区别是第 1 项用"末列去掉最后一个元素"的截断。 */
     const fast = (seq: T[][], index: number): T[][] => {
@@ -163,17 +168,22 @@ export function MN_FS_variants<T>(
         let d = data_short[data_key];
         if (d === undefined) {
             let target = base.FS(seq, 1);
-            d = data_short[data_key] = [
-                target[seq.length - 1].length !== seq[seq.length - 1].length - 1,
-                target.length !== seq.length,
-            ];
+            let d0: boolean;
+            if (truncate !== undefined) {
+                const seq_truncate = truncate(seq);
+                d0 = compare_col!(seq_truncate[seq.length - 1], target[seq.length - 1]) !== 0;
+            } else {
+                d0 = target[seq.length - 1].length !== seq[seq.length - 1].length - 1;
+            }
+            let d1 = target.length !== seq.length;
+            d = data_short[data_key] = [d0, d1];
         }
         let current = 1;
         if (d[0]) {
             if (index === current) {
+                if (truncate !== undefined) return truncate(seq);
                 let result = seq.slice();
-                result[result.length - 1] = result[result.length - 1].slice();
-                result[result.length - 1].pop();
+                result[result.length - 1] = result[result.length - 1].slice(0, -1);
                 return result;
             } else current++;
         }
