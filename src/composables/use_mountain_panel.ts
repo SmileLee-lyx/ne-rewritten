@@ -31,7 +31,9 @@ export function use_mountain_panel() {
     function open(id: string, expr: unknown, input_equiv_id?: string, draw_equiv_id?: string) {
         notation_id.value = id;
         input_equiv.value = input_equiv_id;
-        draw_equiv.value = draw_equiv_id ?? input_equiv_id;
+        // 绘图等价表示由调用方按"图表使用等价表示"设置算好传入(resolve_diagram_equiv);
+        // undefined 表示"按原记号绘制", 是合法取值, 不能回退成 input_equiv_id。
+        draw_equiv.value = draw_equiv_id;
         text.value = serialize(id, input_equiv_id, expr);
         visible.value = true;
     }
