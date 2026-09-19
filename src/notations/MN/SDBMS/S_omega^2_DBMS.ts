@@ -388,7 +388,7 @@ function find_lower_height_pos(expr: Expr, h: Height, p: HeightPos, r: number): 
 
     const [r1, h1] = bound;
     const [v1, p1] = h1[h1.length - 1];
-    if (p1[0] > p[0]) return default_value;
+    if (compare_height_pos(p1, p) > 0) return default_value;
     if (p1[0] === p[0] && p1[1] === v1) return p1;
     return find_lower_height_pos(expr, h1, [p[0], v1], r1);
 }
