@@ -859,7 +859,9 @@ export const S_omega_square_DBMS: NotationDefinition<Expr> = {
     draw_diagram: draw_diagram_control,
     mountain_view: (expr, data) => build_s_omega2_dbms_mountain_source(expr, data?.current_equiv),
 
-    credit_text_id: 'credit.s-omega-dbms',
+    description: [{ id: 'description.s-omega2-dbms.1' }],
+
+    credit_text_id: 'credit.up2dbms-v2',
 
     init: () => [INFINITY, [[]], []],
 };
