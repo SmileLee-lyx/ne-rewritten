@@ -11,3 +11,10 @@ export const category_hypcos_w2mn: NotationCategoryDefinition = {
     simple_name: 'HypCos',
     parent_id: 'category-mn',
 };
+
+export const category_ta0_mn: NotationCategoryDefinition = {
+    id: 'category-ta0-mn',
+    name: "test_alpha0's e0MN",
+    simple_name: 'ta0',
+    parent_id: 'category-mn',
+};
