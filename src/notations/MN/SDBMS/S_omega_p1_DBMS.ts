@@ -315,8 +315,7 @@ function copy_column(col: Column, r: number, offset: number): Column {
 
 function height_fill_dec(h: Height, p: number | 'w', v: number): Height {
     const new_h = h.slice();
-    while (new_h.length > 0 && compare_height_pos(new_h[new_h.length - 1][1], p) <= 0) new_h.pop();
-    if (new_h.length > 0 && new_h[new_h.length - 1][0] === v) new_h.pop();
+    while (new_h.length > 0 && new_h[new_h.length - 1][0] >= v) new_h.pop();
     new_h.push([v, p]);
 
     return new_h;
