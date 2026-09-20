@@ -8,7 +8,6 @@ export const category_bm_like: NotationCategoryDefinition = {
 
 export const category_minus1_y_nss_series: NotationCategoryDefinition = {
     id: 'category-minus1-y-nss-series',
-    name: '-1Y-nSS Series',
-    simple_name: '-1Y-nSS Series',
+    name: 'BTnSS Series',
     parent_id: 'category-bm-like',
 };
