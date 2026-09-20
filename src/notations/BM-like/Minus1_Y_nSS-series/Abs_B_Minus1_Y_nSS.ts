@@ -279,19 +279,19 @@ function FS(e: Expr, index: number, n: number): Expr {
     return result;
 }
 
-export const category_bm_bt_minus1_y_nss: NotationCategoryDefinition = {
+export const category_abs_bm_bt_minus1_y_nss: NotationCategoryDefinition = {
     id: 'category-bm-bt-minus1-y-nss',
-    name: 'Branching -1Y-nSS',
-    simple_name: 'BnSS',
+    name: 'Absolute Branching -1Y-nSS',
+    simple_name: 'abs BnSS',
     parent_id: 'category-minus1-y-nss-series',
-    generator: { start: 0, initial: 3, create: (n) => BT_Minus1_Y_nSS(n) },
+    generator: { start: 0, initial: 3, create: (n) => abs_B_Minus1_Y_nSS(n) },
 };
 
-export function BT_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
+export function abs_B_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
     return {
         id: 'bt--1y-' + (n + 1) + 'ss',
         category_id: 'category-bm-bt-minus1-y-nss',
-        name: 'B' + (n + 1) + 'SS',
+        name: 'abs B' + (n + 1) + 'SS',
 
         display: { plain: display, from_display: (s) => from_display(s, n) },
         is_limit: (e) => is_limit(e),

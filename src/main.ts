@@ -67,7 +67,7 @@ import { Minus1_Y } from '@/notations/Y/minus1_Y.ts';
 import { T_Minus1_Y } from '@/notations/Y/T_minus1_Y.ts';
 import { category_bm_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/Minus1_Y_nSS.ts';
 import { category_bm_t_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/T_Minus1_Y_nSS.ts';
-import { category_bm_bt_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/BT_Minus1_Y_nSS.ts';
+import { category_abs_bm_bt_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/Abs_B_Minus1_Y_nSS.ts';
 import { category_bm_bt_star_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/BT_star_Minus1_Y_nSS.ts';
 import { category_bm_btl_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/BTL_Minus1_Y_nSS.ts';
 import { MOCF_EBO } from '@/notations/OCN/MOCF_EBO.ts';
@@ -114,6 +114,7 @@ import { S_omega_DBMS_v3 } from '@/notations/MN/SDBMS/S_omega_DBMS-v3.ts';
 import { S_omega_p1_DBMS } from '@/notations/MN/SDBMS/S_omega_p1_DBMS.ts';
 import { S_omega2_DBMS } from '@/notations/MN/SDBMS/S_omega2_DBMS.ts';
 import { S_omega_square_DBMS } from '@/notations/MN/SDBMS/S_omega^2_DBMS.ts';
+import { category_rel_bm_bt_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/Rel_B_Minus1_Y_nSS.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -214,7 +215,8 @@ register_notation(DSM);
 register_category(category_minus1_y_nss_series);
 register_category(category_bm_minus1_y_nss);
 register_category(category_bm_t_minus1_y_nss);
-register_category(category_bm_bt_minus1_y_nss);
+register_category(category_abs_bm_bt_minus1_y_nss);
+register_category(category_rel_bm_bt_minus1_y_nss);
 register_category(category_bm_bt_star_minus1_y_nss);
 register_category(category_bm_bt_star_minus1_y_nss_v2);
 register_category(category_bm_bt_star_minus1_y_nss_v3);

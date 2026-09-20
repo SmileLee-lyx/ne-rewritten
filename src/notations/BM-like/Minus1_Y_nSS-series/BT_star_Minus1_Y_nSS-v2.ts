@@ -80,15 +80,11 @@ function is_special_column(c: Column): boolean {
 }
 
 type ColumnParents = number[];
+type Parents = ExprData<ColumnParents>;
 
-function compute_lower_parents(
-    e: Expr,
-    n: number,
-    stack: Column[] = [],
-    parent_stack: ColumnParents[] = [],
-): ExprData<ColumnParents> {
+function compute_lower_parents(e: Expr, n: number, stack: Column[] = [], parent_stack: ColumnParents[] = []): Parents {
     const lS0 = stack.length;
-    let result: ExprData<ColumnParents> = [];
+    let result: Parents = [];
     for (let i = 0; i < e.length; i++) {
         const col = e[i];
         const iS = stack.length;
@@ -118,7 +114,7 @@ function undefined_AT(e: Expr): ExprData<undefined> {
 
 function ascension_thresholds(
     e: Expr,
-    P: ExprData<ColumnParents>,
+    P: Parents,
     r: number | undefined,
     b: number,
     thresholds_stack: (number | undefined)[] = [],
@@ -153,13 +149,11 @@ function ascension_thresholds(
     return result;
 }
 
-function top_comparison_key(
-    base: Column,
-    current: Expr,
-    thresholds: ExprData<number>,
-    n: number,
-): ExprData<[boolean, number][]> {
-    const result: ExprData<[boolean, number][]> = [];
+type RelExpr = ExprData<[boolean, number][]>;
+type RelColumn = RelExpr[number];
+
+function to_relative(base: Column, current: Expr, thresholds: ExprData<number>, n: number): RelExpr {
+    const result: RelExpr = [];
 
     for (let i = 0; i < current.length; i++) {
         const [col, col_children] = current[i];
@@ -168,7 +162,7 @@ function top_comparison_key(
             j < t ? [true, col[j] - base[0][j]] : [false, col[j]],
         );
         const result_i_higher = Array.from({ length: col_children.length }, (_, j) =>
-            top_comparison_key(base, col_children[j], t_children[j], n),
+            to_relative(base, col_children[j], t_children[j], n),
         );
         result.push([result_i_lower, result_i_higher]);
     }
@@ -176,23 +170,23 @@ function top_comparison_key(
     return result;
 }
 
-function compare_key(k1: ExprData<[boolean, number][]>, k2: ExprData<[boolean, number][]>): number {
+function rel_compare(k1: RelExpr, k2: RelExpr): number {
     return lex_compare(
         k1,
         k2,
         tuple_lex_compare_by([
             lex_compare_by(tuple_lex_compare_by([boolean_compare, number_compare])),
-            lex_compare_by(compare_key),
+            lex_compare_by(rel_compare),
         ]),
     );
 }
 
 function fill_top_parents(
     e: Expr,
-    P: ExprData<ColumnParents>,
+    P: Parents,
     n: number,
     parent_stack: ColumnParents[] = [],
-    key_stack: ExprData<[boolean, number][]>[][] = [],
+    key_stack: RelExpr[][] = [],
     outer_stack: number[] = [],
 ) {
     const lS0 = parent_stack.length;
@@ -209,12 +203,12 @@ function fill_top_parents(
             n,
             Array<number | undefined>(iS).fill(undefined),
         ) as ExprData<number>;
-        const key = col[1].map((col_top, j) => top_comparison_key(col, col_top, AT[j], n));
+        const key = col[1].map((col_top, j) => to_relative(col, col_top, AT[j], n));
         key_stack.push(key);
 
         let p = iS;
         while (p >= 0) {
-            if (!outer_stack.includes(p) && lex_compare(key_stack[p], key, compare_key) < 0) break;
+            if (!outer_stack.includes(p) && lex_compare(key_stack[p], key, rel_compare) < 0) break;
             p = parent_stack[p][n - 1];
         }
         Pi[0][n] = p;
@@ -270,7 +264,7 @@ function compute_root_layer(e: Expr, r: number): [number, number] {
     return [layer, r - (len - current.length)];
 }
 
-function root(e: Expr, P: ExprData<ColumnParents>): [r: number, b: number] | undefined {
+function root(e: Expr, P: Parents): [r: number, b: number] | undefined {
     if (e.length === 0 || is_zero_column(e[e.length - 1])) return undefined;
 
     let current_P = P;
