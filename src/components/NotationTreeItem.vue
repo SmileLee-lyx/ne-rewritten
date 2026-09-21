@@ -5,7 +5,7 @@ import { find_next, find_prev } from '@/core/tree.ts';
 import type { TreeNodeExtra } from '@/core/extra.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { resolve_diagram_equiv } from '@/core/settings.ts';
-import { active_FS_variant } from '@/core/fs_variants.ts';
+import { active_FS_variant, resolve_FS } from '@/core/fs_variants.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { expand_item } from '@/core/expander.ts';
 import { FsTrialExpansionError } from '@/core/errors.ts';
@@ -180,11 +180,13 @@ onMounted(() => {
 
 function on_enter() {
     if (!props.notation.is_limit(props.node.expr)) return;
-    const n_max = 3;
+    // 项数由设置决定(默认 3, 即列出 0-3); 基本列取该记号当前实际使用的变体, 而非默认 FS。
+    const n_max = Math.max(settings.max_popup_fs, 0);
     tooltip_FS.value = [];
     const primary_display_fn = primary_display.value;
+    const fs_fn = resolve_FS(props.notation, active_FS_variant(settings, props.notation));
     for (let n = 0; n <= n_max; n++) {
-        tooltip_FS.value.push(`${n}: ${primary_display_fn(props.notation.FS(props.node.expr, n))}`);
+        tooltip_FS.value.push(`${n}: ${primary_display_fn(fs_fn(props.node.expr, n))}`);
     }
     tooltip.value = true;
 }

@@ -6,5 +6,8 @@ export interface Tip {
     content: string;
 }
 
-/** 全体提示注册表。目前仅一条: 旧浏览器导入失败时指引跳转兼容版。 */
-export const TIPS: Tip[] = [{ id: 'compat', content: 'tip.compat' }];
+/** 全体提示注册表: 旧浏览器导入失败时指引跳转兼容版; 以及山脉类记号改用 fast 基本列变体的提速建议。 */
+export const TIPS: Tip[] = [
+    { id: 'compat', content: 'tip.compat' },
+    { id: 'fast-variant', content: 'tip.fast-variant' },
+];

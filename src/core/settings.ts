@@ -39,6 +39,11 @@ export interface Settings {
     current_notation_id: string;
     tier: number;
     /**
+     * 节点悬停弹窗(山脉类等记号的"基本列"预览)中列出的最大项数:
+     * 弹窗自 0 起列出 max_popup_fs + 1 行(默认 3, 即显示 0-3)。
+     */
+    max_popup_fs: number;
+    /**
      * 记号当前使用的展开变体: 记号 id → 变体 id('FS' / 'FS_alter' / 'FS_short' 或 FS_equiv 中的自定义键)。
      * 无记录(或记录已失效)时用该记号的默认变体, 即 lnz-1(FS_short), 不存在则短展开(FS)。
      * 旧版的全局 variant 字段已废弃: 迁移时直接丢弃其值, 所有记号回到默认变体。
@@ -82,6 +87,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
     current_notation_id: 'bm4',
     tier: 0,
+    max_popup_fs: 3,
     FS_active: {},
     input_width: 180,
     show_input: true,

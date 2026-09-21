@@ -83,6 +83,9 @@ const tier_name = computed(() => {
     return ti + '-fold expansion';
 });
 
+/** 弹窗基本列的当前取值说明: 实际列出的是 0..max_popup_fs 各项。 */
+const popup_fs_range = computed(() => '0-' + settings.max_popup_fs);
+
 function toggle_diagram() {
     settings.show_diagram = !settings.show_diagram;
     if (settings.show_diagram) settings.show_latex = false;
@@ -412,6 +415,19 @@ function on_find_keydown(e: KeyboardEvent) {
                     </button>
                     {{ tier_name }}
                     <button class="tier-btn" @mousedown="settings.tier = settings.tier + 1">
+                        <span class="tier-icon">+</span>
+                    </button>
+                </span>
+                <span>
+                    {{ t('popup-fs.label') }}
+                    <button
+                        class="tier-btn"
+                        @mousedown="settings.max_popup_fs = Math.max(settings.max_popup_fs - 1, 0)"
+                    >
+                        <span class="tier-icon">−</span>
+                    </button>
+                    {{ popup_fs_range }}
+                    <button class="tier-btn" @mousedown="settings.max_popup_fs = settings.max_popup_fs + 1">
                         <span class="tier-icon">+</span>
                     </button>
                 </span>
