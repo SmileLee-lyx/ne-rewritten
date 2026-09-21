@@ -18,6 +18,7 @@ import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import type { ColorSpec, Diagram, Element, ExtraText } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import type { MountainViewSource } from '@/notations/mountain_view.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
 
 // Ord = [{ exp: Ord, coeff: positive integer }]; zero = []。
 type Term = { exp: Ord; coeff: number };
@@ -772,8 +773,7 @@ export const strong_e0MN: NotationDefinition<Expr> = {
     },
     is_limit: isLimitExpr,
     compare: exprCompare,
-    FS,
-    FS_short: FSShort,
+    ...MN_FS_variants(FS, is_infinity, infinity_FS, isLimitExpr, exprToPlain, colCompare, shortExpansion),
     draw_diagram: draw_diagram_control,
     mountain_view: (expr) => build_e0MN_mountain_source(expr),
     credit_text_id: 'credit.e0mn',
