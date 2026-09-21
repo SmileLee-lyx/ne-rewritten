@@ -736,7 +736,10 @@ export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
     draw_diagram: (expr, data) => {
         const source = build_e0MN_mountain_source(expr);
         if (source === undefined) return undefined;
-        return draw_mountain_diagram(source.shape, source.layout, { invert_vertical: data?.invert_vertical });
+        return draw_mountain_diagram(source.shape, source.layout, {
+            invert_vertical: data?.invert_vertical,
+            display_html_row_label: source.display_html_row_label,
+        });
     },
 };
 
