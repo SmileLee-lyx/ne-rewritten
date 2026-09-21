@@ -15,7 +15,6 @@
  * 记号 id / name / simple_name 亦不同。
  */
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
-import type { ColorSpec, Diagram, Element, ExtraText } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainNode, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
 import type { MountainViewSource } from '@/notations/mountain_view.ts';
 import { MN_FS_variants } from '@/notations/notation_utils.ts';
@@ -598,14 +597,20 @@ function rfl(src: Expr): Expr {
     return out;
 }
 
-function FS(src: Expr, m: number): Expr {
+function FS(src: Expr, m: number, shorter: boolean = true): Expr {
     if (!Number.isSafeInteger(m) || m < 0) throw Error('FS index must be a non-negative integer');
     if (is_infinity(src)) return infinity_FS(m);
     if (!src.length) return [];
     if (!m || !isLimitExpr(src)) return predecessor(src);
     let r = cloneExpr(src);
     while (m--) r = rfl(r);
-    return predecessor(r);
+    if (shorter) {
+        return predecessor(r);
+    } else {
+        const l = r.length;
+        r = rfl(r);
+        return cloneExpr(r.slice(0, l));
+    }
 }
 
 function shortExpansion(src: Expr): Expr {
