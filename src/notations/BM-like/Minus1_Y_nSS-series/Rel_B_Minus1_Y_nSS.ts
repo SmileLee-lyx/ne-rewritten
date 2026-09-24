@@ -202,7 +202,7 @@ function fill_top_parents(
         let p = iS;
         while (p >= 0) {
             if (!outer_stack.includes(p) && rel_compare(key_stack[p], key) < 0) break;
-            p = parent_stack[p][n - 1];
+            p = n === 0 ? p - 1 : parent_stack[p][n - 1];
         }
         Pi[0][n] = p;
 
