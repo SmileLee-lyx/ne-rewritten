@@ -217,28 +217,35 @@ export function from_display(s: string, n: number): Expr {
         skip_spaces();
 
         const arr: number[] = [];
-        for (let j = 0; j < n; j++) {
-            if (j > 0) {
-                skip_spaces();
-                if (i >= s.length || s[i] !== ',') {
-                    arr.push(0);
-                    continue;
-                }
-                i++;
-            }
-            skip_spaces();
-            if (i < s.length && s[i] >= '0' && s[i] <= '9') {
-                arr.push(parseNumber());
-            } else {
-                arr.push(0);
-            }
-        }
-
-        skip_spaces();
         let step: Expr = [];
-        if (i < s.length && s[i] === ',') {
-            i++;
+
+        if (n === 0) {
+            // n 为 0(即 1SS)时行标段为空, 括号内的内容整体就是末项(step)表达式,
+            // 与 display 的 () / (1) / (2) / (ω) 等写法对应。
             step = parseExpr(false);
+        } else {
+            for (let j = 0; j < n; j++) {
+                if (j > 0) {
+                    skip_spaces();
+                    if (i >= s.length || s[i] !== ',') {
+                        arr.push(0);
+                        continue;
+                    }
+                    i++;
+                }
+                skip_spaces();
+                if (i < s.length && s[i] >= '0' && s[i] <= '9') {
+                    arr.push(parseNumber());
+                } else {
+                    arr.push(0);
+                }
+            }
+
+            skip_spaces();
+            if (i < s.length && s[i] === ',') {
+                i++;
+                step = parseExpr(false);
+            }
         }
 
         skip_spaces();
