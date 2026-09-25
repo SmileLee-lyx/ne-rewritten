@@ -1,5 +1,6 @@
 import { bind2, bind3, deepcopy, index_of_last, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
+import { FS_default_LNZ_variant } from '@/notations/notation_utils.ts';
 
 type Column = [number[], Expr];
 type Expr = Column[];
@@ -340,7 +341,14 @@ export function T_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
 
         is_limit: bind2(is_limit, n),
         compare,
-        FS: bind3(FS, n),
+        ...FS_default_LNZ_variant(
+            bind3(FS, n),
+            compare,
+            is_infinity,
+            bind2(infinity_FS, n),
+            bind2(is_limit, n),
+            display,
+        ),
 
         credit_text_id: 'credit.community_y',
 

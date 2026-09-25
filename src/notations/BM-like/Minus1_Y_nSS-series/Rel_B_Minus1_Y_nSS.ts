@@ -1,4 +1,6 @@
 import {
+    bind2,
+    bind3,
     boolean_compare,
     index_of_last,
     lex_compare,
@@ -9,6 +11,7 @@ import {
 } from '@/utils.ts';
 import { from_display } from '@/notations/BM-like/Minus1_Y_nSS-series/T_Minus1_Y_nSS.ts';
 import { NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
+import { FS_default_LNZ_variant } from '@/notations/notation_utils.ts';
 
 export type ExprData<Data> = [Data, ExprData<Data>][];
 export type Expr = ExprData<number[]>;
@@ -369,7 +372,14 @@ export function rel_B_Minus1_Y_nSS(n: number): NotationDefinition<Expr> {
         display: { plain: display, from_display: (s) => from_display(s, n) },
         is_limit: (e) => is_limit(e),
         compare,
-        FS: (e, index) => FS(e, index, n),
+        ...FS_default_LNZ_variant(
+            bind3(FS, n),
+            compare,
+            is_infinity,
+            bind2(infinity_FS, n),
+            bind2(is_limit, n),
+            display,
+        ),
 
         credit_text_id: 'credit.community_y',
 
