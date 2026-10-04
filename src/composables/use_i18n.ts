@@ -169,6 +169,7 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.dsm': '由 Alice 定义并给出展开器.',
         'credit.wmm': '由社区从 Aarex 定义的 MMS 改进而来. 展开器来自原 NE 项目.',
         'credit.e0mn': '由 test_alpha0 定义.',
+        'credit.pcf-omega-mn': '由 PCF 定义, 由 笑姐姐 给出展开器.',
         'diagram.show': '显示图表',
         'diagram.use-equiv': '图表使用等价表示:',
         'diagram.settings': '图表设置',
@@ -591,6 +592,7 @@ const messages: Record<Language, Record<string, string>> = {
         'credit.dsm': 'Defined by Alice, with expander by the same author.',
         'credit.wmm': 'A community improvement upon MMS defined by Aarex. Expander from the original NE project.',
         'credit.e0mn': 'Defined by test_alpha0.',
+        'credit.pcf-omega-mn': 'Defined by PCF, with expander by 笑姐姐 (Smile Lee).',
         'tips.intro':
             'This site is designed for keyboard-first analysis on PC to avoid breaking flow with mouse. Features below serve this goal. Suggestions welcome.',
         'tips.features': 'Features',
