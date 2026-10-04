@@ -58,6 +58,124 @@ function display(expr: Expr, type: DisplayType = 'plain'): string {
     return expr.map(bind2(col_display, type)).join('');
 }
 
+function from_display(str: string): Expr {
+    let i = 0;
+    const s = str;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + s);
+    }
+
+    function skip_spaces(): void {
+        while (i < s.length && s[i] === ' ') i++;
+    }
+
+    function parse_number(): number {
+        const start = i;
+        while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(s.substring(start, i), 10);
+    }
+
+    function parse_omega_term(): [number, number] {
+        i++;
+        skip_spaces();
+
+        let m = 1;
+        if (i < s.length && s[i] === '^') {
+            i++;
+            skip_spaces();
+            if (i < s.length && s[i] === '(') {
+                i++;
+                skip_spaces();
+                m = parse_number();
+                skip_spaces();
+                if (i >= s.length || s[i] !== ')') error();
+                i++;
+            } else {
+                m = parse_number();
+            }
+            skip_spaces();
+        }
+
+        let n = 1;
+        if (i < s.length && s[i] === '*') {
+            i++;
+            skip_spaces();
+            n = parse_number();
+        }
+
+        return [m, n];
+    }
+
+    function parse_vertical_term(): [number, number] {
+        if (i < s.length && (s[i] === 'ω' || s[i] === 'w')) return parse_omega_term();
+        return [0, parse_number()];
+    }
+
+    function parse_vertical(): Vertical {
+        let result: Vertical = [];
+        while (true) {
+            skip_spaces();
+            const [m, n] = parse_vertical_term();
+            if (n > 0) result = vertical_add(result, [...Array<number>(m).fill(0), n]);
+            skip_spaces();
+            if (i >= s.length || s[i] !== '+') break;
+            i++;
+        }
+        return result;
+    }
+
+    function parse_entry(): Entry {
+        skip_spaces();
+        const p = parse_number() - 1;
+        skip_spaces();
+        if (p < 0 || i >= s.length || s[i] !== ':') error();
+        i++;
+        return [p, parse_vertical()];
+    }
+
+    function parse_column(): Column {
+        i++;
+        skip_spaces();
+        const col: Column = [];
+        if (i < s.length && s[i] === ')') {
+            i++;
+            return col;
+        }
+
+        while (true) {
+            col.push(parse_entry());
+            skip_spaces();
+            if (i >= s.length) error();
+            if (s[i] === ',') {
+                i++;
+                continue;
+            }
+            if (s[i] !== ')') error();
+            i++;
+            return col;
+        }
+    }
+
+    skip_spaces();
+    if (i + 5 <= s.length && s.substring(i, i + 5) === 'Limit') {
+        i += 5;
+        skip_spaces();
+        if (i !== s.length) error();
+        return INFINITY;
+    }
+
+    const result: Expr = [];
+    while (true) {
+        skip_spaces();
+        if (i >= s.length) break;
+        if (s[i] !== '(') error();
+        result.push(parse_column());
+    }
+    return result;
+}
+
 function vertical_compare(v1: Vertical, v2: Vertical): number {
     return anti_lex_compare(v1, v2, number_compare);
 }
@@ -260,7 +378,15 @@ type Entry_MN = [number, number];
 type Column_MN = Entry_MN[];
 type Expr_MN = Column_MN[];
 
+const INFINITY_mn: Expr_MN = Infinity as any;
+
+function is_infinity_mn(expr: Expr_MN): boolean {
+    return expr === INFINITY_mn;
+}
+
 function convert_to_mn(expr: Expr): Expr_MN {
+    if (is_infinity(expr)) return INFINITY_mn;
+
     const result: Expr_MN = [];
     for (let i = 0; i < expr.length; i++) {
         result[i] = [];
@@ -282,11 +408,6 @@ function convert_to_mn(expr: Expr): Expr_MN {
     return result;
 }
 
-function display_as_mn(expr: Expr): string {
-    if (is_infinity(expr)) return 'Limit';
-    return mn_display(convert_to_mn(expr));
-}
-
 function mn_entry_display([p, s]: Entry_MN): string {
     return ','.repeat(s + 1) + (p + 1);
 }
@@ -296,7 +417,126 @@ function mn_column_display(col: Column_MN): string {
 }
 
 function mn_display(expr: Expr_MN): string {
+    if (is_infinity_mn(expr)) return 'Limit';
+
     return expr.map(mn_column_display).join('');
+}
+
+function mn_from_display(str: string): Expr_MN {
+    if (str === 'Limit') return INFINITY_mn;
+
+    let i = 0;
+
+    function error(): never {
+        throw new Error('Illegal input string: ' + str);
+    }
+
+    function skip_spaces(): void {
+        while (i < str.length && str[i] === ' ') i++;
+    }
+
+    function skip_index(): void {
+        if (i < str.length && str[i] === ':') {
+            i++;
+            skip_spaces();
+            while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+        }
+    }
+
+    function parse_sep(): number {
+        let count = 0;
+        while (i < str.length && str[i] === ',') {
+            count++;
+            i++;
+        }
+        return count === 0 ? 0 : count - 1;
+    }
+
+    function parse_number(): number {
+        const start = i;
+        while (i < str.length && str[i] >= '0' && str[i] <= '9') i++;
+        if (start === i) error();
+        return parseInt(str.substring(start, i), 10);
+    }
+
+    function parse_parenthesized_column(): Column_MN {
+        i++;
+        const col: Column_MN = [];
+        skip_spaces();
+        while (i < str.length && str[i] !== ')' && str[i] !== ':') {
+            skip_spaces();
+            const sep = parse_sep();
+            skip_spaces();
+            const v = parse_number();
+            col.push([v - 1, sep]);
+            skip_spaces();
+        }
+        skip_index();
+        skip_spaces();
+        if (i >= str.length || str[i] !== ')') error();
+        i++;
+        return col;
+    }
+
+    function parse_unparenthesized_column(): Column_MN {
+        skip_spaces();
+        if (i >= str.length) error();
+        if (
+            str[i] === '0' &&
+            (i + 1 >= str.length ||
+                str[i + 1] === ':' ||
+                str[i + 1] === ' ' ||
+                str[i + 1] === '(' ||
+                str[i + 1] === ',')
+        ) {
+            i++;
+            skip_index();
+            return [];
+        }
+        const col: Column_MN = [];
+        while (i < str.length && str[i] !== ' ' && str[i] !== '(' && str[i] !== ':') {
+            if (str[i] === ',') {
+                const sep = parse_sep();
+                skip_spaces();
+                const v = parse_number();
+                col.push([v - 1, sep]);
+            } else {
+                error();
+            }
+        }
+        skip_index();
+        return col;
+    }
+
+    const result: Expr_MN = [];
+    skip_spaces();
+    while (i < str.length) {
+        if (str[i] === '(') {
+            result.push(parse_parenthesized_column());
+        } else {
+            result.push(parse_unparenthesized_column());
+        }
+        skip_spaces();
+    }
+    return result;
+}
+
+function convert_from_mn(expr: Expr_MN): Expr {
+    if (is_infinity_mn(expr)) return INFINITY;
+
+    const result: Expr = [];
+    for (let i = 0; i < expr.length; i++) {
+        const col: Column = [];
+        let current: Vertical = [];
+        for (let j = 0; j < expr[i].length; j++) {
+            const [p, s] = expr[i][j];
+            current = vertical_increase(current, s);
+            if (j + 1 < expr[i].length && expr[i][j + 1][0] === p) continue;
+            col.push([p, current]);
+        }
+        result[i] = col;
+    }
+    return result;
 }
 
 export const pcf_omega_mn: NotationDefinition<Expr> = {
@@ -306,11 +546,13 @@ export const pcf_omega_mn: NotationDefinition<Expr> = {
     display: {
         plain: (m) => display(m, 'plain'),
         html: (m) => display(m, 'html'),
+        from_display,
         name: { id: 'display.index' },
     },
     display_equiv: {
         MN: {
-            plain: display_as_mn,
+            plain: (m) => mn_display(convert_to_mn(m)),
+            from_display: (str) => convert_from_mn(mn_from_display(str)),
         },
     },
     ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display, column_compare, truncate),
