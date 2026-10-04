@@ -1,4 +1,12 @@
-import { anti_lex_compare, deepcopy, lex_compare, lex_compare_by, number_compare, tuple_lex_compare } from '@/utils.ts';
+import {
+    anti_lex_compare,
+    bind2,
+    deepcopy,
+    lex_compare,
+    lex_compare_by,
+    number_compare,
+    tuple_lex_compare,
+} from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { MN_FS_variants } from '@/notations/notation_utils.ts';
 import { omega_Y_weak } from '@/notations/Y/Omega_Y.ts';
@@ -464,6 +472,63 @@ function dbms_column_verticals(col: Column_DBMS): Vertical_DBMS[] {
     return result;
 }
 
+type Expr_RMN = [number, Vertical_DBMS][][];
+
+const INFINITY_rmn: Expr_RMN = Infinity as any;
+
+function is_infinity_rmn(expr: Expr_RMN): boolean {
+    return expr === INFINITY_rmn;
+}
+
+function dbms_to_rmn(expr: Expr_DBMS): Expr_RMN {
+    if (is_infinity_dbms(expr)) return INFINITY_rmn;
+
+    const V = expr.map(dbms_column_verticals);
+    const result: Expr_RMN = [];
+    for (let i = 0; i <= expr.length - 1; i++) {
+        const col: Expr_RMN[number] = [];
+
+        for (let j = 0; j < expr[i].length; j++) {
+            if (j + 1 === expr[i].length || expr[i][j][0] !== expr[i][j + 1][0]) {
+                col.push([expr[i][j][0], V[i][j]]);
+            }
+        }
+
+        result[i] = col;
+    }
+    return result;
+}
+
+function vertical_cantor_display(v: Vertical_DBMS, type: DisplayType): string {
+    const result: string[] = [];
+    for (let j = v.length - 1; j >= 0; j--) {
+        const c = v[j];
+        if (c > 0) {
+            if (j === 0) result.push('' + c);
+            else {
+                const prim = j > 1 ? (type === 'html' ? 'ω<sup>' + j + '</sup>' : 'ω^' + j) : 'ω';
+                result.push(c > 1 ? prim + (type === 'html' ? c : '*' + c) : prim);
+            }
+        }
+    }
+    if (result.length === 0) return '0';
+    return result.join('+');
+}
+
+function rmn_entry_display([v, vt]: Expr_RMN[number][number], type: DisplayType): string {
+    return v + 1 + ':' + vertical_cantor_display(vt, type);
+}
+
+function rmn_col_display(col: Expr_RMN[number], type: DisplayType): string {
+    return '(' + col.map(bind2(rmn_entry_display, type)).join(',') + ')';
+}
+
+function rmn_display(expr: Expr_RMN, type: DisplayType): string {
+    if (is_infinity_rmn(expr)) return 'Limit';
+
+    return expr.map(bind2(rmn_col_display, type)).join('');
+}
+
 function dbms_find_index_below_row(V: Vertical_DBMS[], v: Vertical_DBMS): number {
     let l = 0,
         r = V.length;
@@ -740,6 +805,10 @@ export const S_omega_DBMS_v3: NotationDefinition<Expr> = {
             html: (m) => display_marked(m, 'html'),
             from_display,
             name: { id: 'display.index-marked' },
+        },
+        RMN: {
+            plain: (m) => rmn_display(dbms_to_rmn(convert_to_dbms(m)), 'plain'),
+            html: (m) => rmn_display(dbms_to_rmn(convert_to_dbms(m)), 'html'),
         },
         dbms: {
             plain: (m) => dbms_display(convert_to_dbms(m)),
