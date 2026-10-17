@@ -325,7 +325,7 @@ function compute_new_height(h: Height, expr: Expr, r: number): Height | undefine
             const new_value = col_rh[hj][0];
             let new_h = height_fill_dec(h, p_bound - 1, new_value);
             if (hj > 0) {
-                const lower = hj > 0 ? col_rh[hj - 1][1] : [];
+                const lower = col_rh[hj - 1][1];
                 if (compare_height(lower, new_h) > 0) {
                     new_h = lower;
                 }
@@ -429,14 +429,12 @@ function dbms_display(expr: Expr_DBMS): string {
     return expr.map((col) => dbms_column_display(col)).join('');
 }
 
-/** dbms 的单列标记列标显示: plain 在括号内以 ':' 追加列标(空列写作 '(0:N)'), html 作灰色下标写在括号之后。 */
 function dbms_column_display_marked(col: Column_DBMS, index: number, type: DisplayType): string {
     const content = col.length === 0 ? '0' : col.map((entry) => dbms_entry_display(entry)).join('');
     if (type === 'html') return '(' + content + ")<sub><span style='color:#888'>" + index + '</span></sub>';
     return '(' + content + ':' + index + ')';
 }
 
-/** dbms 的标记列标显示: 列标自 start_index 起(1-based)。 */
 export function dbms_display_marked(expr: Expr_DBMS, type: DisplayType = 'plain', start_index: number = 1): string {
     if (is_infinity_dbms(expr)) return 'Limit';
     const parts: string[] = [];
@@ -618,7 +616,6 @@ function dbms_vertical_display(v: Vertical_DBMS): string {
     return result.toReversed().join('/');
 }
 
-/** 由表达式与等价表示算出"形状 + 布局选项":画布版与 HTML 版共用这一份数据。 */
 function build_SDBMS_mountain_source(expr: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
     if (is_infinity(expr) || expr.length === 0) return undefined;
 
