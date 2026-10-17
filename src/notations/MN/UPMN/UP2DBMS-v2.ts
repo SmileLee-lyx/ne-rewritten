@@ -1,15 +1,21 @@
 import {
     anti_lex_compare,
+    bind2,
     boolean_compare,
+    compare_undefined_last_by,
     deepcopy,
     lex_compare,
     number_compare,
     tuple_lex_compare,
 } from '@/utils.ts';
-import { NotationDefinition } from '@/notation-definition.ts';
-import { sequence_FS_variants } from '@/notations/notation_utils.ts';
+import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
+import { MN_FS_variants } from '@/notations/notation_utils.ts';
+import { Diagram } from '@/core/diagram_types.ts';
+import { draw_mountain_diagram, MountainShape } from '@/notations/draw_mountain_diagram.ts';
+import type { MountainViewSource } from '@/notations/mountain_view.ts';
+import { DiagramData } from '@/notations/MN/SDBMS/S1DBMS.ts';
 
-type Height = number[];
+type Height = [number, number];
 type Entry = [number, Height];
 type Column = Entry[];
 type Expr = Column[];
@@ -22,8 +28,8 @@ function is_infinity(expr: Expr): boolean {
 
 function infinity_FS(index: number): Expr {
     const result: Expr = [[]];
-    for (let i = 1; i <= index; i++) {
-        result.push([[i - 1, [i - 1, i - 1]]]);
+    for (let i = 0; i < index; i++) {
+        result.push([[i, [i, i + 1]]]);
     }
     return result;
 }
@@ -34,7 +40,7 @@ function is_limit(expr: Expr): boolean {
 }
 
 function compare_height(h1: Height, h2: Height): number {
-    return anti_lex_compare(h1, h2, number_compare);
+    return anti_lex_compare(h1, h2, compare_undefined_last_by(number_compare));
 }
 
 function compare_entry(entry1: Entry, entry2: Entry): number {
@@ -51,14 +57,16 @@ function compare(expr1: Expr, expr2: Expr): number {
 
 type DisplayType = 'plain' | 'html';
 
-function entry_display([v, s]: Entry, type: DisplayType): string {
+function height_display([h0, h1]: Height): string {
+    const d_h0 = '' + (h0 + 1);
+    return '(' + h1 + ',' + d_h0 + ')';
+}
+
+function entry_display([v, h]: Entry, type: DisplayType): string {
     const d_v = v + 1;
-    const d_s = s
-        .map((x) => x + 1)
-        .toReversed()
-        .join(',');
+    const d_s = height_display(h);
     if (type === 'html') return d_v + '<sup>' + d_s + '</sup>';
-    return d_v + '^(' + d_s + ')';
+    return d_v + '^' + d_s;
 }
 
 function column_display(col: Column, type: DisplayType): string {
@@ -71,9 +79,6 @@ function display(expr: Expr, type: DisplayType = 'plain'): string {
     return expr.map((col) => column_display(col, type)).join('');
 }
 
-/** 标记列标显示: 对每一列显式给出其列标(1-based, 自 start_index 起递增), 仿 S1DBMS 的 display_marked。
- *  plain 把列标写在括号内并以 ':' 引导(如 (:1)(1^(1):2));
- *  html 把列标写在括号之后作为灰色下标。 */
 export function display_marked(expr: Expr, type: DisplayType, start_index: number = 1): string {
     if (is_infinity(expr)) return 'Limit';
     const parts: string[] = [];
@@ -96,9 +101,6 @@ function column_display_marked(col: Column, type: DisplayType, index: number): s
     return '(' + content + ':' + index + ')';
 }
 
-/** 反解析(手写递归下降, 不用正则)。语法与 display 的 plain 产物一致:
- *  若干列 '(...)' 依次拼接, 空列为 '(0)', 项为 'v^(s1,s2,…)'。
- *  行高在显示时按 1-based 且反序(见 entry_display), 故解析时反向还原: 先减一, 再反序。 */
 export function from_display(str: string): Expr {
     let i = 0;
     const s = str;
@@ -128,34 +130,39 @@ export function from_display(str: string): Expr {
         return parseInt(s.substring(start, i), 10);
     }
 
+    /**
+     * 行高: '(h1,h0)', 内部按 [h0, h1] 存放(见 height_display)。
+     * 显示时第 1 分量 h1 原样写出, 第 2 分量写 h0 + 1。
+     */
     function parse_height(): Height {
         skip_spaces();
         if (i >= s.length || s[i] !== '(') error();
         i++;
-        const displayed: number[] = [];
+        const h1 = parse_number();
         skip_spaces();
-        if (i < s.length && s[i] !== ')') {
-            displayed.push(parse_number());
-            skip_spaces();
-            while (i < s.length && s[i] === ',') {
-                i++;
-                displayed.push(parse_number());
-                skip_spaces();
-            }
-        }
+        if (i >= s.length || s[i] !== ',') error();
+        i++;
+        const h0 = parse_number() - 1;
+        skip_spaces();
         if (i >= s.length || s[i] !== ')') error();
         i++;
-        return displayed.map((x) => x - 1).toReversed();
+        return [h0, h1];
     }
 
     function parse_entry(): Entry {
         const v = parse_number() - 1;
         skip_spaces();
+        // 上标一律带括号, 故允许省略 '^': '2^(1,1)' 与 '2(1,1)' 等价。
         if (i < s.length && s[i] === '^') {
             i++;
             return [v, parse_height()];
         }
-        return [v, []]; // '(0)' 这类省略上标的形式, 稍后作为空列处理
+        if (i < s.length && s[i] === '(') {
+            return [v, parse_height()];
+        }
+        // '(0)' 这类不带上标的写法: 以哨兵行高 [0, -1] 占位(h1 = -1 不合法, 不会与 [0, 0] 等合法值混淆),
+        // 列尾删去仍按 v = -1 判
+        return [v, [0, -1]];
     }
 
     function parse_column(): Column {
@@ -211,9 +218,17 @@ export function from_display(str: string): Expr {
     return result;
 }
 
-function height(col: Column): Height {
-    if (col.length === 0) return [];
+function height(col: Column): Height | undefined {
+    if (col.length === 0) return undefined;
     return col[col.length - 1][1];
+}
+
+function height_to_height1(h: Height | undefined): number {
+    return h?.[1] ?? 0;
+}
+
+function height1(col: Column): number {
+    return height_to_height1(height(col));
 }
 
 function filter_height_greater(col: Column, h0: Height): Column {
@@ -226,7 +241,8 @@ function merge_column(...cols: Column[]): Column {
     if (cols.length === 2) {
         const col1 = cols[0];
         const col2 = cols[1];
-        return [...col1, ...filter_height_greater(col2, height(col1))];
+        let h = height(col1);
+        return [...col1, ...(h === undefined ? col2 : filter_height_greater(col2, h))];
     }
     return merge_column(merge_column(cols[0], cols[1]), ...cols.slice(2));
 }
@@ -236,7 +252,7 @@ function copy_value(value: number, r: number, offset: number, up: boolean): numb
 }
 
 function copy_height(h: Height, r: number, offset: number, up: boolean): Height {
-    return h.map((s) => copy_value(s, r, offset, up));
+    return [copy_value(h[0], r, offset, up), h[1]];
 }
 
 function copy_entry(entry: Entry, r: number, offset: number, up: boolean): Entry {
@@ -247,14 +263,14 @@ function copy_column(col: Column, r: number, offset: number, up: boolean): Colum
     const result: Column = [];
     for (let j = 0; j < col.length; j++) {
         const entry = col[j];
-        const prev_height = j === 0 ? [] : col[j - 1][1];
+        const prev_height = j === 0 ? undefined : col[j - 1][1];
 
         // special treat entry with value r to preserve BMS upgrading
         if (entry[0] === r && !up) {
-            if (entry[1].length <= 1 || (prev_height.length >= 2 && entry[1][1] === prev_height[1])) {
+            if (entry[1][1] === 0 || (prev_height !== undefined && entry[1][1] === prev_height[1])) {
                 result.push([r + offset, copy_height(entry[1], r, offset, false)]);
             } else {
-                const finite_height = prev_height.length <= 1 ? [r] : [r, prev_height[1]];
+                const finite_height: Height = prev_height === undefined ? [r, 0] : [r, prev_height[1]];
                 // upgrade finite part of this column
                 result.push([r + offset, finite_height], copy_entry(entry, r, offset, false));
             }
@@ -265,20 +281,36 @@ function copy_column(col: Column, r: number, offset: number, up: boolean): Colum
     return result;
 }
 
-function find_index_below_height(col: Column, h: Height): number {
-    let l = 0,
-        r = col.length;
-    while (l < r) {
-        const m = (l + r + 1) >> 1;
-        if (compare_height(h, col[m - 1][1]) > 0) l = m;
-        else r = m - 1;
+function top_separator([v, h1]: Height, expr: Expr): 0 | 1 {
+    return height1(expr[v]) < h1 ? 1 : 0;
+}
+
+function compute_new_height(h: Height, expr: Expr, r: number): Height | undefined {
+    const [v, h1] = h;
+
+    const col_rh = expr[v];
+    const hj = col_rh.findIndex(([, hv]) => compare_height(h, hv) <= 0);
+
+    if (hj === -1) {
+        if (height1(col_rh) < h1) return [r, h1 - 1];
+
+        return height(col_rh);
+    } else {
+        const new_value = col_rh[hj][0];
+        let new_h: Height = [new_value, h1];
+        if (hj > 0) {
+            const lower = col_rh[hj - 1][1];
+            if (compare_height(lower, new_h) > 0) {
+                new_h = lower;
+            }
+        }
+        return new_h;
     }
-    return l;
 }
 
 type RelColumn = RelEntry[];
 type RelValue = [boolean, number];
-type RelHeight = RelValue[];
+type RelHeight = [RelValue, number];
 type RelEntry = [RelValue, RelHeight];
 
 function compare_rel_column(a: RelColumn, b: RelColumn): number {
@@ -290,19 +322,19 @@ function compare_rel_entry(a: RelEntry, b: RelEntry): number {
 }
 
 function compare_rel_height(a: RelHeight, b: RelHeight): number {
-    return lex_compare(a, b, compare_rel_value);
+    return tuple_lex_compare(a, b, [compare_rel_value, number_compare]);
 }
 
 function compare_rel_value(a: RelValue, b: RelValue): number {
     return tuple_lex_compare(a, b, [boolean_compare, number_compare]);
 }
 
-function to_rel_value(v: number, r: number): [boolean, number] {
+function to_rel_value(v: number, r: number): RelValue {
     return v >= r ? [true, v - r] : [false, v];
 }
 
-function to_rel_height(h: Height, r: number): RelHeight {
-    return h.map((s) => to_rel_value(s, r));
+function to_rel_height([h0, h1]: Height, r: number): RelHeight {
+    return [to_rel_value(h0, r), h1];
 }
 
 function to_rel_entry(entry: Entry, r: number): RelEntry {
@@ -313,16 +345,16 @@ function to_rel_column(col: Column, r: number): RelColumn {
     return col.map((entry) => to_rel_entry(entry, r));
 }
 
-function height_after(col: Column, r: number): Height {
+function height_after(col: Column, r: number): Height | undefined {
     const j = col.findLastIndex((entry) => entry[0] >= r);
-    if (j === -1) return [];
+    if (j === -1) return undefined;
     return col[j][1];
 }
 
-function parent_at(col: Column, h: Height): number {
+function parent_at(col: Column, h: Height | undefined): number {
+    if (h === undefined) return col[0]?.[0] ?? -1;
     const j = col.findIndex((entry) => compare_height(entry[1], h) >= 0);
-    if (j === -1) return -1;
-    return col[j][0];
+    return j === -1 ? -1 : col[j][0];
 }
 
 function discard_after(col: Column, r: number): Column {
@@ -336,33 +368,41 @@ function compute_up(expr: Expr, r: number, h: Height): boolean[] {
     result.fill(false, 0, r);
     result[r] = true;
 
-    if (h.length <= 1) {
-        result.fill(true, r);
+    if (h[1] === 0) {
+        result.fill(true, r + 1, expr.length);
         return result;
     }
 
     for (let i = r + 1; i <= right; i++) {
         const col = expr[i];
 
-        const h0 = height_after(col, r);
+        const h_root = height_after(col, r);
 
-        if (h0.length < 2 || h0[1] < h[1]) {
+        if (h_root === undefined || h_root[1] < h[1]) {
             result[i] = false;
             continue;
         }
 
-        const h_test = height_after(col, r + 1);
-        const threshold_height = h_test.length < 2 ? [r + 1] : [r + 1, h_test[1]];
+        const h_proj = height_after(col, r + 1);
+        const threshold_height: Height = h_proj === undefined ? [r + 1, 0] : [r + 1, Math.min(h_proj[1], h[1] - 1)];
 
-        if (compare_height(h_test, threshold_height) >= 0) {
+        if (h_proj !== undefined && compare_height(h_proj, threshold_height) >= 0) {
             result[i] = result[parent_at(col, threshold_height)];
+            continue;
+        }
+
+        const p_proj = parent_at(col, h_proj);
+        if (!result[p_proj]) {
+            result[i] = false;
             continue;
         }
 
         const X_start = i;
         let Y_start = right;
-        let next: number;
-        while ((next = parent_at(expr[Y_start], threshold_height)) !== r) Y_start = next;
+        {
+            let next: number;
+            while ((next = parent_at(expr[Y_start], threshold_height)) !== r) Y_start = next;
+        }
 
         if (Y_start <= X_start) {
             result[i] = X_start === Y_start;
@@ -395,39 +435,6 @@ function compute_up(expr: Expr, r: number, h: Height): boolean[] {
     return result;
 }
 
-function top_separator(h: Height): number {
-    if (h.length === 0) return 0;
-    const rh = h[0];
-    let s = 0;
-    while (s < h.length && h[s] === rh) s++;
-    return s;
-}
-
-function compute_new_height(h: Height, col_rh: Column, r: number): Height {
-    const s = top_separator(h);
-
-    const new_h = h.slice();
-    const hj = find_index_below_height(col_rh, h);
-    if (hj === col_rh.length) {
-        const h_candidate = height(col_rh);
-        if (h_candidate.length < s) {
-            new_h.pop();
-        } else {
-            new_h[s - 1] = h_candidate[s - 1];
-        }
-    } else {
-        const base_h = hj === 0 ? [] : col_rh[hj - 1][1];
-        if (base_h.length === h.length && lex_compare(base_h.slice(s), h.slice(s), number_compare) === 0) {
-            new_h[s - 1] = base_h[s - 1];
-        } else {
-            new_h[s - 1] = col_rh[hj][0];
-        }
-    }
-    new_h.fill(r, 0, s - 1);
-
-    return new_h;
-}
-
 function expand(expr: Expr, index: number, shorter: boolean): Expr {
     if (expr.length === 0) return expr;
     const right = expr.length - 1;
@@ -439,12 +446,15 @@ function expand(expr: Expr, index: number, shorter: boolean): Expr {
     // compute lnz-1
 
     const h = tr_entry[1];
-    const rh = h[0];
 
-    const new_h = compute_new_height(h, expr[rh], r);
+    const new_h = compute_new_height(h, expr, r);
+
+    let new_col = expr[right].slice(0, -1);
+    if (new_h !== undefined) new_col = merge_column(new_col, [[r, new_h]]);
+    new_col = merge_column(new_col, expr[r]);
 
     const result: Expr = expr.slice(0, -1);
-    result.push(merge_column(expr[right].slice(0, -1), [[r, new_h]], expr[r]));
+    result.push(new_col);
 
     const up = compute_up(expr, r, h);
 
@@ -470,25 +480,39 @@ function is_infinity_dbms(expr: Expr_DBMS): boolean {
 function convert_to_dbms(expr: Expr): Expr_DBMS {
     if (is_infinity(expr)) return INFINITY_dbms;
 
-    const result: Expr_DBMS = [];
+    return convert_to_dbms_data(expr)[1];
+}
+
+function convert_to_dbms_data(expr: Expr): [Entry[][], Expr_DBMS] {
+    const result: Entry[][] = [];
+    const result_dbms: Expr_DBMS = [];
+
     for (let i = 0; i < expr.length; i++) {
-        result[i] = [];
-        for (let j = 0; j < expr[i].length; j++) {
-            const part: Column_DBMS = [];
+        const [result_i, result_dbms_i] = convert_to_dbms_data_column(expr, i);
+        result[i] = result_i;
+        result_dbms[i] = result_dbms_i;
+    }
 
-            const v = expr[i][j][0];
-            let current = expr[i][j][1];
-            while (true) {
-                if (current.length === 0 || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
-                const s = top_separator(current);
-                current = compute_new_height(current, expr[current[0]], v);
-                part.push([v, s - 1]);
-            }
+    return [result, result_dbms];
+}
 
-            result[i].push(...part.reverse());
+function convert_to_dbms_data_column(expr: Expr, i: number): [Entry[], Column_DBMS] {
+    const result: Entry[] = [];
+    const result_dbms: Column_DBMS = [];
+    for (let j = expr[i].length - 1; j >= 0; j--) {
+        const v = expr[i][j][0];
+        let current: Height | undefined = expr[i][j][1];
+        while (true) {
+            if (current === undefined || (j > 0 && compare_height(current, expr[i][j - 1][1]) <= 0)) break;
+            const s = top_separator(current, expr);
+            result.push([v, current]);
+            result_dbms.push([v, s]);
+            current = compute_new_height(current, expr, v);
         }
     }
-    return result;
+    result.reverse();
+    result_dbms.reverse();
+    return [result, result_dbms];
 }
 
 function dbms_entry_display([v, s]: Entry_DBMS): string {
@@ -507,14 +531,12 @@ function dbms_display(expr: Expr_DBMS): string {
     return expr.map((col) => dbms_column_display(col)).join('');
 }
 
-/** dbms 的单列标记列标显示: plain 在括号内以 ':' 追加列标(空列写作 '(0:N)'), html 作灰色下标写在括号之后。 */
 function dbms_column_display_marked(col: Column_DBMS, index: number, type: DisplayType): string {
     const content = col.length === 0 ? '0' : col.map((entry) => dbms_entry_display(entry)).join('');
     if (type === 'html') return '(' + content + ")<sub><span style='color:#888'>" + index + '</span></sub>';
     return '(' + content + ':' + index + ')';
 }
 
-/** dbms 的标记列标显示: 列标自 start_index 起(1-based)。 */
 export function dbms_display_marked(expr: Expr_DBMS, type: DisplayType = 'plain', start_index: number = 1): string {
     if (is_infinity_dbms(expr)) return 'Limit';
     const parts: string[] = [];
@@ -548,6 +570,63 @@ function dbms_column_verticals(col: Column_DBMS): Vertical_DBMS[] {
         result.push(current);
     }
     return result;
+}
+
+type Expr_RMN = [number, Vertical_DBMS][][];
+
+const INFINITY_rmn: Expr_RMN = Infinity as any;
+
+function is_infinity_rmn(expr: Expr_RMN): boolean {
+    return expr === INFINITY_rmn;
+}
+
+function dbms_to_rmn(expr: Expr_DBMS): Expr_RMN {
+    if (is_infinity_dbms(expr)) return INFINITY_rmn;
+
+    const V = expr.map(dbms_column_verticals);
+    const result: Expr_RMN = [];
+    for (let i = 0; i <= expr.length - 1; i++) {
+        const col: Expr_RMN[number] = [];
+
+        for (let j = 0; j < expr[i].length; j++) {
+            if (j + 1 === expr[i].length || expr[i][j][0] !== expr[i][j + 1][0]) {
+                col.push([expr[i][j][0], V[i][j]]);
+            }
+        }
+
+        result[i] = col;
+    }
+    return result;
+}
+
+function vertical_cantor_display(v: Vertical_DBMS, type: DisplayType): string {
+    const result: string[] = [];
+    for (let j = v.length - 1; j >= 0; j--) {
+        const c = v[j];
+        if (c > 0) {
+            if (j === 0) result.push('' + c);
+            else {
+                const prim = j > 1 ? (type === 'html' ? 'ω<sup>' + j + '</sup>' : 'ω^' + j) : 'ω';
+                result.push(c > 1 ? prim + (type === 'html' ? c : '*' + c) : prim);
+            }
+        }
+    }
+    if (result.length === 0) return '0';
+    return result.join('+');
+}
+
+function rmn_entry_display([v, vt]: Expr_RMN[number][number], type: DisplayType): string {
+    return v + 1 + ':' + vertical_cantor_display(vt, type);
+}
+
+function rmn_col_display(col: Expr_RMN[number], type: DisplayType): string {
+    return '(' + col.map(bind2(rmn_entry_display, type)).join(',') + ')';
+}
+
+function rmn_display(expr: Expr_RMN, type: DisplayType): string {
+    if (is_infinity_rmn(expr)) return 'Limit';
+
+    return expr.map(bind2(rmn_col_display, type)).join('');
 }
 
 function dbms_find_index_below_row(V: Vertical_DBMS[], v: Vertical_DBMS): number {
@@ -584,16 +663,21 @@ export function convert_dbms_to_layer(om: Expr_DBMS): Expr_DBMS {
     return dm;
 }
 
+function dbms_to_y_mountain_column(expr: Expr_DBMS, V: Vertical_DBMS[][], y_mountain: number[][], i: number): number[] {
+    const result = [];
+    result[expr[i].length] = 1;
+    for (let j = expr[i].length - 1; j >= 0; j--) {
+        const [pi, pj] = dbms_compute_parent(expr, V, [i, j]);
+        result[j] = y_mountain[pi][pj] + result[j + 1];
+    }
+    return result;
+}
+
 function dbms_to_y_mountain(expr: Expr_DBMS): number[][] {
     const V = expr.map(dbms_column_verticals);
     const result: number[][] = [];
     for (let i = 0; i < expr.length; i++) {
-        result[i] = [];
-        result[i][expr[i].length] = 1;
-        for (let j = expr[i].length - 1; j >= 0; j--) {
-            const [pi, pj] = dbms_compute_parent(expr, V, [i, j]);
-            result[i][j] = result[pi][pj] + result[i][j + 1];
-        }
+        result[i] = dbms_to_y_mountain_column(expr, V, result, i);
     }
     return result;
 }
@@ -603,6 +687,190 @@ function display_as_Y(matrix: Expr_DBMS): string {
     return dbms_to_y_mountain(matrix)
         .map((col) => col[0])
         .join(',');
+}
+
+function to_y_sequence(expr: Expr): number[] {
+    return dbms_to_y_mountain(convert_to_dbms(expr)).map((col) => col[0]);
+}
+
+function dbms_vertical_display(v: Vertical_DBMS): string {
+    const result: string[] = [];
+    for (let i = 0; i < v.length; i++) {
+        for (let j = 0; j < v[i]; j++) {
+            result.push(','.repeat(i + 1));
+        }
+    }
+    return result.toReversed().join('/');
+}
+
+function build_SDBMS_mountain_source(expr: Expr, current_equiv: string | undefined): MountainViewSource | undefined {
+    if (is_infinity(expr) || expr.length === 0) return undefined;
+
+    const is_dbms = current_equiv === 'dbms' || current_equiv === 'm dbms';
+    const is_m = current_equiv === 'm' || current_equiv === 'm dbms';
+    const is_l_dbms = current_equiv === 'l dbms';
+    const is_y = current_equiv === 'Y';
+
+    const [mountain, dbms] = convert_to_dbms_data(expr);
+    const V = dbms.map(dbms_column_verticals);
+    const layered = is_l_dbms ? convert_dbms_to_layer(dbms) : [];
+    const y = is_y ? dbms_to_y_mountain(dbms) : [];
+
+    const shape: MountainShape<Vertical_DBMS> = [];
+
+    for (let i = 0; i < expr.length; i++) {
+        shape[i] = [
+            {
+                vertical: [],
+                text: is_y ? '' + y[i][0] : is_m ? ':' + (i + 1) : '*',
+            },
+        ];
+
+        for (let j = 0; j < dbms[i].length; j++) {
+            shape[i][j + 1] = {
+                vertical: V[i][j],
+                text: is_dbms
+                    ? dbms_entry_display(dbms[i][j])
+                    : is_l_dbms
+                      ? dbms_entry_display(layered[i][j])
+                      : is_y
+                        ? '' + y[i][j + 1]
+                        : entry_display(mountain[i][j], 'html'),
+                leg_target: dbms_compute_parent(dbms, V, [i, j]),
+            };
+        }
+    }
+
+    return {
+        shape,
+        layout: {
+            vertical_display: dbms_vertical_display,
+            vertical_compare: compare_dbms_vertical,
+            separator_count: () => 1,
+        },
+        display_html_entry: true,
+    };
+}
+
+function draw_SDBMS_diagram(
+    expr: Expr,
+    current_equiv: string | undefined,
+    invert_vertical: boolean,
+): Diagram | undefined {
+    const source = build_SDBMS_mountain_source(expr, current_equiv);
+    if (!source) return undefined;
+    const is_original = current_equiv === undefined || current_equiv === 'm';
+    return draw_mountain_diagram(source.shape, source.layout, {
+        invert_vertical,
+        display_html_entry: source.display_html_entry,
+        column_width: is_original ? 100 : 30,
+    });
+}
+
+// 从极限展开, 查找 to_y_seq 等于 target 的表达式
+function from_y_seq(target: number[]): Expr {
+    if (target.length === 0) return [];
+    if (target[0] !== 1) throw new Error('Illegal argument');
+    if (target.length === 1) return [[]];
+    if (!target.every((x) => Number.isInteger(x) && x > 0)) throw new Error('Illegal argument');
+
+    let bound: Expr = infinity_FS(target[1] - 1); // 初始时, to_y_seq(bound) = (1, target[1]+1)
+    let [mountain, dbms] = convert_to_dbms_data(bound);
+    let V = dbms.map(dbms_column_verticals);
+    let y_mountain = dbms_to_y_mountain(dbms);
+
+    // 假设: to_y_seq(bound) 和 target 仅在 bound 的末位不同.
+    while (true) {
+        const right = bound.length - 1;
+
+        // 首先尝试直接截断山脉.
+
+        let new_l = dbms[right].length;
+        while (new_l > 0 && y_mountain[right][0] - y_mountain[right][new_l - 1] + 1 > target[right]) {
+            new_l--;
+        }
+
+        if (new_l !== dbms[right].length) {
+            bound = deepcopy(bound);
+            const [v, h] = mountain[right][new_l - 1];
+            while (bound[right][bound[right].length - 1][0] < v) bound[right].pop();
+            bound[right][bound[right].length - 1][1] = h;
+        }
+
+        // 进行展开. 展开其实是线性的, 代价远低于 to_dbms 和 y_mountain. 只需对后两者进行重用.
+
+        let bound_fs_index = 0;
+        let bound_fs = expand(bound, bound_fs_index, false);
+        let mountain_fs = mountain.slice(0, -1);
+        let dbms_fs = dbms.slice(0, -1);
+        let V_fs = V.slice(0, -1);
+        let y_mountain_fs = y_mountain.slice(0, -1);
+
+        // 不断生成并比较基本列
+
+        let compared = right;
+        while (true) {
+            if (compared === target.length) return bound_fs.slice(0, compared);
+            if (compared === bound_fs.length) {
+                bound_fs_index++;
+                bound_fs = expand(bound, bound_fs_index, false);
+            }
+            const [next, dbms_next] = convert_to_dbms_data_column(bound_fs, compared);
+            mountain_fs.push(next);
+            dbms_fs.push(dbms_next);
+            V_fs.push(dbms_column_verticals(dbms_next));
+            y_mountain_fs.push(dbms_to_y_mountain_column(dbms_fs, V_fs, y_mountain_fs, compared));
+
+            if (y_mountain_fs[compared][0] > target[compared]) {
+                break;
+            }
+
+            if (y_mountain_fs[compared][0] < target[compared]) {
+                throw new Error('Not standard');
+            }
+
+            compared++;
+        }
+
+        [bound, mountain, dbms, V, y_mountain] = [
+            bound_fs.slice(0, compared + 1),
+            mountain_fs,
+            dbms_fs,
+            V_fs,
+            y_mountain_fs,
+        ];
+    }
+}
+
+function from_display_y_seq(str: string): Expr {
+    const seq = str.split(',').map((x) => Number(x.trim()));
+    if (!seq.every(Number.isInteger)) throw new Error('Illegal input: ' + str);
+    if (lex_compare(seq, [1, 4], number_compare) >= 0) return INFINITY;
+    return from_y_seq(seq);
+}
+
+export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
+    default_data: { current_equiv: undefined, invert_vertical: undefined },
+    draw_diagram: (_expr, _data) => draw_SDBMS_diagram(_expr, _data.current_equiv, _data.invert_vertical ?? false),
+    handle_action: (data: DiagramData, action): DiagramData | null => {
+        if (action.type === 'scroll') {
+            if (action.direction === 'down') {
+                return { ...data, invert_vertical: true };
+            } else if (action.direction === 'up') {
+                return { ...data, invert_vertical: false };
+            }
+        }
+        return null;
+    },
+};
+
+function truncate(expr: Expr): Expr {
+    const right = expr.length - 1;
+    const top = expr[right].length - 1;
+    const result = expand(expr, 0, false);
+    if (result[right].length <= top) return result;
+    result[right] = result[right].slice(0, result[right][top][0] === expr[right][top][0] ? top + 1 : top);
+    return result;
 }
 
 export const UP2DBMS_v2: NotationDefinition<Expr> = {
@@ -616,32 +884,41 @@ export const UP2DBMS_v2: NotationDefinition<Expr> = {
         name: { id: 'display.index' },
     },
     display_equiv: {
-        marked: {
+        m: {
             plain: (m) => display_marked(m, 'plain'),
             html: (m) => display_marked(m, 'html'),
             from_display,
             name: { id: 'display.index-marked' },
         },
+        RMN: {
+            plain: (m) => rmn_display(dbms_to_rmn(convert_to_dbms(m)), 'plain'),
+            html: (m) => rmn_display(dbms_to_rmn(convert_to_dbms(m)), 'html'),
+        },
         dbms: {
             plain: (m) => dbms_display(convert_to_dbms(m)),
             name: { id: 'display.dbms' },
         },
-        'marked dbms': {
+        'm dbms': {
             plain: (m) => dbms_display_marked(convert_to_dbms(m), 'plain'),
             html: (m) => dbms_display_marked(convert_to_dbms(m), 'html'),
             name: { id: 'display.marked-dbms' },
         },
-        'layered dbms': {
+        'l dbms': {
             plain: (m) => dbms_display(convert_dbms_to_layer(convert_to_dbms(m))),
             name: { id: 'display.layered-dbms' },
         },
         Y: {
             plain: (m) => display_as_Y(convert_to_dbms(m)),
+            from_display: from_display_y_seq,
         },
     },
-    ...sequence_FS_variants(expand, is_infinity, infinity_FS, is_limit, display),
+    ...MN_FS_variants(expand, is_infinity, infinity_FS, is_limit, display, compare_column, truncate),
     is_limit,
     compare,
+
+    draw_diagram: draw_diagram_control,
+    mountain_view: (expr, data) => build_SDBMS_mountain_source(expr, data?.current_equiv),
+
     credit_text_id: 'credit.up2dbms-v2',
 
     init: () => [INFINITY, [[]], []],
