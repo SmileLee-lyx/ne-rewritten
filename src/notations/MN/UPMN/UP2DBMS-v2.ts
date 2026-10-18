@@ -373,6 +373,8 @@ function compute_up(expr: Expr, r: number, h: Height): boolean[] {
         return result;
     }
 
+    const h_threshold: Height = [r + 1, h[1] - 1];
+
     for (let i = r + 1; i <= right; i++) {
         const col = expr[i];
 
@@ -384,24 +386,35 @@ function compute_up(expr: Expr, r: number, h: Height): boolean[] {
         }
 
         const h_proj = height_after(col, r + 1);
-        const threshold_height: Height = h_proj === undefined ? [r + 1, 0] : [r + 1, Math.min(h_proj[1], h[1] - 1)];
 
-        if (h_proj !== undefined && compare_height(h_proj, threshold_height) >= 0) {
-            result[i] = result[parent_at(col, threshold_height)];
+        if (h_proj !== undefined && compare_height(h_proj, h_threshold) >= 0) {
+            result[i] = result[parent_at(col, h_threshold)];
             continue;
         }
 
-        const p_proj = parent_at(col, h_proj);
-        if (!result[p_proj]) {
-            result[i] = false;
+        if (h_proj !== undefined) {
+            let p_proj = i;
+            let next: number;
+            while ((next = parent_at(expr[p_proj], h_proj)) !== r) p_proj = next;
+
+            if (!result[p_proj]) {
+                result[i] = false;
+                continue;
+            }
+        }
+
+        if (h_proj !== undefined && h_proj[0] > r) {
+            result[i] = true;
             continue;
         }
+
+        const h_proj_threshold: Height = [r + 1, h_proj?.[1] ?? 0];
 
         const X_start = i;
         let Y_start = right;
         {
             let next: number;
-            while ((next = parent_at(expr[Y_start], threshold_height)) !== r) Y_start = next;
+            while ((next = parent_at(expr[Y_start], h_proj_threshold)) !== r) Y_start = next;
         }
 
         if (Y_start <= X_start) {
