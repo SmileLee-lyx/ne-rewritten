@@ -117,6 +117,7 @@ import { S_omega_square_DBMS } from '@/notations/MN/SDBMS/S_omega^2_DBMS.ts';
 import { category_rel_bm_bt_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/Rel_B_Minus1_Y_nSS.ts';
 import { pcf_omega_mn } from '@/notations/MN/pcf-omega_MN.ts';
 import { S2DBMS } from '@/notations/MN/SDBMS/S2DBMS.ts';
+import { UP2DBMS_v2c } from '@/notations/MN/UPMN/UP2DBMS-v2c.ts';
 
 const SETTINGS_KEY_NAME = 'ne-settings';
 
@@ -262,6 +263,7 @@ register_notation(UP2MN_v1b_plus);
 register_notation(UP2DBMS_v1c);
 register_notation(UP2DBMS_v1);
 register_notation(UP2DBMS_v2);
+register_notation(UP2DBMS_v2c);
 register_category(category_upmn_test);
 register_notation(UP2MN_v1a);
 register_notation(UP2MN_v1b);
