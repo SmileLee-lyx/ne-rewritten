@@ -239,6 +239,13 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up2dbms-v1c.1': '此版本为无 BMS 提升, 亦无 Y 提升的 1Y, 以 1,3,9 为极限.',
         'description.up2dbms-v1c.2': '对 UP1Y v1b+ 进行修改, 预期使得其 UP 判定的语义与 UP2MN v1b+ 一致.',
         'description.up2dbms-v1c.3': '预期此版本与 TUPMS 对应良好.',
+        'description.up2dbms-v2.1':
+            '将斜 1Y 表示为 S2DBMS 形式后, 再进行类似 UPMS 的提升判定, 但经特殊处理保留了 BMS 提升, 得到的无提升 1Y 序列.',
+        'description.up2dbms-v2.2': '预期保留了 BMS 提升, 消除了 Y 提升.',
+        'description.up2dbms-v2.3': '预期此版本以 v1 为前段.',
+        'description.up2dbms-v2c.1': '将斜 1Y 表示为 S2DBMS 形式后, 再进行类似 UPMS 的提升判定, 得到的无提升 1Y 序列.',
+        'description.up2dbms-v2c.2': '预期同时消除了 BMS 提升与 Y 提升.',
+        'description.up2dbms-v2c.3': '预期此版本以 v1c 为前段.',
         'description.s-omega2-dbms.1': '此版本为失败作, 未能解决 1,3,13,74,12,68,119,500,879,4734,4733,500 的压扁问题.',
         'diagram.den.offset': '起始偏移',
         'diagram.den.offset-x': '横向偏移',
@@ -489,7 +496,7 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up1mn': 'Identified with Indexed UPMS',
         'description.btbm-weak.1': 'Indexed weak BTBMS',
         'description.btbm-weak.2':
-            'Compared to the non-weak version, the difference is that superscripts whose row index is below lnz-1 are not BMS-elevated but keep the same height',
+            'Compared to the non-weak version, the difference is that for entries whose row index is below lnz-1, the superscripts are not BMS-elevated but kept the same height',
         'description.btbm-weak.3': '()(1^(2,1),1) expands to ()(1^(2,1))(2^(3,1))(3^(4,1))...;',
         'description.btbm-weak.4':
             '()(1^(2,1),1^(2,1))(1^(2,1),1) expands to ()(1^(2,1),1^(2,1))(1^(2,1))(3^(4,1),3^(4,3))..., with the 4th column normalized to (3^(4,3)).',
@@ -506,15 +513,15 @@ const messages: Record<Language, Record<string, string>> = {
             'In the example ()(,,1)(,2,,1)(,3)(,4,,4)(,5,5,,4)(,6,,4)(,7,4)(,4,,4)(,9,9,,4), the UP condition requires that the copy of (,6,,4) is not elevated,',
         'description.UP2MN-v1a.5':
             'and hence the copy of ,,4 remains unchanged. Thus ,4 in (,7,4) cannot be elevated either. Therefore, one cannot simply add all BMS elevations.',
-        'description.up2mn-v1b': 'Compared to v1a, all BMS elevation is removed.',
+        'description.up2mn-v1b': 'Compared to v1a, all BMS upgrading is removed.',
         'description.up2mn-v1b-plus.1':
             'Based on v1b, the limit expression is changed from ()(,,1)(,,2) to ()(,,1,1), with corresponding adaptation.',
         'description.up2mn-v1b-plus.2':
-            'UP2MN v1b+ is the 2MN version with neither BMS elevation nor Y elevation, expected to correspond well with TUPMS.',
+            'UP2MN v1b+ is the 2MN version with neither BMS upgrading nor Y upgrading, expected to correspond well with TUPMS.',
         'description.up2dbms-v1b-plus.1':
             'Directly applying the UP2MN v1b logic to the 1Y mountain yields UP1Y below Y(1,3,9).',
         'description.up2dbms-v1b-plus.2':
-            'UP1Y v1b+ is the 1Y version with neither BMS elevation nor Y elevation. Current analysis (to be verified) holds that it elevates where TUPMS does not, so it is not the correct TUPMS counterpart.',
+            'UP1Y v1b+ is the 1Y version with neither BMS upgrading nor Y upgrading. Current analysis (to be verified) holds that it elevates where TUPMS does not, so it is not the correct TUPMS counterpart.',
         'description.up2dbms-v1b-plus.3':
             'The core difference between the elevation criteria of UP1Y v1b+ and UP2MN v1b+ is the elevation decision on the (non-standard) Y(1,2,5,10,8,5,10).',
         'description.up2dbms-v1b-plus.4':
@@ -527,14 +534,22 @@ const messages: Record<Language, Record<string, string>> = {
             'whereas in the elevation decision of UP2DBMS, (,8,8,,4) is recognized as a separate entry, so (,5,4,,4) is elevated.',
         'description.up2dbms-v1b-plus.8':
             'Here, the version corresponding to TBMS should have elevation, while the TUPMS version should not.',
-        'description.up2dbms-v1.1': 'Based on v1b+, all BMS elevation is added back.',
+        'description.up2dbms-v1.1': 'Based on v1b+, all BMS upgrading is added back.',
         'description.up2dbms-v1.2':
-            'UP1Y v1 is the 1Y version with BMS elevation but no Y elevation, expected to correspond well with TBMS, and correctly realizes the expectations of IIIY.',
+            'UP1Y v1 is the 1Y version with BMS upgrading but no Y upgrading, expected to correspond well with TBMS, and correctly realizes the expectations of IIIY.',
         'description.up2dbms-v1c.1':
-            'This version is the 1Y with neither BMS elevation nor Y elevation, taking 1,3,9 as its limit.',
+            'This version is the 1Y with neither BMS upgrading nor Y upgrading, taking 1,3,9 as its limit.',
         'description.up2dbms-v1c.2':
             'It is obtained by modifying UP1Y v1b+, with the expectation that its UP decision semantics agree with those of UP2MN v1b+.',
         'description.up2dbms-v1c.3': 'This version is expected to correspond well with TUPMS.',
+        'description.up2dbms-v2.1':
+            'After expressing the Skew 1Y in S2DBMS form, an UPMS-like elevation decision is applied, but with special treatment that preserves BMS upgrading, yielding the unupgrading 1Y sequence.',
+        'description.up2dbms-v2.2': 'It is expected to preserve BMS upgrading and remove Y upgrading.',
+        'description.up2dbms-v2.3': 'This version is expected to extend v1.',
+        'description.up2dbms-v2c.1':
+            'After expressing the Skew 1Y in S2DBMS form, an UPMS-like elevation decision is applied, yielding the unupgrading 1Y sequence.',
+        'description.up2dbms-v2c.2': 'It is expected to remove both BMS upgrading and Y upgrading.',
+        'description.up2dbms-v2c.3': 'This version is expected to extend v1c.',
         'description.s-omega2-dbms.1':
             'This version is a failed attempt: it does not resolve the flattening problem of 1,3,13,74,12,68,119,500,879,4734,4733,500.',
         'diagram.den.offset': 'Start offset',

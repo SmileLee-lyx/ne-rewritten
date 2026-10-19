@@ -889,6 +889,11 @@ function truncate(expr: Expr): Expr {
 export const UP2DBMS_v2: NotationDefinition<Expr> = {
     id: 'up2dbms-v2',
     name: 'UP2DBMS v2',
+    description: [
+        { id: 'description.up2dbms-v2.1' },
+        { id: 'description.up2dbms-v2.2' },
+        { id: 'description.up2dbms-v2.3' },
+    ],
     category_id: 'category-upmn',
     display: {
         plain: (m) => display(m, 'plain'),
