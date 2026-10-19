@@ -91,7 +91,6 @@ import { BTBM } from '@/notations/BM-like/BTBM.ts';
 import { GMS_categories, GMS_notations } from '@/notations/BM-like/GMS.ts';
 import { category_bm_bt_star_minus1_y_nss_v2 } from '@/notations/BM-like/Minus1_Y_nSS-series/BT_star_Minus1_Y_nSS-v2.ts';
 import { category_bm_bt_star_minus1_y_nss_v3 } from '@/notations/BM-like/Minus1_Y_nSS-series/BT_star_Minus1_Y_nSS-v3.ts';
-import { BTBM_weak } from '@/notations/BM-like/BTBM-weak.ts';
 import { category_translators } from '@/notations/translators/categories.ts';
 import { Translator_BM_BOCF } from '@/notations/translators/BM-BOCF.ts';
 import { omega_Y_1257omega, omega_Y_12omega, omega_Y_skew } from '@/notations/Y/variants.ts';
@@ -225,7 +224,6 @@ register_category(category_bm_bt_star_minus1_y_nss_v2);
 register_category(category_bm_bt_star_minus1_y_nss_v3);
 register_category(category_bm_btl_minus1_y_nss);
 register_notation(BTBM);
-register_notation(BTBM_weak);
 register_notation(BBM);
 for (const cat of GMS_categories) {
     register_category(cat);
