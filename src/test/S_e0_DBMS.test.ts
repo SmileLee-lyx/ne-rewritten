@@ -4,7 +4,6 @@ import {
     S_e0_DBMS,
     INFINITY,
     INFINITE_HEIGHT,
-    ABOVE_ALL,
     compare_height,
     compare,
     display,
@@ -148,15 +147,17 @@ describe('Sε₀DBMS (note-7)', () => {
         const q = create_queries([[]]);
         expect(q.grid_below(0, 0, 0)).toBeUndefined();
         expect(q.grid_prev(0, 0, 0)).toBeUndefined();
-        expect(q.grid_below(0, 0, [])).toBe(ABOVE_ALL);
-        expect(q.grid_below(0, 0, [[1, 0]])).toBe(ABOVE_ALL);
+        expect(q.grid_below(0, 0, [])).toEqual([]);
+        expect(q.grid_below(0, 0, [[1, 0]])).toEqual([]);
+        expect(q.grid_member(0, 0, [])).toBe(false);
         expect(q.grid_prev(0, 0, [[0, 0]])).toBe(0);
+        expect(() => q.grid_prev(0, 0, [])).toThrow();
         expect(() => q.grid_prev(0, 0, [[1, 0]])).toThrow();
     });
 
     it('uses the specified diagonal Limit sequence starting at one @', () => {
-        expect(INFINITY).toEqual([[], [[0, []]]]);
-        expect(display([[], [[0, []]]])).toBe('Limit');
+        expect(INFINITY).toBe(Infinity);
+        expect(display(INFINITY)).toBe('Limit');
         for (let n = 0; n < 8; n++) {
             const expr: Expr = [[], [[0, tower(0, n + 1)]]];
             for (const fs of [S_e0_DBMS.FS, S_e0_DBMS.FS_alter!, S_e0_DBMS.FS_short!, S_e0_DBMS.FS_equiv!.fast])
@@ -170,7 +171,7 @@ describe('Sε₀DBMS (note-7)', () => {
             '(0)(1^(1@1))',
             '(0)(1^(1@(1@1)))',
         ]);
-        expect(from_display('()(1^∞)')).toBe(INFINITY);
+        expect(() => from_display('()(1^∞)')).toThrow();
         expect(compare(INFINITY, infinity_FS(3))).toBeGreaterThan(0);
     });
 

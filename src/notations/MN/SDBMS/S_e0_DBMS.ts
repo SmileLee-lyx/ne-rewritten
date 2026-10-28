@@ -12,18 +12,13 @@ export type Column = Entry[];
 export type Expr = Column[];
 type DisplayType = 'plain' | 'html';
 
+// Also returned by unbounded grid queries; never a finite grid member.
 export const INFINITE_HEIGHT: Height = [];
-export const INFINITY: Expr = [[], [[0, INFINITE_HEIGHT]]];
-// An unbounded grid has no greatest member; this is distinct from both 0 and [].
-export const ABOVE_ALL = Symbol('ABOVE_ALL');
-type GridResult = Height | undefined | typeof ABOVE_ALL;
+export const INFINITY: Expr = Infinity as any;
 type Seed = { height: Height; source?: number };
 
 export function is_infinity(expr: Expr): boolean {
-    if (expr === INFINITY) return true;
-    if (expr.length !== 2 || expr[0].length !== 0 || expr[1].length !== 1) return false;
-    const [r, h] = expr[1][0];
-    return r === 0 && h !== 0 && h.length === 0;
+    return expr === INFINITY;
 }
 
 export function compare_height(h1: Height, h2: Height): number {
@@ -58,9 +53,8 @@ function max_height(a: Height, b: Height): Height {
     return compare_height(a, b) >= 0 ? a : b;
 }
 
-function finite_result(h: GridResult): Height {
-    if (h === undefined || h === ABOVE_ALL || (h !== 0 && h.length === 0))
-        throw new Error('Expected a bounded nonempty grid query');
+function finite_result(h: Height | undefined): Height {
+    if (h === undefined || (h !== 0 && h.length === 0)) throw new Error('Expected a bounded nonempty grid query');
     return h;
 }
 
@@ -196,10 +190,10 @@ export function create_queries(expr: Expr) {
         });
     }
 
-    function grid_below(a: number, n: number, cap: Height): GridResult {
+    function grid_below(a: number, n: number, cap: Height): Height | undefined {
         return memo('below', a, n, cap, () => {
             if (cap === 0) return undefined;
-            if (cap.length === 0 || cap[0][0] > a) return ABOVE_ALL;
+            if (cap.length === 0 || cap[0][0] > a) return INFINITE_HEIGHT;
             const lower = seed_below(a, n, cap)!.height;
             let j = 0;
             while (j < cap.length && cap[j][0] < a) j++;
@@ -458,8 +452,6 @@ export function from_display(str: string): Expr {
         read(')');
         result.push(col);
     }
-    // The two-column expression with an infinite height is the same Limit.
-    if (is_infinity(result)) return INFINITY;
     validate_expr(result);
     return result;
 }
