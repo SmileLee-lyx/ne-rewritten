@@ -13,6 +13,12 @@ dist-compat
 dist-ssr
 *.local
 
+# Temporary files
+/tmp/
+
+# AI-generated mathematical results
+/AI_math_results/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

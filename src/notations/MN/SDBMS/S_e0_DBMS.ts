@@ -830,7 +830,11 @@ export const S_e0_DBMS: NotationDefinition<Expr> = {
     compare,
     draw_diagram: draw_diagram_control,
     mountain_view: (expr, data) => build_s_e0_dbms_mountain_source(expr, data?.current_equiv),
-    description: [{ id: 'description.s-e0-dbms.1' }],
+    description: [
+        { id: 'description.s-e0-dbms.1' },
+        { id: 'description.s-e0-dbms.2' },
+        { id: 'description.s-e0-dbms.3' },
+    ],
     credit_text_id: 'credit.up2dbms-v2',
     init: () => [INFINITY, [[]], []],
     debug: { create_queries, height_value, convert_to_dbms_data, to_y_sequence, from_y_seq, validate_expr },

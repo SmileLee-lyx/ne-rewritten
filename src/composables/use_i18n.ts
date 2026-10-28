@@ -247,8 +247,11 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up2dbms-v2c.2': '预期同时消除了 BMS 提升与 Y 提升.',
         'description.up2dbms-v2c.3': '预期此版本以 v1c 为前段.',
         'description.s-omega2-dbms.1': '此版本为失败作, 未能解决 1,3,13,74,12,68,119,500,879,4734,4733,500 的压扁问题.',
-        'description.s-e0-dbms.1':
-            '按完整山脉的尾高度定义任意有限嵌套的 Sε₀DBMS. 展开直接查询压缩列中的高度前驱; 极限基本列为逐层增加的对角塔.',
+        'description.s-e0-dbms.1': '此版本 ε0DBMS 中, 相同高度坐标在任意高度都代表相同分隔符值.',
+        'description.s-e0-dbms.2':
+            '而对于一个行数大于 ω^ω 的山脉, ω^ω 以下的山脉存在递增的有限分隔符, 这使得高行标处的有限分隔符被剧烈拉伸.',
+        'description.s-e0-dbms.3':
+            '实际效果为存在对行标指数的圣诞树提升, 如 (0)(1^(1@(1@1)))(2^(2@(1@1,2@0)))(3^(1@(1@1)),2^(2@0)) = 1,4,22,158 的展开.',
         'diagram.den.offset': '起始偏移',
         'diagram.den.offset-x': '横向偏移',
         'diagram.den.max-display': '最大显示行数',
@@ -555,7 +558,11 @@ const messages: Record<Language, Record<string, string>> = {
         'description.s-omega2-dbms.1':
             'This version is a failed attempt: it does not resolve the flattening problem of 1,3,13,74,12,68,119,500,879,4734,4733,500.',
         'description.s-e0-dbms.1':
-            'Sε₀DBMS with arbitrarily nested finite heights, defined by the tail heights of the full mountain. Expansion queries height predecessors directly from compressed columns; the limit sequence consists of diagonal towers of increasing depth.',
+            'In this version of ε0DBMS, identical height coordinates represent identical separator values at every height.',
+        'description.s-e0-dbms.2':
+            'For a mountain with more than ω^ω rows, the portion below ω^ω contains increasing finite separators, which causes finite separators at high row indices to be stretched drastically.',
+        'description.s-e0-dbms.3':
+            'The resulting behavior is Christmas tree upgrading of the exponents of row indices, as seen in the expansion of (0)(1^(1@(1@1)))(2^(2@(1@1,2@0)))(3^(1@(1@1)),2^(2@0)) = 1,4,22,158.',
         'diagram.den.offset': 'Start offset',
         'diagram.den.offset-x': 'Horizontal offset',
         'diagram.den.max-display': 'Max display rows',
