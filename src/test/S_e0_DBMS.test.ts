@@ -32,6 +32,7 @@ import {
 } from '@/notations/MN/SDBMS/S_e0_DBMS.ts';
 
 const Y = resolve_display(S_e0_DBMS.display_equiv!.Y);
+const RMN = resolve_display(S_e0_DBMS.display_equiv!.RMN);
 
 function tower(a: number, depth: number): Height {
     let h: Height = 0;
@@ -220,6 +221,26 @@ describe('Sε₀DBMS (note-7)', () => {
         expect(compare_ordinal(height_value(expr, p), height_value(expr, q))).toBeGreaterThan(0);
     });
 
+    it('displays RMN endpoint values, boundary terms and nested superscripts', () => {
+        expect(RMN.plain([])).toBe('');
+        expect(RMN.plain([[]])).toBe('()');
+        expect(RMN.plain([[], []])).toBe('()()');
+        expect(RMN.plain(INFINITY)).toBe('Limit');
+        expect(RMN.html(INFINITY)).toBe('Limit');
+        expect(RMN.latex(INFINITY)).toBe('Limit');
+        expect([0, 1, 2, 3].map((n) => RMN.plain(infinity_FS(n)))).toEqual([
+            '()(1:1)',
+            '()(1:ω)',
+            '()(1:ω^(ω))',
+            '()(1:ω^(ω^(ω)))',
+        ]);
+        expect(RMN.html(infinity_FS(3))).toBe('()(1:ω<sup>ω<sup>ω</sup></sup>)');
+        expect(RMN.latex(infinity_FS(3))).toBe('()(1:\\omega ^{\\omega ^{\\omega }})');
+        const expr = from_display('(0)(1^(1@(1@1)))(2^(2@(1@1,2@0)))(3^(1@(1@1)),2^(2@0))');
+        freeze_tree(expr);
+        expect(RMN.plain(expr)).toBe('()(1:ω^(ω))(2:ω^(ω)+ω^2)(3:ω^(ω),2:ω^(ω)+1)');
+    });
+
     it('matches finite-set grid enumeration, all-order tails, bounds and predecessors', () => {
         for (const input of [[1], [1, 3], [1, 3, 6, 5], [1, 10, 3, 11], [1, 3, 13, 10]]) {
             const expr = from_y_seq(input);
@@ -322,7 +343,7 @@ describe('Sε₀DBMS (note-7)', () => {
         }
     });
 
-    it('reproduces the exponential family without enumerating it for expansion', () => {
+    it('reproduces the exponential family without enumerating it for expansion or RMN', () => {
         const expr: Expr = [[]];
         for (let i = 1; i <= 6; i++) expr.push([[i - 1, tower(i - 1, 2)]]);
         const ref = reference_model(expr);
@@ -338,6 +359,12 @@ describe('Sε₀DBMS (note-7)', () => {
         const next = expand(large, 0, false);
         expect(next[256][0]).toEqual([255, [[255, [[254, 0]]]]]);
         expect(q.grid_head(256, 0, tower(256, 2))).toEqual(tower(256, 1));
+        expect(RMN.plain(large)).toBe(
+            '()' +
+                Array.from({ length: 256 }, (_, i) => '(' + (i + 1) + ':ω' + (i === 0 ? '' : '^' + (i + 1)) + ')').join(
+                    '',
+                ),
+        );
     });
 
     it('moves all nested references in every copied block', () => {

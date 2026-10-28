@@ -511,6 +511,15 @@ export function height_value(expr: Expr, h: Height, n: number = 0): Ordinal {
     return create_values(create_queries(expr))(h, n);
 }
 
+export function rmn_display(expr: Expr, type: DisplayType = 'plain'): string {
+    if (is_infinity(expr)) return 'Limit';
+    // Evaluate compressed endpoints with shared caches, without enumerating the mountain.
+    const value = create_values(create_queries(expr));
+    return expr
+        .map((col) => '(' + col.map(([v, h]) => v + 1 + ':' + display_ordinal(value(h), type)).join(',') + ')')
+        .join('');
+}
+
 export type SepDbms = Ordinal;
 export type EntryDbms = [number, SepDbms];
 export type ColumnDbms = EntryDbms[];
@@ -798,6 +807,10 @@ export const S_e0_DBMS: NotationDefinition<Expr> = {
             html: (m) => display_marked(m, 'html'),
             from_display,
             name: { id: 'display.index-marked' },
+        },
+        RMN: {
+            plain: (m) => rmn_display(m),
+            html: (m) => rmn_display(m, 'html'),
         },
         dbms: {
             plain: (m) => dbms_display(convert_to_dbms(m)),
