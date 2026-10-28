@@ -247,6 +247,8 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up2dbms-v2c.2': '预期同时消除了 BMS 提升与 Y 提升.',
         'description.up2dbms-v2c.3': '预期此版本以 v1c 为前段.',
         'description.s-omega2-dbms.1': '此版本为失败作, 未能解决 1,3,13,74,12,68,119,500,879,4734,4733,500 的压扁问题.',
+        'description.s-e0-dbms.1':
+            '按完整山脉的尾高度定义任意有限嵌套的 Sε₀DBMS. 展开直接查询压缩列中的高度前驱; 极限基本列为逐层增加的对角塔.',
         'diagram.den.offset': '起始偏移',
         'diagram.den.offset-x': '横向偏移',
         'diagram.den.max-display': '最大显示行数',
@@ -552,6 +554,8 @@ const messages: Record<Language, Record<string, string>> = {
         'description.up2dbms-v2c.3': 'This version is expected to extend v1c.',
         'description.s-omega2-dbms.1':
             'This version is a failed attempt: it does not resolve the flattening problem of 1,3,13,74,12,68,119,500,879,4734,4733,500.',
+        'description.s-e0-dbms.1':
+            'Sε₀DBMS with arbitrarily nested finite heights, defined by the tail heights of the full mountain. Expansion queries height predecessors directly from compressed columns; the limit sequence consists of diagonal towers of increasing depth.',
         'diagram.den.offset': 'Start offset',
         'diagram.den.offset-x': 'Horizontal offset',
         'diagram.den.max-display': 'Max display rows',
