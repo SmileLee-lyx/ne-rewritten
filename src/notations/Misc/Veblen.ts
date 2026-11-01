@@ -1,6 +1,9 @@
 import { bind2, boolean_compare, lex_compare, tuple_lex_compare_by } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { FS_default_LNZ_variant, merge_sum } from '@/notations/notation_utils.ts';
+import { display as display_bm } from '@/notations/BM-like/BM.ts';
+import { display_OCN_IR, merge_sum as merge_ocn_sum, type OCNDisplayIR } from '@/notations/OCN/OCN_utils.ts';
+import { category_veblen } from '@/notations/Misc/categories.ts';
 
 type VeblenList = [VeblenList, Expr][];
 // 0: 0
@@ -201,12 +204,15 @@ class VParser {
         return inner;
     }
 
-    // 序数: '+' 链; 结果用代码一致的扁平素项列表表示 ([1, atoms])
+    // 序数加法按文本顺序吸收右侧较大素项之前的较小项，相等项保留。
     private ordinal(): Expr {
         const atoms: Expr[] = [];
         while (true) {
             this.skip();
-            atoms.push(...this.prime_atoms());
+            for (const atom of this.prime_atoms()) {
+                while (atoms.length > 0 && compare(atoms[atoms.length - 1], atom) < 0) atoms.pop();
+                atoms.push(atom);
+            }
             this.skip();
             if (this.i < this.t.length && this.t[this.i] === '+') {
                 this.i++;
@@ -214,8 +220,7 @@ class VParser {
             }
             break;
         }
-        if (atoms.length === 1) return atoms[0];
-        return [1, atoms];
+        return from_prim_list(atoms);
     }
 
     // 素项(0/n/ω/φ(…))加可选系数后缀: 'ω2' = ω+ω, 'φ(2)3' = φ(2) 重复 3 次
@@ -226,7 +231,6 @@ class VParser {
         const c = this.t[this.i];
         if (c >= '0' && c <= '9') {
             const n = this.digits();
-            if (n === 0) return [zero()];
             return Array<Expr>(n).fill(one());
         }
         let prime: Expr;
@@ -261,8 +265,9 @@ class VParser {
             const inner = this.read_parens();
             return { kind: 'list', l: new VParser(inner).index_list() };
         }
-        if (this.t[this.i] >= '0' && this.t[this.i] <= '9') return { kind: 'nat', n: this.digits() };
-        return { kind: 'scalar', e: this.ordinal() };
+        const e = this.ordinal(),
+            n = this.natural_value(e);
+        return n >= 0 ? { kind: 'nat', n } : { kind: 'scalar', e };
     }
 
     // 索引列表文本: 项可以是 "值" 或 "值@索引"(索引递归), 无独立 tail;
@@ -294,10 +299,8 @@ class VParser {
             const it = items[k];
             if (it.idx === null) {
                 const off = n - 1 - k;
-                if (is_zero(it.v)) continue;
                 l.push([list_from_nat(off), it.v]);
             } else if (it.idx.kind === 'nat') {
-                if (is_zero(it.v)) continue;
                 l.push([list_from_nat(it.idx.n), it.v]);
             } else if (it.idx.kind === 'scalar') {
                 l.push([this.scalar_prefix(it.idx.e, false), it.v]);
@@ -305,7 +308,7 @@ class VParser {
                 l.push([it.idx.l, it.v]);
             }
         }
-        return l;
+        return this.normalize_list(l);
     }
 
     // 若 e 是纯自然数(0 或若干 '1' 之和)返回其值, 否则 -1
@@ -330,14 +333,18 @@ class VParser {
         return pref;
     }
 
-    // 组装条目 (去掉零值的自然槽, 天然槽省略; 保持文本顺序)
-    private assemble(entriesSrc: { prefix: VeblenList; v: Expr }[], tail: Expr): Expr {
-        const l: VeblenList = [];
-        for (const e of entriesSrc) {
-            if (is_zero(e.v) && e.prefix.length === 0) continue;
-            l.push([e.prefix, e.v]);
+    // 地址的子表达式已经递归归约；先检验原槽位严格递减，再删除全部零值条目。
+    private normalize_list(l: VeblenList): VeblenList {
+        for (let k = 1; k < l.length; k++) {
+            if (list_lex_compare(l[k - 1][0], l[k][0]) <= 0) this.error();
         }
-        return [2, l, tail];
+        return l.filter(([, v]) => !is_zero(v));
+    }
+
+    // 先确定原始槽号与尾参数，再删除零项并正规化整个 φ。
+    private assemble(entriesSrc: { prefix: VeblenList; v: Expr }[], tail: Expr): Expr {
+        const l = this.normalize_list(entriesSrc.map((e) => [e.prefix, e.v]));
+        return normalized_phi(l, tail);
     }
 
     // φ( 内部 (已消费 '(')
@@ -439,7 +446,14 @@ class VParser {
             } else if (it.idx.kind === 'scalar') {
                 src.push({ prefix: this.scalar_prefix(it.idx.e, true), v: it.v });
             } else {
-                src.push({ prefix: it.idx.l, v: it.v });
+                const prefix = it.idx.l;
+                if (list_is_finite(prefix)) {
+                    const n = list_to_nat(prefix);
+                    if (n === 0) this.error();
+                    src.push({ prefix: list_from_nat(n - 1), v: it.v });
+                } else {
+                    src.push({ prefix, v: it.v });
+                }
             }
         }
         return this.assemble(src, tail);
@@ -680,10 +694,502 @@ function FS(a: Expr, index: number): Expr {
     return current;
 }
 
+// note-11: extended_phi_bocf_bms_implementation_11.md。
+// Ω-CNF 的系数仍是 φ Expr；ψ 森林只作为转换中间值，不改变记号内部表示。
+type OmegaCnf = VeblenList;
+export type PsiNode = [0 | 1, PsiForest];
+export type PsiForest = PsiNode[];
+
+const MAX_BUCHHOLZ_SIZE = 100_000;
+const MAX_BUCHHOLZ_WORK = 1_000_000;
+const MAX_BUCHHOLZ_DEPTH = 512;
+const PSI_ONE: PsiNode = [0, []];
+const PSI_OMEGA: PsiNode = [0, [PSI_ONE]];
+const PSI_BIG_OMEGA: PsiNode = [1, []];
+const BHO_MATRIX = [[], [1, 1], [2, 2]];
+const BHO_IR: OCNDisplayIR = {
+    type: 'psi',
+    arg: {
+        type: 'constant',
+        display: 'ε',
+        display_latex: '\\varepsilon ',
+        sub: { type: 'sum', terms: [{ type: 'Omega' }, { type: 'number', value: 1 }] },
+    },
+};
+
+function check_buchholz_size(size: number): void {
+    if (!Number.isSafeInteger(size) || size > MAX_BUCHHOLZ_SIZE) {
+        throw new RangeError('Veblen BOCF/BMS materialization resource limit exceeded');
+    }
+}
+
+function check_buchholz_depth(depth: number): void {
+    if (depth > MAX_BUCHHOLZ_DEPTH) throw new RangeError('Veblen BOCF/BMS nesting resource limit exceeded');
+}
+
+function append_ordinal_parts(result: Expr[], b: Expr): void {
+    for (const term of prim_list(b)) {
+        while (result.length && compare(result[result.length - 1], term) < 0) result.pop();
+        check_buchholz_size(result.length + 1);
+        result.push(term);
+    }
+}
+
+function ordinal_add(a: Expr, b: Expr): Expr {
+    const result = prim_list(a).slice();
+    append_ordinal_parts(result, b);
+    return from_prim_list(result);
+}
+
+// 左侧去掉一个 1：无限序数（包括 ω+1）保持原样。
+function drop_left_one(a: Expr): Expr {
+    const parts = prim_list(a);
+    return parts.length && is_one(parts[0]) ? from_prim_list(parts.slice(1)) : a;
+}
+
+function left_difference(a: Expr, b: Expr): Expr {
+    if (is_zero(b)) return a;
+    const parts = prim_list(a);
+    if (!parts.length || compare(parts[0], b) < 0) throw new Error('No ordinal left difference');
+    return compare(parts[0], b) === 0 ? from_prim_list(parts.slice(1)) : a;
+}
+
+function embed_countable(a: Expr): OmegaCnf {
+    return is_zero(a) ? [] : [[[], a]];
+}
+
+function omega_cnf_add(a: OmegaCnf, b: OmegaCnf): OmegaCnf {
+    const result = a.slice();
+    for (const [p, c] of b) {
+        while (result.length && list_lex_compare(result[result.length - 1][0], p) < 0) result.pop();
+        if (result.length && list_lex_compare(result[result.length - 1][0], p) === 0) {
+            const [q, d] = result.pop()!;
+            result.push([q, ordinal_add(d, c)]);
+        } else {
+            check_buchholz_size(result.length + 1);
+            result.push([p, c]);
+        }
+    }
+    return result;
+}
+
+function omega_cnf_drop_left_one(a: OmegaCnf): OmegaCnf {
+    return a.length === 1 && !a[0][0].length ? embed_countable(drop_left_one(a[0][1])) : a;
+}
+
+function multiply_left_omega(a: OmegaCnf): OmegaCnf {
+    const unit = embed_countable(one());
+    return a.map(([p, c]) => [omega_cnf_add(unit, p), c]);
+}
+
+function divide_left_omega(a: OmegaCnf): [OmegaCnf, Expr] {
+    const last = a[a.length - 1],
+        has_tail = last && !last[0].length;
+    return [
+        (has_tail ? a.slice(0, -1) : a).map(([p, c]) => [omega_cnf_drop_left_one(p), c]),
+        has_tail ? last[1] : zero(),
+    ];
+}
+
+function critical_class(b: OmegaCnf, lambda: Expr): number {
+    if (!b.length) return compare(zero(), lambda);
+    if (b.length === 1 && !b[0][0].length) return compare(b[0][1], lambda);
+    if (bounded_by(b, lambda)) return -1;
+    const [p, c] = b[b.length - 1],
+        kind = critical_class(p, lambda);
+    // 相等沿末尾单位系数地址递归传递，不能只检查 p = lambda。
+    return bounded_by(b.slice(0, -1), lambda) && ((is_one(c) && kind === 0) || (kind < 0 && compare(c, lambda) === 0))
+        ? 0
+        : 1;
+}
+
+function compare_psi_node(a: PsiNode, b: PsiNode): number {
+    return Math.sign(a[0] - b[0]) || compare_psi_forest(a[1], b[1]);
+}
+
+export function compare_psi_forest(a: PsiForest, b: PsiForest): number {
+    return lex_compare(a, b, compare_psi_node);
+}
+
+function create_psi_standard_check(): (forest: PsiForest) => boolean {
+    const checked = new WeakSet<PsiForest>();
+    let operations = 0;
+    function work(): void {
+        if (++operations > MAX_BUCHHOLZ_WORK)
+            throw new RangeError('Veblen BOCF/BMS validation resource limit exceeded');
+    }
+    function in_closure(forest: PsiForest, label: number, bound: PsiForest): boolean {
+        for (const [i, child] of forest) {
+            work();
+            if (i >= label && (compare_psi_forest(child, bound) >= 0 || !in_closure(child, label, bound))) return false;
+        }
+        return true;
+    }
+    function is_standard(forest: PsiForest, depth: number = 0): boolean {
+        check_buchholz_depth(depth);
+        if (checked.has(forest)) return true;
+        check_buchholz_size(forest.length);
+        for (let k = 0; k < forest.length; k++) {
+            work();
+            const [label, child] = forest[k];
+            if (
+                !is_standard(child, depth + 1) ||
+                !in_closure(child, label, child) ||
+                (k > 0 && compare_psi_node(forest[k - 1], forest[k]) < 0)
+            )
+                return false;
+        }
+        checked.add(forest);
+        return true;
+    }
+    return is_standard;
+}
+
+function require_countable_psi(forest: PsiForest): void {
+    if (forest.some(([label]) => label !== 0) || !create_psi_standard_check()(forest)) {
+        throw new Error('Outside the countable standard Buchholz domain');
+    }
+}
+
+// 缓存属于单次转换，键为 AST；不使用可能发生碰撞的显示字符串。
+function create_psi_conversion() {
+    const arguments_cache = new WeakMap<Expr, OmegaCnf>();
+    const decoded_cache = new WeakMap<PsiForest, OmegaCnf>();
+    const encoded_cache = new WeakMap<OmegaCnf, PsiForest>();
+    const values_cache = new WeakMap<OmegaCnf, Expr>();
+    let operations = 0;
+    function work(): void {
+        if (++operations > MAX_BUCHHOLZ_WORK)
+            throw new RangeError('Veblen BOCF/BMS conversion resource limit exceeded');
+    }
+    function decode_psi_zero(a: OmegaCnf): Expr {
+        work();
+        const cached = values_cache.get(a);
+        if (cached) return cached;
+        if (!a.length) return one();
+        const [b, c] = a[a.length - 1],
+            lambda = drop_left_one(decode_psi_zero(a.slice(0, -1)));
+        const kind = critical_class(b, lambda),
+            rho = kind < 0 ? lambda : kind === 0 ? one() : zero();
+        const result = normalized_phi(b, drop_left_one(ordinal_add(rho, c)));
+        values_cache.set(a, result);
+        return result;
+    }
+    function list_parameters(b: OmegaCnf, result: Expr[]): void {
+        for (const [p, c] of b) {
+            work();
+            result.push(c);
+            list_parameters(p, result);
+        }
+    }
+    function phi_to_argument(a: Expr): OmegaCnf {
+        work();
+        const cached = arguments_cache.get(a);
+        if (cached) return cached;
+        if (a[0] !== 2) throw new Error('Expected a principal φ expression');
+        const b = a[1],
+            alpha = a[2],
+            parameters = [alpha];
+        list_parameters(b, parameters);
+        let prefix: OmegaCnf = [];
+        for (const parameter of parameters)
+            for (const term of prim_list(parameter)) {
+                work();
+                const candidate = phi_to_argument(term).filter(([p]) => list_lex_compare(p, b) > 0);
+                if (list_lex_compare(candidate, prefix) > 0) prefix = candidate;
+            }
+        const lambda = drop_left_one(decode_psi_zero(prefix)),
+            kind = critical_class(b, lambda);
+        const c = kind < 0 ? left_difference(alpha, lambda) : kind === 0 ? alpha : ordinal_add(one(), alpha);
+        const result = is_zero(c) ? prefix : omega_cnf_add(prefix, [[b, c]]);
+        arguments_cache.set(a, result);
+        return result;
+    }
+    function encode_unbounded(a: OmegaCnf): PsiForest {
+        work();
+        const cached = encoded_cache.get(a);
+        if (cached) return cached;
+        const result: PsiForest = [];
+        for (const [p, c] of a) {
+            if (!p.length) {
+                for (const node of encode_countable(c)) {
+                    check_buchholz_size(result.length + 1);
+                    result.push(node);
+                }
+                continue;
+            }
+            for (const term of prim_list(c)) {
+                if (term[0] !== 2) throw new Error('Expected a principal Ω-CNF coefficient');
+                const logarithm = term[1].length ? term : term[2];
+                const argument = omega_cnf_add(
+                    multiply_left_omega(omega_cnf_drop_left_one(p)),
+                    embed_countable(logarithm),
+                );
+                check_buchholz_size(result.length + 1);
+                result.push([1, encode_unbounded(argument)]);
+            }
+        }
+        encoded_cache.set(a, result);
+        return result;
+    }
+    function encode_countable(a: Expr): PsiForest {
+        work();
+        check_buchholz_size(prim_list(a).length);
+        return prim_list(a).map((p) => [0, encode_unbounded(phi_to_argument(p))]);
+    }
+    function decode_unbounded(forest: PsiForest): OmegaCnf {
+        work();
+        const cached = decoded_cache.get(forest);
+        if (cached) return cached;
+        let result: OmegaCnf = [];
+        for (let k = 0; k < forest.length; k++) {
+            work();
+            const [label, child] = forest[k];
+            // 标准森林的可数节点构成尾部，统一累加其主项，避免逐项复制长系数。
+            if (label === 0) {
+                result = omega_cnf_add(result, embed_countable(decode_countable(forest.slice(k))));
+                break;
+            }
+            let end = k + 1;
+            while (end < forest.length && compare_psi_node(forest[k], forest[end]) === 0) {
+                work();
+                end++;
+            }
+            const value = decode_unbounded(child),
+                omega: OmegaCnf = [[embed_countable(one()), one()]];
+            const [b, delta] = divide_left_omega(omega_cnf_add(omega, value));
+            const coefficient = from_prim_list(Array<Expr>(end - k).fill(normalized_phi([], delta)));
+            result = omega_cnf_add(result, [[b, coefficient]]);
+            k = end - 1;
+        }
+        decoded_cache.set(forest, result);
+        return result;
+    }
+    function decode_countable(forest: PsiForest): Expr {
+        const result: Expr[] = [];
+        for (const [, child] of forest) append_ordinal_parts(result, decode_psi_zero(decode_unbounded(child)));
+        return from_prim_list(result);
+    }
+    return { encode_countable, decode_countable };
+}
+
+export function encode_countable(expr: Expr): PsiForest {
+    if (is_infinity(expr)) throw new Error('Limit is not a finite Buchholz expression');
+    return create_psi_conversion().encode_countable(expr);
+}
+
+export function decode_countable(forest: PsiForest): Expr {
+    require_countable_psi(forest);
+    return create_psi_conversion().decode_countable(forest);
+}
+
+function psi_to_bocf_ir(forest: PsiForest): OCNDisplayIR {
+    let nodes = 0;
+    function impl(t: PsiForest, depth: number): OCNDisplayIR {
+        check_buchholz_depth(depth);
+        return merge_ocn_sum(
+            t.map(([label, child]): OCNDisplayIR => {
+                check_buchholz_size(++nodes);
+                if (label === 0 && !child.length) return { type: 'number', value: 1 };
+                if (label === 0 && compare_psi_forest(child, [PSI_ONE]) === 0) return { type: 'omega' };
+                if (label === 1 && !child.length) return { type: 'Omega' };
+                return {
+                    type: 'psi',
+                    sub: label === 1 ? { type: 'number', value: 1 } : undefined,
+                    arg: impl(child, depth + 1),
+                };
+            }),
+        );
+    }
+    return impl(forest, 0);
+}
+
+function display_bocf(expr: Expr, type: DisplayType): string {
+    return display_OCN_IR(is_infinity(expr) ? BHO_IR : psi_to_bocf_ir(encode_countable(expr)), type);
+}
+
+function psi_to_bms(forest: PsiForest): number[][] {
+    const result: number[][] = [];
+    function visit(t: PsiForest, depth: number): void {
+        check_buchholz_depth(depth);
+        for (const [label, child] of t) {
+            check_buchholz_size(result.length + 1);
+            result.push(label ? [depth, label] : depth ? [depth] : []);
+            visit(child, depth + 1);
+        }
+    }
+    visit(forest, 0);
+    return result;
+}
+
+function display_bms(expr: Expr): string {
+    return display_bm(is_infinity(expr) ? BHO_MATRIX : psi_to_bms(encode_countable(expr)));
+}
+
+function from_bms(text: string): Expr {
+    if (text.trim() === 'Limit') return INFINITY;
+    const matrix: number[][] = [],
+        column_pattern = /\(\s*(?:\d+(?:\s*,\s*\d+)*)?\s*\)/y;
+    let offset = 0;
+    while (offset < text.length) {
+        while (offset < text.length && /\s/.test(text[offset])) offset++;
+        if (offset === text.length) break;
+        column_pattern.lastIndex = offset;
+        const match = column_pattern.exec(text);
+        if (!match) throw new Error('Invalid BMS column at ' + offset);
+        const body = match[0].slice(1, -1).trim(),
+            col = body ? body.split(',').map(Number) : [];
+        if (col.some((n) => !Number.isSafeInteger(n) || n < 0))
+            throw new Error('BMS entries must be nonnegative safe integers');
+        while (col.length && col[col.length - 1] === 0) col.pop();
+        check_buchholz_size(matrix.length + 1);
+        matrix.push(col);
+        offset = column_pattern.lastIndex;
+    }
+    // 必须在二标签检查之前识别唯一的 BHO 边界，且已验证完整文本和所有数字。
+    if (
+        matrix.length === 3 &&
+        matrix.every((col, i) => col.length === BHO_MATRIX[i].length && col.every((n, j) => n === BHO_MATRIX[i][j]))
+    )
+        return INFINITY;
+    const roots: PsiForest = [],
+        stack: PsiNode[] = [];
+    for (const col of matrix) {
+        const depth = col[0] ?? 0,
+            label = col[1] ?? 0;
+        if (col.length > 2 || (label !== 0 && label !== 1)) throw new Error('Outside the two-label BMS domain');
+        if (depth > stack.length) throw new Error('Invalid BMS preorder depth');
+        check_buchholz_depth(depth);
+        stack.length = depth;
+        const node: PsiNode = [label, []];
+        if (depth === 0) roots.push(node);
+        else stack[depth - 1][1].push(node);
+        stack.push(node);
+    }
+    return decode_countable(roots);
+}
+
+function add_psi_forests(a: PsiForest, b: PsiForest): PsiForest {
+    const result = a.slice();
+    for (const node of b) {
+        while (result.length && compare_psi_node(result[result.length - 1], node) < 0) result.pop();
+        check_buchholz_size(result.length + 1);
+        result.push(node);
+    }
+    return result;
+}
+
+function multiply_psi_finite(forest: PsiForest, count: number): PsiForest {
+    if (!count || !forest.length) return [];
+    // 每次右加会吸收低于首主项的尾部；仅最后一次保留该尾部。
+    let leading = 1;
+    while (leading < forest.length && compare_psi_node(forest[leading], forest[0]) === 0) leading++;
+    const copies = leading * count;
+    check_buchholz_size(copies + forest.length - leading);
+    return Array<PsiNode>(copies).fill(forest[0]).concat(forest.slice(leading));
+}
+
+class BocfParser {
+    private offset = 0;
+    private depth = 0;
+    private is_standard = create_psi_standard_check();
+
+    constructor(private text: string) {}
+
+    private error(): never {
+        throw new Error('Invalid BOCF input at ' + this.offset + ': ' + this.text);
+    }
+
+    private skip(): void {
+        while (this.offset < this.text.length && /\s/.test(this.text[this.offset])) this.offset++;
+    }
+
+    private take(token: string): boolean {
+        this.skip();
+        if (!this.text.startsWith(token, this.offset)) return false;
+        this.offset += token.length;
+        return true;
+    }
+
+    private natural(): number {
+        this.skip();
+        const start = this.offset;
+        while (this.offset < this.text.length && /[0-9]/.test(this.text[this.offset])) this.offset++;
+        const value = Number(this.text.slice(start, this.offset));
+        if (start === this.offset || !Number.isSafeInteger(value)) this.error();
+        return value;
+    }
+
+    private atom(): PsiForest {
+        this.skip();
+        if (/[0-9]/.test(this.text[this.offset] ?? '')) {
+            const n = this.natural();
+            check_buchholz_size(n);
+            return Array<PsiNode>(n).fill(PSI_ONE);
+        }
+        if (this.take('ω') || this.take('omega')) return [PSI_OMEGA];
+        if (this.take('Ω') || this.take('Omega')) return [PSI_BIG_OMEGA];
+        if (this.take('ψ') || this.take('psi')) {
+            let label: 0 | 1 = 0;
+            if (this.take('[')) {
+                this.skip();
+                const start = this.offset,
+                    value = this.natural();
+                if (this.offset - start !== 1 || (value !== 0 && value !== 1) || !this.take(']')) this.error();
+                label = value;
+            }
+            if (!this.take('(')) this.error();
+            const child = this.nested_sum();
+            if (!this.take(')')) this.error();
+            const forest: PsiForest = [[label, child]];
+            // 每个 ψ 先检查 G 条件，后续吸收或乘零不能掩盖非法子项。
+            if (!this.is_standard(forest)) throw new Error('Nonstandard Buchholz ψ expression');
+            return forest;
+        }
+        if (this.take('(')) {
+            const result = this.nested_sum();
+            if (!this.take(')')) this.error();
+            return result;
+        }
+        this.error();
+    }
+
+    private nested_sum(): PsiForest {
+        check_buchholz_depth(++this.depth);
+        const result = this.sum();
+        this.depth--;
+        return result;
+    }
+
+    private product(): PsiForest {
+        const value = this.atom();
+        return this.take('·') || this.take('*') ? multiply_psi_finite(value, this.natural()) : value;
+    }
+
+    private sum(): PsiForest {
+        let result = this.product();
+        while (this.take('+')) result = add_psi_forests(result, this.product());
+        return result;
+    }
+
+    parse(): Expr {
+        const result = this.sum();
+        this.skip();
+        if (this.offset !== this.text.length) this.error();
+        return decode_countable(result);
+    }
+}
+
+function from_bocf(text: string): Expr {
+    if (/^(?:Limit|BHO|ψ\s*(?:\[\s*0\s*\]\s*)?\(\s*ε\s*\[\s*Ω\s*\+\s*1\s*\]\s*\))$/.test(text.trim())) return INFINITY;
+    return new BocfParser(text).parse();
+}
+
 export const VeblenPhi: NotationDefinition<Expr> = {
     id: 'veblen-phi',
     name: "Extended Veblen's φ Function",
     simple_name: 'BHO φ',
+    category_id: category_veblen.id,
     is_limit,
     ...FS_default_LNZ_variant(FS, compare, is_infinity, infinity_FS, is_limit, (e) => display(e, 'plain')),
     compare,
@@ -700,6 +1206,20 @@ export const VeblenPhi: NotationDefinition<Expr> = {
             latex: bind2(display_separate, 'latex'),
             from_display,
             name: { id: 'display.veblen-separate' },
+        },
+        bocf: {
+            plain: (e) => display_bocf(e, 'plain'),
+            html: (e) => display_bocf(e, 'html'),
+            latex: (e) => display_bocf(e, 'latex'),
+            from_display: from_bocf,
+            name: 'BOCF',
+        },
+        bms: {
+            plain: display_bms,
+            html: display_bms,
+            latex: display_bms,
+            from_display: from_bms,
+            name: 'BMS',
         },
     },
     init: () => [INFINITY, zero()],

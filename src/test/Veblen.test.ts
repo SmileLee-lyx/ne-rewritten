@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { resolve_display } from '@/notation-definition.ts';
 import { VeblenPhi } from '@/notations/Misc/Veblen.ts';
 
@@ -150,4 +150,126 @@ describe('Veblen φ from_display', () => {
         ])
             throwCheck(s);
     });
+
+    it.each(['φ(0,0,0)', 'φ(0@2)', 'φ(0@ω)', 'φ(0@(1,0))', 'φ(0+0@2,ω0,φ(2)0)'])(
+        'removes every zero entry in %s',
+        (text) => {
+            const expr = fd(text);
+            expect(expr).toEqual(fd('1'));
+            expect(pl(expr)).toBe('1');
+            expect(VeblenPhi.is_limit(expr as never)).toBe(false);
+            expect(VeblenPhi.FS(expr as never, 2)).toEqual(fd('0'));
+        },
+    );
+
+    it.each([
+        ['φ(1@(0@(1)))', 'ω'],
+        ['φ(1@(0@2,1@0))', 'φ(1@1)'],
+        ['φ(1,0,1)', 'φ(1@2,1@0)'],
+        ['φ(1,0,0,0)', 'φ(1@3)'],
+        ['φ(1,0,0;1)', 'φ(1@2;1)'],
+        ['φ(1@(1,0,0))', 'φ(1@(1@2))'],
+        ['φ(1@(1,0,1))', 'φ(1@(1@2,1@0))'],
+    ])('deletes zeros recursively without renumbering slots: %s', (text, expected) => {
+        expect(fd(text)).toEqual(fd(expected));
+    });
+
+    it.each(['0+0', 'ω0', 'φ(2)0', 'ω0+φ(1,0)0+0'])('represents the zero sum %s as [0]', (text) => {
+        const expr = fd(text);
+        expect(expr).toEqual([0]);
+        expect(pl(expr)).toBe('0');
+        expect(cmp(expr, fd('0'))).toBe(0);
+        expect(VeblenPhi.is_limit(expr as never)).toBe(false);
+        expect(VeblenPhi.FS(expr as never, 1)).toEqual([0]);
+    });
+
+    it.each([
+        ['0+1', '1'],
+        ['ω+0', 'ω'],
+        ['1+ω', 'ω'],
+        ['ω+1', 'ω+1'],
+        ['ω+1+ω', 'ω2'],
+        ['ω+1+0+ω+2+ω', 'ω3'],
+        ['ω2+φ(2)', 'φ(2)'],
+        ['φ(2)+ω2+1+φ(2)+ω+1', 'φ(2)2+ω+1'],
+        ['φ(φ(1,0))+ω+φ(1,0)', 'φ(1,0)2'],
+    ])('uses ordinal absorption without sorting addends: %s → %s', (text, expected) => {
+        const expr = fd(text);
+        expect(expr).toEqual(fd(expected));
+        expect(pl(expr)).toBe(expected);
+        expect(VeblenPhi.is_limit(expr as never)).toBe(VeblenPhi.is_limit(fd(expected) as never));
+    });
+
+    it.each([
+        ['φ(1+ω)', 'φ(ω)'],
+        ['φ(ω+0;0)', 'φ(ω;0)'],
+        ['φ(1+ω,0+0,ω0)', 'φ(ω@2)'],
+        ['φ(1@1+ω)', 'φ(1@ω)'],
+        ['φ(1@(1+ω))', 'φ(1@ω)'],
+        ['φ(1@ω+0)', 'φ(1@ω)'],
+        ['φ(1@0+0)', 'ω'],
+        ['φ(1@ω0)', 'ω'],
+        ['φ(1@(0+0))', 'ω'],
+        ['φ(φ(1,0))', 'φ(1,0)'],
+        ['φ(φ(φ(1,0)))', 'φ(1,0)'],
+        ['φ(1@φ(φ(1,0)))', 'φ(1@φ(1,0))'],
+    ])('normalizes ordinal subexpressions before using them: %s', (text, expected) => {
+        expect(fd(text)).toEqual(fd(expected));
+    });
+
+    it.each([
+        ['φ(1@(1))', 'φ(1@1)'],
+        ['φ(1@(1@0))', 'φ(1@1)'],
+        ['φ(1@(1+1))', 'φ(1@2)'],
+        ['φ(1@1+1)', 'φ(1@2)'],
+        ['φ(1@(1);0)', 'φ(1@1;0)'],
+        ['φ(1@(1@(1)))', 'φ(1@(1@1))'],
+    ])('shares finite slot semantics without shifting separate or nested addresses: %s', (text, expected) => {
+        expect(fd(text)).toEqual(fd(expected));
+    });
+
+    it.each([
+        'φ(1@1,1@2)',
+        'φ(1@(1@0,1@1))',
+        'φ(1@2,1@2)',
+        'φ(1@(2),1@2)',
+        'φ(1@(0@2,1@0),1@1)',
+        'φ(1@φ(φ(1,0)),1@φ(1,0))',
+        'φ(1@ω+0,1@1+ω)',
+        'φ(1@0,1@1;0)',
+        'φ(1@(1@ω+0,1@1+ω))',
+        'φ(0@1,1@2)',
+        'φ(0@2,0@2)',
+        'φ(1@(0@0,1@1))',
+    ])('rejects increasing or duplicate addresses, including normalized and zero-valued entries: %s', (text) => {
+        expect(() => fd(text)).toThrow();
+    });
+
+    it.each([false, true])(
+        'round-trips the reported generated term with parsed-first cache order %s',
+        async (parsed_first) => {
+            for (const variant of ['FS', 'FS_short'] as const) {
+                vi.resetModules();
+                const notation = (await import('@/notations/Misc/Veblen.ts')).VeblenPhi;
+                let original = notation.init()[0];
+                for (const n of [3, 2, 2, 2]) original = notation.FS(original, n);
+                const plain = resolve_display(notation.display),
+                    separate = resolve_display(notation.display_equiv!.separate);
+                expect(plain.plain(original)).toBe('φ(1,0,0,0)');
+                const parsed = plain.from_display!(plain.plain(original));
+                const parsed_separate = separate.from_display!(separate.plain(original));
+                expect(parsed).toEqual(original);
+                expect(parsed_separate).toEqual(original);
+                const expand = notation[variant]!;
+                const first = parsed_first ? parsed : original,
+                    second = parsed_first ? original : parsed;
+                for (const n of [0, 1, 2, 3]) {
+                    const expected = expand(first, n);
+                    expect(expand(second, n)).toEqual(expected);
+                    expect(expand(parsed_separate, n)).toEqual(expected);
+                    if (n === 1) expect(plain.plain(expected)).toBe('1');
+                }
+            }
+        },
+    );
 });
