@@ -3,7 +3,7 @@
  *
  * 树条目渲染等价表示 (display_equiv) 时, 对每个节点每行等价每次渲染都直接调用
  * display 函数, 无任何缓存 —— 上万节点切换等价/display_mode 时会全部重算。
- * 本模块按 `(记号 id, 等价 id, mode, expr_key)` 缓存最终字符串, 使滚动回看、
+ * 本模块按 `(记号 id, 等价 id, mode, expr_key, locale)` 缓存最终字符串, 使滚动回看、
  * 切回旧等价、切换 display_mode 均为 cache hit。
  *
  * 纯 memoization, 非响应式。缓存的 value 是计算后的字符串, compute 只负责
@@ -23,8 +23,9 @@ export function cached_display(
     mode: 'plain' | 'html' | 'latex',
     expr_key: string,
     compute: () => string,
+    locale = '',
 ): string {
-    const key = nid + '\0' + id + '\0' + mode + '\0' + expr_key;
+    const key = nid + '\0' + id + '\0' + mode + '\0' + locale + '\0' + expr_key;
     const hit = cache.get(key);
     if (hit !== undefined) return hit;
     const value = compute();

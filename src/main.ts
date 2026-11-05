@@ -119,6 +119,9 @@ import { S_e0_DBMS } from '@/notations/MN/SDBMS/S_e0_DBMS.ts';
 import { category_rel_bm_bt_minus1_y_nss } from '@/notations/BM-like/Minus1_Y_nSS-series/Rel_B_Minus1_Y_nSS.ts';
 import { pcf_omega_mn } from '@/notations/MN/pcf-omega_MN.ts';
 import { S2DBMS } from '@/notations/MN/SDBMS/S2DBMS.ts';
+import { category_11242, category_11242_ta0 } from '@/notations/11242/categories.ts';
+import { series11242 } from '@/notations/11242/index.ts';
+import { setSeriesLanguageSource } from '@/notations/11242/i18n.ts';
 import { TS2DBMS } from '@/notations/MN/SDBMS/TS2DBMS.ts';
 import { TS_omega_DBMS } from '@/notations/MN/SDBMS/TS_omega_DBMS.ts';
 import { UP2DBMS_v2c } from '@/notations/MN/UPMN/UP2DBMS-v2c.ts';
@@ -156,6 +159,7 @@ const settings: Settings = reactive({
     ...DEFAULT_SETTINGS,
     ...load_settings(),
 });
+setSeriesLanguageSource(() => settings.language);
 
 set_generator_state(settings.generator_state ?? {});
 set_variant_state(settings.variant_state ?? {});
@@ -304,6 +308,14 @@ register_notation(aSAN);
 register_notation(aSAN2);
 register_notation(aSAN3);
 register_notation(aSAN_tilde3plus);
+register_category(category_11242);
+series11242
+    .filter((notation) => notation.category_id === category_11242.id)
+    .forEach((notation) => register_notation(notation));
+register_category(category_11242_ta0);
+series11242
+    .filter((notation) => notation.category_id === category_11242_ta0.id)
+    .forEach((notation) => register_notation(notation));
 register_category(category_translators);
 register_notation(Translator_BM_BOCF);
 

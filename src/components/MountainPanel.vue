@@ -4,7 +4,7 @@ import { I18N_KEY } from '@/composables/use_i18n.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { use_mountain_panel } from '@/composables/use_mountain_panel.ts';
 import { get_notation } from '@/core/registry.ts';
-import { resolve_display, resolve_name } from '@/notation-definition.ts';
+import { resolve_display, resolve_display_name, resolve_name } from '@/notation-definition.ts';
 import { build_mountain_view, type MountainView } from '@/notations/mountain_view.ts';
 import HtmlMountainView from '@/components/HtmlMountainView.vue';
 
@@ -102,7 +102,7 @@ onUnmounted(() => window.removeEventListener('keydown', on_close_key));
                         <select :value="panel.input_equiv.value ?? ''" @change="on_input_equiv_change">
                             <option value="">{{ t('equiv.default') }}</option>
                             <option v-for="key in Object.keys(notation?.display_equiv ?? {})" :key="key" :value="key">
-                                {{ key }}
+                                {{ resolve_display_name(notation!.display_equiv![key], t) ?? key }}
                             </option>
                         </select>
                     </label>
@@ -111,7 +111,7 @@ onUnmounted(() => window.removeEventListener('keydown', on_close_key));
                         <select v-model="panel.draw_equiv.value">
                             <option :value="undefined">{{ t('equiv.default') }}</option>
                             <option v-for="key in Object.keys(notation?.display_equiv ?? {})" :key="key" :value="key">
-                                {{ key }}
+                                {{ resolve_display_name(notation!.display_equiv![key], t) ?? key }}
                             </option>
                         </select>
                     </label>

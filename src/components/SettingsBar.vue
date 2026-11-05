@@ -305,9 +305,9 @@ function on_find_keydown(e: KeyboardEvent) {
                                 }
                             "
                         >
-                            <option value="">(None)</option>
+                            <option value="">{{ t('equiv.none') }}</option>
                             <option v-for="k in equiv_options" :key="k.id" :value="k.id">
-                                {{ k.id }}
+                                {{ k.label }}
                             </option>
                         </select>
                     </label>
@@ -355,9 +355,9 @@ function on_find_keydown(e: KeyboardEvent) {
                         @mousedown.stop
                         @change="on_diagram_equiv_change"
                     >
-                        <option value="">(None)</option>
+                        <option value="">{{ t('equiv.none') }}</option>
                         <option v-for="k in equiv_options" :key="k.id" :value="k.id">
-                            {{ k.id }}
+                            {{ k.label }}
                         </option>
                     </select>
                 </label>
