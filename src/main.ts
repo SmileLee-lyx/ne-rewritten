@@ -121,7 +121,6 @@ import { pcf_omega_mn } from '@/notations/MN/pcf-omega_MN.ts';
 import { S2DBMS } from '@/notations/MN/SDBMS/S2DBMS.ts';
 import { category_11242, category_11242_ta0 } from '@/notations/11242/categories.ts';
 import { series11242 } from '@/notations/11242/index.ts';
-import { setSeriesLanguageSource } from '@/notations/11242/i18n.ts';
 import { TS2DBMS } from '@/notations/MN/SDBMS/TS2DBMS.ts';
 import { TS_omega_DBMS } from '@/notations/MN/SDBMS/TS_omega_DBMS.ts';
 import { UP2DBMS_v2c } from '@/notations/MN/UPMN/UP2DBMS-v2c.ts';
@@ -159,7 +158,6 @@ const settings: Settings = reactive({
     ...DEFAULT_SETTINGS,
     ...load_settings(),
 });
-setSeriesLanguageSource(() => settings.language);
 
 set_generator_state(settings.generator_state ?? {});
 set_variant_state(settings.variant_state ?? {});

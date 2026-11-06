@@ -1,4 +1,4 @@
-import { seriesName } from './i18n.ts';
+import { seriesName } from './text.ts';
 import type { NotationCategoryDefinition } from '@/notation-definition.ts';
 
 export const category_11242: NotationCategoryDefinition = {

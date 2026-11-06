@@ -1,4 +1,4 @@
-import { seriesName, seriesText } from './i18n.ts';
+import { seriesName, seriesText } from './text.ts';
 import type { NotationDefinition, NotationDisplaySpec } from '@/notation-definition.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { countText, textDisplay, textHtml } from './common.ts';
@@ -68,7 +68,10 @@ function makeGraphNotation(kind: GraphKind): NotationDefinition<Graph> {
             wellOrdering,
         ],
         display: textDisplay(seriesName('view.list'), graphPlain, (text) => graphParse(kind, text)),
-        display_equiv: { 计数序列: textDisplay(seriesName('view.count'), counts), ...graphDisplays(read, graphPlain) },
+        display_equiv: {
+            [seriesName('view.count')]: textDisplay(seriesName('view.count'), counts),
+            ...graphDisplays(read, graphPlain),
+        },
         FS: fs,
         FS_short: fs,
         FS_alter: fs,
@@ -159,10 +162,14 @@ export const SRD: NotationDefinition<SRDExpr> = {
     description: [seriesName('description.srd'), comparisonChain, wellOrdering],
     display: textDisplay(seriesName('view.list'), srdPlain, srdParse),
     display_equiv: {
-        计数序列: textDisplay(seriesName('view.count'), srdCountText),
+        [seriesName('view.count')]: textDisplay(seriesName('view.count'), srdCountText),
         ...graphDisplays(srdGraph, srdPlain),
-        层级列表: textDisplay(seriesName('view.heights'), (g) => srdPlain(srdHeights(g)), srdHeightParse),
-        山脉图: {
+        [seriesName('view.heights')]: textDisplay(
+            seriesName('view.heights'),
+            (g) => srdPlain(srdHeights(g)),
+            srdHeightParse,
+        ),
+        [seriesName('view.mountain')]: {
             name: seriesName('view.mountain'),
             plain: srdPlain,
             html: (g) => diagramHtml(srdMountain(g), srdPlain(g)),
@@ -187,7 +194,7 @@ export const IPD: NotationDefinition<string> = {
     description: [seriesName('description.ipd'), wellOrdering],
     display: textDisplay(seriesName('view.list'), ipdCore.plain, ipdCore.parse),
     display_equiv: {
-        计数序列: textDisplay(seriesName('view.count'), ipdCore.counts),
+        [seriesName('view.count')]: textDisplay(seriesName('view.count'), ipdCore.counts),
         ...graphDisplays((raw) => {
             const graph = ipdCore.graph(raw);
             return (
@@ -198,7 +205,7 @@ export const IPD: NotationDefinition<string> = {
                 }
             );
         }, ipdCore.plain),
-        树形图: {
+        [seriesName('view.trees')]: {
             name: seriesName('view.trees'),
             plain: ipdCore.plain,
             html: ipdCore.treeHtml,
@@ -261,16 +268,16 @@ function makeE0Notation(strong: boolean): NotationDefinition<E0Expr> {
             from_display: core.parse,
         },
         display_equiv: {
-            计数序列: textDisplay(seriesName('view.count'), core.counts),
+            [seriesName('view.count')]: textDisplay(seriesName('view.count'), core.counts),
             ...graphDisplays(viewGraph, core.plain),
-            行高差: {
+            [seriesName('view.row-difference')]: {
                 name: seriesName('view.row-difference'),
                 plain: core.rowPlain,
                 html: core.rowHtml,
                 latex: core.rowLatex,
                 from_display: core.rowParse,
             },
-            山脉图: {
+            [seriesName('view.mountain')]: {
                 name: seriesName('view.mountain'),
                 plain: core.plain,
                 html: (expr) =>

@@ -1,4 +1,4 @@
-import { seriesText } from './i18n.ts';
+import { seriesText } from './text.ts';
 import type { NotationDisplaySpec, TextSpec } from '@/notation-definition.ts';
 
 export class ResourceLimit extends Error {

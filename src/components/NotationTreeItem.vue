@@ -16,12 +16,7 @@ import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
 import { use_multi_select } from '@/composables/use_multi_select.ts';
 import RenderLatex from '@/components/RenderLatex.vue';
-import {
-    NotationDefinition,
-    resolve_display,
-    resolve_display_name,
-    ResolvedDisplaySpec,
-} from '@/notation-definition.ts';
+import { NotationDefinition, resolve_display, ResolvedDisplaySpec } from '@/notation-definition.ts';
 import { cached_display, ORIGINAL_ID } from '@/core/display_cache.ts';
 import { observe_on_screen, unobserve_on_screen } from '@/composables/use_on_screen.ts';
 
@@ -109,8 +104,7 @@ const equiv_rows = computed(() => {
             id,
             label,
             spec,
-            render: (mode) =>
-                cached_display(nid, id, mode, expr_key.value, () => spec[mode](props.node.expr), settings.language),
+            render: (mode) => cached_display(nid, id, mode, expr_key.value, () => spec[mode](props.node.expr)),
         });
     };
 
@@ -124,11 +118,7 @@ const equiv_rows = computed(() => {
 
     for (const id of equiv_option_ids.value) {
         if (shownMap[id] && id !== current) {
-            add_row(
-                id,
-                resolve_display_name(props.notation.display_equiv![id], t) ?? id,
-                resolve_display(props.notation.display_equiv![id]),
-            );
+            add_row(id, id, resolve_display(props.notation.display_equiv![id]));
         }
     }
 

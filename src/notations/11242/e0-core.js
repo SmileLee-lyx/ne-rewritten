@@ -1,4 +1,4 @@
-import { seriesText } from './i18n.ts';
+import { seriesText } from './text.ts';
 // e0MN by test_alpha0. Counts use exact polynomial interval sums and shared finite-prefix tables.
 export function createE0Core(strong = false) {
     const LIMIT = 'Limit';

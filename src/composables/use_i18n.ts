@@ -1,5 +1,4 @@
 import type { InjectionKey } from 'vue';
-import { seriesDictionary } from '@/notations/11242/i18n.ts';
 
 export type Language = 'zh' | 'en';
 
@@ -7,7 +6,6 @@ export const I18N_KEY: InjectionKey<(key: string, params?: Record<string, string
 
 const messages: Record<Language, Record<string, string>> = {
     zh: {
-        ...seriesDictionary('zh'),
         'notation-name.mode-label': '记号名模式:',
         'config-display.label': '配置记号显示:',
         'config-display.configure': '配置',
@@ -331,7 +329,6 @@ const messages: Record<Language, Record<string, string>> = {
         'hotkey.delete-clear': '清空分析文本（可在设置中开关）',
     },
     en: {
-        ...seriesDictionary('en'),
         'notation-name.mode-label': 'Notation name mode:',
         'config-display.label': 'Notation display:',
         'config-display.configure': 'Configure',

@@ -1,4 +1,4 @@
-import { seriesText } from './i18n.ts';
+import { seriesText } from './text.ts';
 // IPD: shared tree nodes, exact local lowering, and memoized frozen-prefix counts.
 const TOP = 'Limit',
     CAP = -1;

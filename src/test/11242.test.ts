@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolve_display, resolve_name } from '@/notation-definition.ts';
-import { create_t } from '@/composables/use_i18n.ts';
+import { seriesName } from '@/notations/11242/text.ts';
 import { series11242, ARD, ARD2, RPD, SRD, e0MN, strongE0MN } from '@/notations/11242/index.ts';
 import { category_11242, category_11242_ta0 } from '@/notations/11242/categories.ts';
 import { createE0Core } from '@/notations/11242/e0-core.js';
@@ -30,7 +30,7 @@ describe('11242 reference implementation parity', () => {
                 }
             }
             if (example.counts) {
-                const displayed = resolve_display(notation.display_equiv!['计数序列']).plain(input);
+                const displayed = resolve_display(notation.display_equiv![seriesName('view.count')]).plain(input);
                 const expected = example.counts.split(',');
                 expect(displayed.split(',')).toHaveLength(expected.length);
                 displayed.split(',').forEach((value, j) => {
@@ -59,7 +59,7 @@ describe('11242 views and integration', () => {
             const names = [
                 display.name,
                 ...Object.values(notation.display_equiv!).map((v) => resolve_display(v).name),
-            ].map((name) => resolve_name(name, create_t('zh')));
+            ].map((name) => resolve_name(name));
             expect(new Set(names).size).toBe(names.length);
             for (const view of Object.values(notation.display_equiv!)) {
                 const v = resolve_display(view);

@@ -1,4 +1,4 @@
-import { seriesText, seriesName } from './i18n.ts';
+import { seriesText, seriesName } from './text.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import type { NotationDisplaySpec } from '@/notation-definition.ts';
 import { escapeHtml as esc, textHtml, textLatex, ResourceLimit } from './common.ts';
@@ -149,19 +149,19 @@ export function graphDisplays<T>(
         return g ? adjacencyText(g) : plain(expr);
     };
     return {
-        邻接列表: {
+        [seriesName('view.adjacency')]: {
             name: seriesName('view.adjacency'),
             plain: adjacency,
             html: render((g) => textHtml(adjacencyText(g))),
             latex: (expr) => textLatex(adjacency(expr)),
         },
-        三角矩阵: {
+        [seriesName('view.matrix')]: {
             name: seriesName('view.matrix'),
             plain: adjacency,
             html: render(triangleHtml),
             latex: (expr) => textLatex(adjacency(expr)),
         },
-        弧线图: {
+        [seriesName('view.arcs')]: {
             name: seriesName('view.arcs'),
             plain,
             html: render(arcHtml),

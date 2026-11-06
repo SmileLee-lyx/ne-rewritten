@@ -1,4 +1,4 @@
-import { seriesText } from './i18n.ts';
+import { seriesText } from './text.ts';
 import { budget, lex, natural, partialCounts, ResourceLimit } from './common.ts';
 
 export interface Edge {
