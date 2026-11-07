@@ -16,7 +16,12 @@ import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { use_latex } from '@/composables/use_latex.ts';
 import { use_multi_select } from '@/composables/use_multi_select.ts';
 import RenderLatex from '@/components/RenderLatex.vue';
-import { NotationDefinition, resolve_display, ResolvedDisplaySpec } from '@/notation-definition.ts';
+import {
+    NotationDefinition,
+    resolve_display,
+    resolve_display_name,
+    ResolvedDisplaySpec,
+} from '@/notation-definition.ts';
 import { cached_display, ORIGINAL_ID } from '@/core/display_cache.ts';
 import { observe_on_screen, unobserve_on_screen } from '@/composables/use_on_screen.ts';
 
@@ -98,7 +103,7 @@ const equiv_rows = computed(() => {
     }> = [];
 
     // render 闭包只在模板 (可见时) 被调用, 因此 equiv_rows 本体不追踪 expr_key / node.expr,
-    // 只随等价设置变化重算。spec 保留给 primary_display 与 tooltip 使用。
+    // 只随等价设置和名称语言变化重算。spec 保留给 primary_display 与 tooltip 使用。
     const add_row = (id: string, label: string, spec: ResolvedDisplaySpec<T>) => {
         rows.push({
             id,
@@ -118,7 +123,11 @@ const equiv_rows = computed(() => {
 
     for (const id of equiv_option_ids.value) {
         if (shownMap[id] && id !== current) {
-            add_row(id, id, resolve_display(props.notation.display_equiv![id]));
+            add_row(
+                id,
+                resolve_display_name(props.notation.display_equiv![id], t) ?? id,
+                resolve_display(props.notation.display_equiv![id]),
+            );
         }
     }
 

@@ -22,8 +22,8 @@ import { strong_e0MN as upstreamStrongE0MN } from '@/notations/MN/strong_e0MN.ts
 import { natural, ResourceLimit } from './common.ts';
 
 const category = 'category-11242';
-const comparisonChain = seriesName('description.chain');
-const wellOrdering = seriesName('description.well-ordering');
+const comparisonChain = { id: '11242.description.chain' };
+const wellOrdering = { id: '11242.description.well-ordering' };
 
 function makeGraphNotation(kind: GraphKind): NotationDefinition<Graph> {
     const cache = new WeakMap<NonNullable<Graph>, { until: number; text: string }>();
@@ -61,15 +61,15 @@ function makeGraphNotation(kind: GraphKind): NotationDefinition<Graph> {
         category_id: category,
         description: [
             kind === 'RPD'
-                ? seriesName('description.rpd')
+                ? { id: '11242.description.rpd' }
                 : kind === 'ARD'
-                  ? seriesName('description.ard')
-                  : seriesName('description.ard2'),
+                  ? { id: '11242.description.ard' }
+                  : { id: '11242.description.ard2' },
             wellOrdering,
         ],
-        display: textDisplay(seriesName('view.list'), graphPlain, (text) => graphParse(kind, text)),
+        display: textDisplay({ id: '11242.view.list' }, graphPlain, (text) => graphParse(kind, text)),
         display_equiv: {
-            [seriesName('view.count')]: textDisplay(seriesName('view.count'), counts),
+            [seriesName('view.count')]: textDisplay({ id: '11242.view.count' }, counts),
             ...graphDisplays(read, graphPlain),
         },
         FS: fs,
@@ -159,18 +159,18 @@ export const SRD: NotationDefinition<SRDExpr> = {
     name: 'SRD',
     simple_name: 'SRD',
     category_id: category,
-    description: [seriesName('description.srd'), comparisonChain, wellOrdering],
-    display: textDisplay(seriesName('view.list'), srdPlain, srdParse),
+    description: [{ id: '11242.description.srd' }, comparisonChain, wellOrdering],
+    display: textDisplay({ id: '11242.view.list' }, srdPlain, srdParse),
     display_equiv: {
-        [seriesName('view.count')]: textDisplay(seriesName('view.count'), srdCountText),
+        [seriesName('view.count')]: textDisplay({ id: '11242.view.count' }, srdCountText),
         ...graphDisplays(srdGraph, srdPlain),
         [seriesName('view.heights')]: textDisplay(
-            seriesName('view.heights'),
+            { id: '11242.view.heights' },
             (g) => srdPlain(srdHeights(g)),
             srdHeightParse,
         ),
         [seriesName('view.mountain')]: {
-            name: seriesName('view.mountain'),
+            name: { id: '11242.view.mountain' },
             plain: srdPlain,
             html: (g) => diagramHtml(srdMountain(g), srdPlain(g)),
             from_display: srdParse,
@@ -191,10 +191,10 @@ export const IPD: NotationDefinition<string> = {
     name: 'IPD',
     simple_name: 'IPD',
     category_id: category,
-    description: [seriesName('description.ipd'), wellOrdering],
-    display: textDisplay(seriesName('view.list'), ipdCore.plain, ipdCore.parse),
+    description: [{ id: '11242.description.ipd' }, wellOrdering],
+    display: textDisplay({ id: '11242.view.list' }, ipdCore.plain, ipdCore.parse),
     display_equiv: {
-        [seriesName('view.count')]: textDisplay(seriesName('view.count'), ipdCore.counts),
+        [seriesName('view.count')]: textDisplay({ id: '11242.view.count' }, ipdCore.counts),
         ...graphDisplays((raw) => {
             const graph = ipdCore.graph(raw);
             return (
@@ -206,7 +206,7 @@ export const IPD: NotationDefinition<string> = {
             );
         }, ipdCore.plain),
         [seriesName('view.trees')]: {
-            name: seriesName('view.trees'),
+            name: { id: '11242.view.trees' },
             plain: ipdCore.plain,
             html: ipdCore.treeHtml,
             from_display: ipdCore.parse,
@@ -256,29 +256,29 @@ function makeE0Notation(strong: boolean): NotationDefinition<E0Expr> {
         simple_name: name,
         category_id: 'category-11242-ta0',
         description: [
-            seriesName(strong ? 'description.strong-e0mn' : 'description.e0mn'),
+            { id: strong ? '11242.description.strong-e0mn' : '11242.description.e0mn' },
             ...(!strong ? [comparisonChain] : []),
-            seriesName('description.e0-proof'),
+            { id: '11242.description.e0-proof' },
         ],
         display: {
-            name: seriesName('view.list'),
+            name: { id: '11242.view.list' },
             plain: core.plain,
             html: core.html,
             latex: core.latex,
             from_display: core.parse,
         },
         display_equiv: {
-            [seriesName('view.count')]: textDisplay(seriesName('view.count'), core.counts),
+            [seriesName('view.count')]: textDisplay({ id: '11242.view.count' }, core.counts),
             ...graphDisplays(viewGraph, core.plain),
             [seriesName('view.row-difference')]: {
-                name: seriesName('view.row-difference'),
+                name: { id: '11242.view.row-difference' },
                 plain: core.rowPlain,
                 html: core.rowHtml,
                 latex: core.rowLatex,
                 from_display: core.rowParse,
             },
             [seriesName('view.mountain')]: {
-                name: seriesName('view.mountain'),
+                name: { id: '11242.view.mountain' },
                 plain: core.plain,
                 html: (expr) =>
                     expr === 'Limit' || !expr.length

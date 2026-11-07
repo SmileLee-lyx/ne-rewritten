@@ -150,19 +150,19 @@ export function graphDisplays<T>(
     };
     return {
         [seriesName('view.adjacency')]: {
-            name: seriesName('view.adjacency'),
+            name: { id: '11242.view.adjacency' },
             plain: adjacency,
             html: render((g) => textHtml(adjacencyText(g))),
             latex: (expr) => textLatex(adjacency(expr)),
         },
         [seriesName('view.matrix')]: {
-            name: seriesName('view.matrix'),
+            name: { id: '11242.view.matrix' },
             plain: adjacency,
             html: render(triangleHtml),
             latex: (expr) => textLatex(adjacency(expr)),
         },
         [seriesName('view.arcs')]: {
-            name: seriesName('view.arcs'),
+            name: { id: '11242.view.arcs' },
             plain,
             html: render(arcHtml),
             latex: (expr) => textLatex(plain(expr)),

@@ -1,6 +1,5 @@
-/** Fixed text keeps notation displays independent of the application language and cache. */
+/** Persisted view IDs stay stable; rendered diagram and error text remains language-independent. */
 const messages = {
-    category: '11242系列 / 11242 family',
     'view.list': '列表 / List',
     'view.count': '计数序列 / Counting sequence',
     'view.adjacency': '邻接列表 / Adjacency list',
@@ -10,26 +9,6 @@ const messages = {
     'view.mountain': '山脉图 / Mountain diagram',
     'view.trees': '树形图 / Tree diagram',
     'view.row-difference': '行高差 / Row-height differences',
-    'description.chain':
-        '已有纸面嵌入比较：e0MN > ARD2 > ARD > RPD > SRD。 / Paper embedding results: e0MN > ARD2 > ARD > RPD > SRD.',
-    'description.well-ordering':
-        '已在“KPω + 存在不可数序数”下证明良序（纸面证明）。 / Proved well-ordered in “KPω + an uncountable ordinal exists” (paper proof).',
-    'description.srd':
-        '“11242系列”各记号的共有初段（原名 SRPD）。1,2,4,2 对应 lim(BMS)。极限目前未知；@最菜萌新 猜测为 Y 序列的 1,3,4,2,5,8,10,4,9,14,17,10。 / A common initial segment of the notations in the “11242 family” (formerly SRPD). 1,2,4,2 corresponds to lim(BMS). Its limit is unknown; @最菜萌新 conjectures Y(1,3,4,2,5,8,10,4,9,14,17,10).',
-    'description.rpd':
-        '由 GPT6-Astra 与 @hzyhhzy 发明，已证明大于等于 Y 序列，但目前不确定是否等于。 / Invented by GPT6-Astra and @hzyhhzy. Proved to be at least as large as the Y sequence; equality remains open.',
-    'description.ard':
-        '由 GPT6-Astra 与 @hzyhhzy 发明。已证明 RPD ≤ ARD(1,2)，因此 ARD > RPD。 / Invented by GPT6-Astra and @hzyhhzy. RPD ≤ ARD(1,2) has been proved, so ARD > RPD.',
-    'description.ard2':
-        '由 GPT6-Astra 与 @hzyhhzy 发明。已证明 ARD ≤ ARD2(1,3)，因此 ARD2 > ARD。 / Invented by GPT6-Astra and @hzyhhzy. ARD ≤ ARD2(1,3) has been proved, so ARD2 > ARD.',
-    'description.ipd':
-        '由 GPT6-Astra 与 @hzyhhzy 发明，以迭代树轮廓作为边的参数，与整个 ARD2 的大小关系尚未确定。 / Invented by GPT6-Astra and @hzyhhzy, using iterated tree profiles as edge parameters. Its comparison with the whole ARD2 system remains open.',
-    'description.e0mn':
-        '由 @test_alpha0 发明，与 MN–ta0 栏的 e0MN 使用相同定义，增加计数序列等显示。 / Invented by @test_alpha0. Uses the same definition as e0MN under MN–ta0, with counting sequences and additional views.',
-    'description.strong-e0mn':
-        '由 @test_alpha0 发明，与 MN–ta0 栏的 strong e0MN 使用相同定义，增加计数序列等显示。 / Invented by @test_alpha0. Uses the same definition as strong e0MN under MN–ta0, with counting sequences and additional views.',
-    'description.e0-proof':
-        '已由 @test_alpha0 在“KPω + 存在不可数序数”下证明良序。 / Proved well-ordered by @test_alpha0 in “KPω + an uncountable ordinal exists”.',
     'error.budget': '计算预算不足，请使用较小的展开指标。',
     'error.natural': '需要非负安全整数。',
     'error.graph-range': '父列、层标或根标超出本记号允许的范围。',
@@ -159,6 +138,7 @@ const messages = {
 } as const;
 type TextKey = keyof typeof messages;
 
+/** Legacy equivalent-view IDs, retained for saved settings; visible names use TextSpec i18n IDs. */
 export function seriesName(key: TextKey): string {
     return messages[key];
 }

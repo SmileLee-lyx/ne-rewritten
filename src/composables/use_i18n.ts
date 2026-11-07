@@ -6,6 +6,29 @@ export const I18N_KEY: InjectionKey<(key: string, params?: Record<string, string
 
 const messages: Record<Language, Record<string, string>> = {
     zh: {
+        '11242.category': '11242系列',
+        '11242.view.list': '列表',
+        '11242.view.count': '计数序列',
+        '11242.view.adjacency': '邻接列表',
+        '11242.view.matrix': '三角矩阵',
+        '11242.view.arcs': '弧线图',
+        '11242.view.heights': '层级列表',
+        '11242.view.mountain': '山脉图',
+        '11242.view.trees': '树形图',
+        '11242.view.row-difference': '行高差',
+        '11242.description.chain': '已有纸面嵌入比较：e0MN > ARD2 > ARD > RPD > SRD。',
+        '11242.description.well-ordering': '已在“KPω + 存在不可数序数”下证明良序（纸面证明）。',
+        '11242.description.srd':
+            '“11242系列”各记号的共有初段（原名 SRPD）。1,2,4,2 对应 lim(BMS)。极限目前未知；@最菜萌新 猜测为 Y 序列的 1,3,4,2,5,8,10,4,9,14,17,10。',
+        '11242.description.rpd': '由 GPT6-Astra 与 @hzyhhzy 发明，已证明大于等于 Y 序列，但目前不确定是否等于。',
+        '11242.description.ard': '由 GPT6-Astra 与 @hzyhhzy 发明。已证明 RPD ≤ ARD(1,2)，因此 ARD > RPD。',
+        '11242.description.ard2': '由 GPT6-Astra 与 @hzyhhzy 发明。已证明 ARD ≤ ARD2(1,3)，因此 ARD2 > ARD。',
+        '11242.description.ipd':
+            '由 GPT6-Astra 与 @hzyhhzy 发明，以迭代树轮廓作为边的参数，与整个 ARD2 的大小关系尚未确定。',
+        '11242.description.e0mn': '由 @test_alpha0 发明，与 MN–ta0 栏的 e0MN 使用相同定义，增加计数序列等显示。',
+        '11242.description.strong-e0mn':
+            '由 @test_alpha0 发明，与 MN–ta0 栏的 strong e0MN 使用相同定义，增加计数序列等显示。',
+        '11242.description.e0-proof': '已由 @test_alpha0 在“KPω + 存在不可数序数”下证明良序。',
         'notation-name.mode-label': '记号名模式:',
         'config-display.label': '配置记号显示:',
         'config-display.configure': '配置',
@@ -329,6 +352,33 @@ const messages: Record<Language, Record<string, string>> = {
         'hotkey.delete-clear': '清空分析文本（可在设置中开关）',
     },
     en: {
+        '11242.category': '11242 family',
+        '11242.view.list': 'List',
+        '11242.view.count': 'Counting sequence',
+        '11242.view.adjacency': 'Adjacency list',
+        '11242.view.matrix': 'Triangular matrix',
+        '11242.view.arcs': 'Arc diagram',
+        '11242.view.heights': 'Height list',
+        '11242.view.mountain': 'Mountain diagram',
+        '11242.view.trees': 'Tree diagram',
+        '11242.view.row-difference': 'Row-height differences',
+        '11242.description.chain': 'Paper embedding results: e0MN > ARD2 > ARD > RPD > SRD.',
+        '11242.description.well-ordering':
+            'Proved well-ordered in “KPω + an uncountable ordinal exists” (paper proof).',
+        '11242.description.srd':
+            'A common initial segment of the notations in the “11242 family” (formerly SRPD). 1,2,4,2 corresponds to lim(BMS). Its limit is unknown; @最菜萌新 conjectures Y(1,3,4,2,5,8,10,4,9,14,17,10).',
+        '11242.description.rpd':
+            'Invented by GPT6-Astra and @hzyhhzy. Proved to be at least as large as the Y sequence; equality remains open.',
+        '11242.description.ard': 'Invented by GPT6-Astra and @hzyhhzy. RPD ≤ ARD(1,2) has been proved, so ARD > RPD.',
+        '11242.description.ard2':
+            'Invented by GPT6-Astra and @hzyhhzy. ARD ≤ ARD2(1,3) has been proved, so ARD2 > ARD.',
+        '11242.description.ipd':
+            'Invented by GPT6-Astra and @hzyhhzy, using iterated tree profiles as edge parameters. Its comparison with the whole ARD2 system remains open.',
+        '11242.description.e0mn':
+            'Invented by @test_alpha0. Uses the same definition as e0MN under MN–ta0, with counting sequences and additional views.',
+        '11242.description.strong-e0mn':
+            'Invented by @test_alpha0. Uses the same definition as strong e0MN under MN–ta0, with counting sequences and additional views.',
+        '11242.description.e0-proof': 'Proved well-ordered by @test_alpha0 in “KPω + an uncountable ordinal exists”.',
         'notation-name.mode-label': 'Notation name mode:',
         'config-display.label': 'Notation display:',
         'config-display.configure': 'Configure',

@@ -4,7 +4,8 @@ import ModalDialog from './ModalDialog.vue';
 import { use_expand_dialog } from '@/composables/use_expand_dialog.ts';
 import { SETTINGS_KEY } from '@/composables/use_settings.ts';
 import { I18N_KEY } from '@/composables/use_i18n.ts';
-import { resolve_name } from '@/notation-definition.ts';
+import { resolve_display_name, resolve_name } from '@/notation-definition.ts';
+import { get_notation } from '@/core/registry.ts';
 import { FS_variant_label } from '@/core/fs_variants.ts';
 import type { Settings } from '@/core/settings.ts';
 
@@ -13,6 +14,11 @@ const emit = defineEmits<{ close: [] }>();
 const settings = inject(SETTINGS_KEY)! as Settings;
 const t = inject(I18N_KEY)!;
 const ed = use_expand_dialog();
+
+function equiv_label(id: string): string {
+    const spec = get_notation(ed.notation_id.value)?.display_equiv?.[id];
+    return spec ? (resolve_display_name(spec, t) ?? id) : id;
+}
 
 function on_keydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
@@ -59,7 +65,7 @@ function on_fill() {
                     >{{ t('expand.equiv') }}
                     <select v-model="ed.notation_equiv.value">
                         <option value="">{{ t('equiv.none') }}</option>
-                        <option v-for="k in ed.equiv_options.value" :key="k" :value="k">{{ k }}</option>
+                        <option v-for="k in ed.equiv_options.value" :key="k" :value="k">{{ equiv_label(k) }}</option>
                     </select>
                 </label>
                 <label v-if="ed.variant_options.value.length > 0"
