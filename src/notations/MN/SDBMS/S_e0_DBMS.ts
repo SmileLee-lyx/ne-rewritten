@@ -793,7 +793,7 @@ export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
 
 export const S_e0_DBMS: NotationDefinition<Expr> = {
     id: 's-e0-dbms',
-    name: 'S ε₀ DBMS',
+    name: 'Sε₀DBMS (Sε₀Y)',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m),

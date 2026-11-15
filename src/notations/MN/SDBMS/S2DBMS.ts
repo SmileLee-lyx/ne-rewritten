@@ -740,7 +740,7 @@ function truncate(expr: Expr): Expr {
 
 export const S2DBMS: NotationDefinition<Expr> = {
     id: 's-2-dbms',
-    name: 'S2DBMS',
+    name: 'S2DBMS (1Y)',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),

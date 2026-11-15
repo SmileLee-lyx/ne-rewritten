@@ -461,7 +461,7 @@ export const draw_diagram_control: DiagramControl<Expr, DiagramData> = {
 
 export const S1DBMS: NotationDefinition<Expr> = {
     id: 's1dbms',
-    name: 'S1DBMS',
+    name: 'S1DBMS (0Y)',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),

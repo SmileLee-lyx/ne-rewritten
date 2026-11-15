@@ -788,7 +788,7 @@ function truncate(expr: Expr): Expr {
 
 export const S_omega_DBMS_v3: NotationDefinition<Expr> = {
     id: 's-omega-dbms-v3',
-    name: 'SωDBMS',
+    name: 'SωDBMS (ωY)',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),

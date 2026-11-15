@@ -1205,7 +1205,7 @@ function fundamental_sequence(expr: Expr, index: number, variant: FsVariant): Ex
 
 export const TS_omega_DBMS: NotationDefinition<Expr> = {
     id: 'ts-omega-dbms',
-    name: 'TSωDBMS',
+    name: 'TSωDBMS (TωY)',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),

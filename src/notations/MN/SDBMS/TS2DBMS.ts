@@ -1008,7 +1008,7 @@ function fundamental_sequence(expr: Expr, index: number, variant: FsVariant): Ex
 
 export const TS2DBMS: NotationDefinition<Expr> = {
     id: 'ts-2-dbms',
-    name: 'TS2DBMS',
+    name: 'TS2DBMS (T1Y)',
     category_id: 'category-sdbms',
     display: {
         plain: (m) => display(m, 'plain'),
