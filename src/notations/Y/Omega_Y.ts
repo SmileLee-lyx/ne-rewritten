@@ -1,4 +1,4 @@
-import { lex_compare, number_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, number_compare } from '@/utils.ts';
 import { Y_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
 import { draw_mountain_diagram, type MountainShape } from '@/notations/draw_mountain_diagram.ts';
@@ -44,6 +44,9 @@ export const sequence_from_display = (str: string): Expr => {
 };
 
 export function seq_compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, number_compare);
 }
 

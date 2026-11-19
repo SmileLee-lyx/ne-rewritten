@@ -1,4 +1,13 @@
-import { bind2, bind3, deepcopy, index_of_last, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
+import {
+    boolean_compare,
+    bind2,
+    bind3,
+    deepcopy,
+    index_of_last,
+    lex_compare,
+    number_compare,
+    tuple_lex_compare,
+} from '@/utils.ts';
 import { NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
 import { FS_default_LNZ_variant } from '@/notations/notation_utils.ts';
 
@@ -34,6 +43,9 @@ function column_compare(a: Column, b: Column): number {
 }
 
 function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, column_compare);
 }
 

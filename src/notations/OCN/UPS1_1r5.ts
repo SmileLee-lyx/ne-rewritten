@@ -881,6 +881,9 @@ function display_as_OCN(e: Expr, type: DisplayType): string {
 
 // ========== Expr 层面的函数 ==========
 function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(
         a,
         b,

@@ -443,6 +443,9 @@ export function from_display(s: string): Expr {
 }
 
 export function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, lex_compare_by(entry_comparator));
 }
 

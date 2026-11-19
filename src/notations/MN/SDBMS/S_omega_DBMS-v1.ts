@@ -1,4 +1,11 @@
-import { anti_lex_compare, deepcopy, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
+import {
+    boolean_compare,
+    anti_lex_compare,
+    deepcopy,
+    lex_compare,
+    number_compare,
+    tuple_lex_compare,
+} from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 
@@ -35,6 +42,9 @@ function compare_column(col1: Column, col2: Column): number {
 }
 
 function compare(expr1: Expr, expr2: Expr): number {
+    if (is_infinity(expr1) || is_infinity(expr2)) {
+        return boolean_compare(is_infinity(expr1), is_infinity(expr2));
+    }
     return lex_compare(expr1, expr2, compare_column);
 }
 

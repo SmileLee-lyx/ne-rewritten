@@ -1,4 +1,11 @@
-import { index_of_last, lex_compare, lex_compare_by, number_compare, tuple_lex_compare } from '@/utils.ts';
+import {
+    boolean_compare,
+    index_of_last,
+    lex_compare,
+    lex_compare_by,
+    number_compare,
+    tuple_lex_compare,
+} from '@/utils.ts';
 import { NotationCategoryDefinition, NotationDefinition } from '@/notation-definition.ts';
 
 export type ExprData<Data> = [Data, ExprData<Data>[]][];
@@ -56,6 +63,9 @@ function column_compare(a: Column, b: Column): number {
 }
 
 function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, column_compare);
 }
 

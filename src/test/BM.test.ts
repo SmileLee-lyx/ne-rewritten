@@ -96,3 +96,18 @@ describe('FS', () => {
         );
     });
 });
+
+describe('BM4 Infinity comparison', () => {
+    it('orders Limit above ordinary terms in both directions and equates independent sentinels', () => {
+        const limit = BM4.init()[0];
+        const other_limit = structuredClone(limit);
+        expect(BM4.compare(limit, other_limit)).toBe(0);
+        expect(BM4.compare(other_limit, limit)).toBe(0);
+        const ordinary_terms = [...BM4.init().slice(1), ...[0, 1, 2].map((index) => BM4.FS(limit, index))];
+        for (const term of ordinary_terms) {
+            expect(BM4.compare(limit, term)).toBe(1);
+            expect(BM4.compare(term, limit)).toBe(-1);
+            expect(BM4.compare(term, structuredClone(term))).toBe(0);
+        }
+    });
+});

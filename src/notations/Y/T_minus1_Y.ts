@@ -1,4 +1,4 @@
-import { lex_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 type Expr = Expr[];
@@ -16,6 +16,9 @@ function is_limit(e: Expr): boolean {
 }
 
 function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, compare);
 }
 

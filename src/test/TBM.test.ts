@@ -9,6 +9,7 @@ import {
     expand,
     Expr,
     parents,
+    TBM,
 } from '@/notations/BM-like/TBM.ts';
 
 describe('parents', () => {
@@ -649,5 +650,20 @@ describe('parents', () => {
             ],
         ];
         expect(expand(e, 1)).toEqual(e1);
+    });
+});
+
+describe('TBM Infinity comparison', () => {
+    it('orders Limit above ordinary terms in both directions and equates independent sentinels', () => {
+        const limit = TBM.init()[0];
+        const other_limit = structuredClone(limit);
+        expect(TBM.compare(limit, other_limit)).toBe(0);
+        expect(TBM.compare(other_limit, limit)).toBe(0);
+        const ordinary_terms = [...TBM.init().slice(1), ...[0, 1, 2].map((index) => TBM.FS(limit, index))];
+        for (const term of ordinary_terms) {
+            expect(TBM.compare(limit, term)).toBe(1);
+            expect(TBM.compare(term, limit)).toBe(-1);
+            expect(TBM.compare(term, structuredClone(term))).toBe(0);
+        }
     });
 });

@@ -1,4 +1,4 @@
-import { deepcopy, lex_compare } from '@/utils.ts';
+import { boolean_compare, deepcopy, lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 type Sep = Expr;
@@ -29,6 +29,9 @@ function column_compare(a: Column, b: Column): number {
 }
 
 function mountain_compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, column_compare);
 }
 

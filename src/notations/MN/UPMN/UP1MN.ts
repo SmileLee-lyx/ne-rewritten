@@ -36,6 +36,9 @@ function is_limit(expr: Expr): boolean {
 }
 
 function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, compare_column);
 }
 

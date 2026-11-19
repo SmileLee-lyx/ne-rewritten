@@ -631,3 +631,33 @@ describe('TS2DBMS (note-9)', () => {
         expect(() => compute_t1y_cnf(seed(ord_natural(100000000000000000000n)))).toThrow(/resource limit/);
     });
 });
+
+describe('S2DBMS Infinity comparison', () => {
+    it('orders Limit above ordinary terms in both directions and equates independent sentinels', () => {
+        const limit = S2DBMS.init()[0];
+        const other_limit = structuredClone(limit);
+        expect(S2DBMS.compare(limit, other_limit)).toBe(0);
+        expect(S2DBMS.compare(other_limit, limit)).toBe(0);
+        const ordinary_terms = [...S2DBMS.init().slice(1), ...[0, 1, 2].map((index) => S2DBMS.FS(limit, index))];
+        for (const term of ordinary_terms) {
+            expect(S2DBMS.compare(limit, term)).toBe(1);
+            expect(S2DBMS.compare(term, limit)).toBe(-1);
+            expect(S2DBMS.compare(term, structuredClone(term))).toBe(0);
+        }
+    });
+});
+
+describe('TS2DBMS Infinity comparison', () => {
+    it('orders Limit above ordinary terms in both directions and equates independent sentinels', () => {
+        const limit = TS2DBMS.init()[0];
+        const other_limit = structuredClone(limit);
+        expect(TS2DBMS.compare(limit, other_limit)).toBe(0);
+        expect(TS2DBMS.compare(other_limit, limit)).toBe(0);
+        const ordinary_terms = [...TS2DBMS.init().slice(1), ...[0, 1, 2].map((index) => TS2DBMS.FS(limit, index))];
+        for (const term of ordinary_terms) {
+            expect(TS2DBMS.compare(limit, term)).toBe(1);
+            expect(TS2DBMS.compare(term, limit)).toBe(-1);
+            expect(TS2DBMS.compare(term, structuredClone(term))).toBe(0);
+        }
+    });
+});

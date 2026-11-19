@@ -1,4 +1,4 @@
-import { lex_compare, number_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, number_compare } from '@/utils.ts';
 import { DiagramControl, NotationDefinition } from '@/notation-definition.ts';
 import { sequence_FS_variants } from '@/notations/notation_utils.ts';
 import type { Diagram } from '@/core/diagram_types.ts';
@@ -40,6 +40,9 @@ function compare_column(col1: Column, col2: Column): number {
 }
 
 function compare(expr1: Expr, expr2: Expr): number {
+    if (is_infinity(expr1) || is_infinity(expr2)) {
+        return boolean_compare(is_infinity(expr1), is_infinity(expr2));
+    }
     return lex_compare(expr1, expr2, compare_column);
 }
 

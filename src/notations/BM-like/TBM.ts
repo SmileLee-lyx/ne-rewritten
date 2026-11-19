@@ -1,4 +1,4 @@
-import { lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, number_compare, tuple_lex_compare } from '@/utils.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 import { FS_default_LNZ_variant } from '@/notations/notation_utils.ts';
 
@@ -16,6 +16,9 @@ export function column_compare(c1: Column, c2: Column): number {
 }
 
 export function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, column_compare);
 }
 

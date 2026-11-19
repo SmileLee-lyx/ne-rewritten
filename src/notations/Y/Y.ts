@@ -1,5 +1,5 @@
-import { deepcopy, lex_compare, number_compare } from '@/utils.ts';
-import { is_limit, sequence_display, sequence_from_display } from '@/notations/Y/Omega_Y.ts';
+import { deepcopy } from '@/utils.ts';
+import { is_limit, seq_compare, sequence_display, sequence_from_display } from '@/notations/Y/Omega_Y.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
 export type Expr = number[];
@@ -507,7 +507,7 @@ export const Y_seq: NotationDefinition<Expr> = {
     category_id: 'category-y',
     display: { plain: sequence_display, from_display: sequence_from_display },
     is_limit: is_limit,
-    compare: (a, b) => lex_compare(a, b, number_compare),
+    compare: seq_compare,
     FS: (m: Expr, index: number): Expr => {
         const key = '' + m;
         if (key === 'Infinity') return [1, 1 + index];

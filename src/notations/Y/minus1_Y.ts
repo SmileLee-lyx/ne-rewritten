@@ -1,4 +1,4 @@
-import { lex_compare, number_compare } from '@/utils.ts';
+import { boolean_compare, lex_compare, number_compare } from '@/utils.ts';
 import { sequence_display, sequence_from_display } from '@/notations/Y/Omega_Y.ts';
 import { NotationDefinition } from '@/notation-definition.ts';
 
@@ -17,6 +17,9 @@ function is_limit(e: Expr): boolean {
 }
 
 function compare(a: Expr, b: Expr): number {
+    if (is_infinity(a) || is_infinity(b)) {
+        return boolean_compare(is_infinity(a), is_infinity(b));
+    }
     return lex_compare(a, b, number_compare);
 }
 

@@ -273,3 +273,21 @@ spacedSuite(
     ],
     ['(1 0)', '( 1 , 0 1 )', 'Limitx'],
 );
+
+describe('T_Minus1_Y Infinity comparison', () => {
+    it('orders Limit above ordinary terms in both directions and equates independent sentinels', () => {
+        const limit = T_Minus1_Y.init()[0];
+        const other_limit = structuredClone(limit);
+        expect(T_Minus1_Y.compare(limit, other_limit)).toBe(0);
+        expect(T_Minus1_Y.compare(other_limit, limit)).toBe(0);
+        const ordinary_terms = [
+            ...T_Minus1_Y.init().slice(1),
+            ...[0, 1, 2].map((index) => T_Minus1_Y.FS(limit, index)),
+        ];
+        for (const term of ordinary_terms) {
+            expect(T_Minus1_Y.compare(limit, term)).toBe(1);
+            expect(T_Minus1_Y.compare(term, limit)).toBe(-1);
+            expect(T_Minus1_Y.compare(term, structuredClone(term))).toBe(0);
+        }
+    });
+});
